@@ -1,5 +1,5 @@
 [package]
-name = "standard_framework"
+name = "serenity_standard_framework"
 version = "0.1.0"
 authors = ["Alex M. M. <acdenissk69@gmail.com>"]
 edition = "2018"
