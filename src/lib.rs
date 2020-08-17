@@ -1,15 +1,17 @@
-use serenity::model::prelude::Message;
+use serenity::model::channel::Message;
 use serenity::prelude::{Context as SerenityContext, RwLock};
 
 use std::error::Error as StdError;
-use std::marker::PhantomData;
 use std::sync::Arc;
 
 pub mod command;
+pub mod configuration;
 pub mod context;
 pub mod group;
+pub mod parse;
 pub mod utils;
 
+use configuration::Configuration;
 use context::Context;
 use group::{Group, GroupConstructor, GroupId};
 use utils::IdMap;
@@ -17,33 +19,12 @@ use utils::IdMap;
 pub type DefaultData = ();
 pub type DefaultError = Box<dyn StdError + Send + Sync>;
 
-#[non_exhaustive]
-#[derive(Debug, Default, Clone)]
-pub struct Configuration {
-    pub prefix: String,
-}
-
-impl Configuration {
-    pub fn new() -> Self {
-        Self::default()
-    }
-
-    pub fn prefix<I>(mut self, prefix: I) -> Self
-    where
-        I: Into<String>,
-    {
-        self.prefix = prefix.into();
-        self
-    }
-}
-
 #[derive(Debug, Clone)]
 pub struct Framework<D = DefaultData, E = DefaultError> {
     pub conf: Configuration,
     pub data: Arc<RwLock<D>>,
     pub groups: IdMap<String, GroupId, Group<D, E>>,
-    pub groups_without_prefixes: Vec<Group<D, E>>,
-    _error: PhantomData<E>,
+    pub top_level_groups: Vec<Group<D, E>>,
 }
 
 impl<D, E> Default for Framework<D, E>
@@ -70,8 +51,7 @@ impl<D, E> Framework<D, E> {
             conf: Configuration::default(),
             data: Arc::new(RwLock::new(data)),
             groups: IdMap::default(),
-            groups_without_prefixes: Vec::default(),
-            _error: PhantomData,
+            top_level_groups: Vec::default(),
         }
     }
 
@@ -86,7 +66,12 @@ impl<D, E> Framework<D, E> {
         let group = group();
 
         if group.prefixes.is_empty() {
-            self.groups_without_prefixes.push(group);
+            assert!(
+                group.subgroups.is_empty(),
+                "top level groups must not have prefixes nor subgroups"
+            );
+
+            self.top_level_groups.push(group);
             return self;
         }
 
@@ -100,47 +85,27 @@ impl<D, E> Framework<D, E> {
     }
 
     pub async fn dispatch(&self, ctx: SerenityContext, msg: Message) -> Result<(), ()> {
-        let mut stream = uwl::Stream::new(msg.content.trim());
-
         // Check for the presence of the prefix.
-        if stream.advance(self.conf.prefix.len()) != self.conf.prefix {
+        if !msg.content.starts_with(&self.conf.prefix) {
             return Err(());
         }
 
-        // Prefix is present, but no more information is available.
-        if stream.is_empty() {
-            return Err(());
-        }
+        let content = &msg.content[self.conf.prefix.len()..];
+        let mut segments = parse::segments(content, ' ');
 
-        let prefix_or_name = stream.take_until(|b| b == b' ');
+        let command_name = *segments.peek().ok_or(())?;
 
-        // Ignore whitespace after the group prefix or command name.
-        stream.take_while_char(char::is_whitespace);
+        let group = parse::groups(&self.groups, &mut segments).last();
 
-        let command = if let Some(group) = self.groups.get_by_name(prefix_or_name) {
-            // TODO: Subgroups
-
-            let name = stream.take_until(|b| b == b' ');
-
-            stream.take_while_char(char::is_whitespace);
-
-            match group.commands.get_by_name(name) {
-                Some(command) => command,
-                None => return Err(()),
-            }
-        } else {
-            let mut iter = self.groups_without_prefixes.iter();
-            loop {
-                let group = match iter.next() {
-                    Some(group) => group,
-                    None => return Err(()),
-                };
-
-                if let Some(command) = group.commands.get_by_name(prefix_or_name) {
-                    break command;
-                }
-            }
+        let command = match group {
+            Some(group) => parse::commands(&group.commands, &mut segments).last(),
+            None => self
+                .top_level_groups
+                .iter()
+                .find_map(|g| g.commands.get_by_name(command_name)),
         };
+
+        let command = command.ok_or(())?;
 
         let ctx = Context {
             data: self.data.clone(),

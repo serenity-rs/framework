@@ -1,6 +1,8 @@
-use crate::command::{Command, CommandConstructor, CommandId};
+use crate::command::{CommandConstructor, CommandId, CommandMap};
 use crate::utils::IdMap;
 use crate::{DefaultData, DefaultError};
+
+pub type GroupMap<D = DefaultData, E = DefaultError> = IdMap<String, GroupId, Group<D, E>>;
 
 #[derive(Debug, Default, Clone, Copy, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct GroupId(pub u64);
@@ -17,8 +19,8 @@ impl<D, E> From<GroupConstructor<D, E>> for GroupId {
 pub struct Group<D = DefaultData, E = DefaultError> {
     pub name: String,
     pub prefixes: Vec<String>,
-    pub commands: IdMap<String, CommandId, Command<D, E>>,
-    pub subgroups: IdMap<String, GroupId, Group<D, E>>,
+    pub commands: CommandMap<D, E>,
+    pub subgroups: GroupMap<D, E>,
 }
 
 impl<D, E> Default for Group<D, E> {

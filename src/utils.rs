@@ -22,6 +22,18 @@ impl<Name, Id, Aggr> IdMap<Name, Id, Aggr> {
     pub fn new() -> Self {
         Self::default()
     }
+
+    pub fn len_names(&self) -> usize {
+        self.name_to_id.len()
+    }
+
+    pub fn len(&self) -> usize {
+        self.aggregrates.len()
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.len() == 0
+    }
 }
 
 impl<Name, Id, Aggr> IdMap<Name, Id, Aggr>
