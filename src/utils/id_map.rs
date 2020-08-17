@@ -1,6 +1,6 @@
-use std::hash::Hash;
-use std::collections::HashMap;
 use std::borrow::Borrow;
+use std::collections::HashMap;
+use std::hash::Hash;
 use std::ops::{Index, IndexMut};
 
 #[derive(Debug, Clone)]
@@ -57,7 +57,8 @@ where
         Name: Borrow<B>,
         B: Hash + Eq,
     {
-        self.get_id(name).and_then(move |id| self.aggregrates.get_mut(&id))
+        self.get_id(name)
+            .and_then(move |id| self.aggregrates.get_mut(&id))
     }
 }
 
@@ -68,7 +69,6 @@ where
     pub fn insert(&mut self, id: Id, aggr: Aggr) -> Option<Aggr> {
         self.aggregrates.insert(id, aggr)
     }
-
 
     pub fn get(&self, id: Id) -> Option<&Aggr> {
         self.aggregrates.get(&id)
@@ -95,6 +95,7 @@ where
     Id: Hash + Eq,
 {
     fn index_mut(&mut self, index: Id) -> &mut Self::Output {
-        self.get_mut(index).expect("ID with an associated aggregate")
+        self.get_mut(index)
+            .expect("ID with an associated aggregate")
     }
 }

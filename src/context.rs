@@ -1,10 +1,9 @@
 use crate::DefaultData;
 
-use serenity::client::Context as SerenityContext;
-use serenity::http::{Http, CacheHttp};
 use serenity::cache::Cache;
+use serenity::client::Context as SerenityContext;
+use serenity::http::{CacheHttp, Http};
 use serenity::prelude::RwLock;
-
 
 use std::sync::Arc;
 

@@ -1,22 +1,21 @@
-use serenity::prelude::{Context as SerenityContext, RwLock};
 use serenity::model::prelude::Message;
+use serenity::prelude::{Context as SerenityContext, RwLock};
 
-use std::sync::Arc;
 use std::error::Error as StdError;
 use std::marker::PhantomData;
+use std::sync::Arc;
 
-pub mod utils;
-pub mod context;
 pub mod command;
+pub mod context;
 pub mod group;
+pub mod utils;
 
-use utils::IdMap;
 use context::Context;
-use group::{GroupId, Group, GroupConstructor};
+use group::{Group, GroupConstructor, GroupId};
+use utils::IdMap;
 
 pub type DefaultData = ();
 pub type DefaultError = Box<dyn StdError + Send + Sync>;
-
 
 #[non_exhaustive]
 #[derive(Debug, Default, Clone)]
@@ -31,7 +30,7 @@ impl Configuration {
 
     pub fn prefix<I>(mut self, prefix: I) -> Self
     where
-        I: Into<String>
+        I: Into<String>,
     {
         self.prefix = prefix.into();
         self
@@ -49,7 +48,7 @@ pub struct Framework<D = DefaultData, E = DefaultError> {
 
 impl<D, E> Default for Framework<D, E>
 where
-    D: Default
+    D: Default,
 {
     fn default() -> Self {
         Self::with_data(D::default())
@@ -58,7 +57,7 @@ where
 
 impl<D, E> Framework<D, E>
 where
-    D: Default
+    D: Default,
 {
     pub fn new() -> Self {
         Self::default()
@@ -156,14 +155,14 @@ impl<D, E> Framework<D, E> {
 
 #[cfg(test)]
 mod tests {
-    use crate::{Framework, DefaultError};
-    use crate::utils::IdMap;
-    use crate::context::Context;
     use crate::command::{Command, CommandResult};
+    use crate::context::Context;
     use crate::group::Group;
+    use crate::utils::IdMap;
+    use crate::{DefaultError, Framework};
 
-    use serenity::model::channel::Message;
     use serenity::futures::future::{BoxFuture, FutureExt};
+    use serenity::model::channel::Message;
 
     #[derive(Default)]
     struct TestData {
@@ -174,7 +173,8 @@ mod tests {
         async move {
             println!("{:?}", ctx.data.read().await.text);
             Ok(())
-        }.boxed()
+        }
+        .boxed()
     }
 
     fn _ping() -> Command<TestData> {
@@ -186,10 +186,7 @@ mod tests {
     }
 
     fn general() -> Group<TestData> {
-        Group::builder()
-            .name("general")
-            .command(_ping)
-            .build()
+        Group::builder().name("general").command(_ping).build()
     }
 
     #[tokio::test]

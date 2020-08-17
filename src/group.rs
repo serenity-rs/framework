@@ -1,6 +1,6 @@
-use crate::{DefaultData, DefaultError};
+use crate::command::{Command, CommandConstructor, CommandId};
 use crate::utils::IdMap;
-use crate::command::{CommandId, Command, CommandConstructor};
+use crate::{DefaultData, DefaultError};
 
 #[derive(Debug, Default, Clone, Copy, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct GroupId(pub u64);
@@ -80,7 +80,10 @@ impl<D, E> GroupBuilder<D, E> {
 
         let group = group();
 
-        assert!(!group.prefixes.is_empty(), "subgroups cannot have zero prefixes");
+        assert!(
+            !group.prefixes.is_empty(),
+            "subgroups cannot have zero prefixes"
+        );
 
         for prefix in &group.prefixes {
             self.inner.subgroups.insert_name(prefix.clone(), id);

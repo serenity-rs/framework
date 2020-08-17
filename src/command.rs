@@ -1,12 +1,13 @@
-use crate::{DefaultData, DefaultError};
-use crate::utils::IdMap;
 use crate::context::Context;
+use crate::utils::IdMap;
+use crate::{DefaultData, DefaultError};
 
-use serenity::model::channel::Message;
 use serenity::futures::future::BoxFuture;
+use serenity::model::channel::Message;
 
 pub type CommandResult<E = DefaultError> = std::result::Result<(), E>;
-pub type CommandFn<D = DefaultData, E = DefaultError> = fn(ctx: Context<D>, msg: Message) -> BoxFuture<'static, CommandResult<E>>;
+pub type CommandFn<D = DefaultData, E = DefaultError> =
+    fn(ctx: Context<D>, msg: Message) -> BoxFuture<'static, CommandResult<E>>;
 
 pub type CommandConstructor<D = DefaultData, E = DefaultError> = fn() -> Command<D, E>;
 
