@@ -5,8 +5,23 @@ use crate::Configuration;
 use std::iter::Peekable;
 
 pub fn prefix<'a, D, E>(conf: &Configuration<D, E>, content: &'a str) -> Option<&'a str> {
-    if content.starts_with(&conf.prefix) {
-        Some(&content[conf.prefix.len()..])
+    if let Some(mention) = &conf.on_mention {
+        if content.starts_with("<@") {
+            let content = content["<@".len()..].trim_start_matches('!');
+
+            if let Some(index) = content.find('>') {
+                let id = &content[..index];
+
+                if id == mention {
+                    // + 1 to remove the angle bracket
+                    return Some(&content[index + 1..].trim_start());
+                }
+            }
+        }
+    }
+
+    if let Some(prefix) = conf.prefixes.iter().find(|p| content.starts_with(p.as_str())) {
+        Some(&content[prefix.len()..])
     } else {
         None
     }

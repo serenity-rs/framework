@@ -16,7 +16,11 @@ pub struct BlockedEntities {
 #[non_exhaustive]
 #[derive(Debug, Clone)]
 pub struct Configuration<D = DefaultData, E = DefaultError> {
-    pub prefix: String,
+    pub prefixes: Vec<String>,
+    pub owners: Vec<UserId>,
+    pub case_insensitive: bool,
+    pub no_dm_prefix: bool,
+    pub on_mention: Option<String>,
     pub blocked_entities: BlockedEntities,
     pub groups: GroupMap<D, E>,
     pub top_level_groups: Vec<Group<D, E>>,
@@ -25,7 +29,11 @@ pub struct Configuration<D = DefaultData, E = DefaultError> {
 impl<D, E> Default for Configuration<D, E> {
     fn default() -> Self {
         Self {
-            prefix: String::default(),
+            prefixes: Vec::default(),
+            owners: Vec::default(),
+            case_insensitive: false,
+            no_dm_prefix: false,
+            on_mention: None,
             blocked_entities: BlockedEntities::default(),
             groups: GroupMap::default(),
             top_level_groups: Vec::default(),
@@ -42,31 +50,45 @@ impl<D, E> Configuration<D, E> {
     where
         I: Into<String>,
     {
-        self.prefix = prefix.into();
+        self.prefixes.push(prefix.into());
         self
     }
 
-    pub fn group(mut self, group: GroupConstructor<D, E>) -> Self {
-        let id = GroupId::from(group);
+    pub fn prefixes<I>(mut self, prefixes: impl IntoIterator<Item = I>) -> Self
+    where
+        I: Into<String>,
+    {
+        self.prefixes = prefixes.into_iter().map(|p| p.into()).collect();
+        self
+    }
 
-        let group = group();
+    pub fn owners<I>(mut self, iter: impl IntoIterator<Item = I>) -> Self
+    where
+        I: Into<UserId>,
+    {
+        self.owners = iter.into_iter().map(|u| u.into()).collect();
+        self
+    }
 
-        if group.prefixes.is_empty() {
-            assert!(
-                group.subgroups.is_empty(),
-                "top level groups must not have prefixes nor subgroups"
-            );
+    pub fn case_insensitive(mut self, b: bool) -> Self {
+        self.case_insensitive = b;
 
-            self.top_level_groups.push(group);
-            return self;
+        if b {
+            for prefix in &mut self.prefixes {
+                *prefix = prefix.to_lowercase();
+            }
         }
 
-        for prefix in &group.prefixes {
-            self.groups.insert_name(prefix.clone(), id);
-        }
+        self
+    }
 
-        self.groups.insert(id, group);
+    pub fn no_dm_prefix(mut self, b: bool) -> Self {
+        self.no_dm_prefix = b;
+        self
+    }
 
+    pub fn on_mention(mut self, id: Option<UserId>) -> Self {
+        self.on_mention = id.map(|id| id.to_string());
         self
     }
 
@@ -101,6 +123,30 @@ impl<D, E> Configuration<D, E> {
 
     pub fn blocked_groups(mut self, iter: impl IntoIterator<Item = GroupId>) -> Self {
         self.blocked_entities.groups = iter.into_iter().collect();
+        self
+    }
+
+    pub fn group(mut self, group: GroupConstructor<D, E>) -> Self {
+        let id = GroupId::from(group);
+
+        let group = group();
+
+        if group.prefixes.is_empty() {
+            assert!(
+                group.subgroups.is_empty(),
+                "top level groups must not have prefixes nor subgroups"
+            );
+
+            self.top_level_groups.push(group);
+            return self;
+        }
+
+        for prefix in &group.prefixes {
+            self.groups.insert_name(prefix.clone(), id);
+        }
+
+        self.groups.insert(id, group);
+
         self
     }
 }

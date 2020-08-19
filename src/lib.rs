@@ -48,7 +48,12 @@ impl<D, E> Framework<D, E> {
         let command = {
             let conf = self.conf.lock().await;
 
-            let content = parse::prefix(&conf, &msg.content).ok_or(())?;
+            let content = if msg.is_private() && conf.no_dm_prefix {
+                &msg.content
+            } else {
+                parse::prefix(&conf, &msg.content).ok_or(())?
+            };
+
             let mut segments = parse::segments(content, ' ');
 
             let command_name = *segments.peek().ok_or(())?;

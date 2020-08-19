@@ -79,6 +79,22 @@ impl<D, E> GroupBuilder<D, E> {
         self
     }
 
+    pub fn prefix<I>(mut self, prefix: I) -> Self
+    where
+        I: Into<String>,
+    {
+        self.inner.prefixes.push(prefix.into());
+        self
+    }
+
+    pub fn prefixes<I>(mut self, iter: impl IntoIterator<Item = I>) -> Self
+    where
+        I: Into<String>,
+    {
+        self.inner.prefixes = iter.into_iter().map(|p| p.into()).collect();
+        self
+    }
+
     pub fn command(mut self, command: CommandConstructor<D, E>) -> Self {
         self.inner.commands.add(command);
         self
