@@ -1,7 +1,16 @@
 use crate::command::{Command, CommandMap};
 use crate::group::{Group, GroupMap};
+use crate::Configuration;
 
 use std::iter::Peekable;
+
+pub fn prefix<'a, D, E>(conf: &Configuration<D, E>, content: &'a str) -> Option<&'a str> {
+    if content.starts_with(&conf.prefix) {
+        Some(&content[conf.prefix.len()..])
+    } else {
+        None
+    }
+}
 
 #[derive(Debug, Clone)]
 pub struct Segments<'a> {

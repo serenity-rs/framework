@@ -1,5 +1,6 @@
+use crate::{DefaultData, DefaultError};
 use crate::command::CommandId;
-use crate::group::GroupId;
+use crate::group::{GroupId, Group, GroupMap, GroupConstructor};
 
 use serenity::model::id::{ChannelId, GuildId, UserId};
 
@@ -13,13 +14,26 @@ pub struct BlockedEntities {
 }
 
 #[non_exhaustive]
-#[derive(Debug, Default, Clone)]
-pub struct Configuration {
+#[derive(Debug, Clone)]
+pub struct Configuration<D = DefaultData, E = DefaultError> {
     pub prefix: String,
     pub blocked_entities: BlockedEntities,
+    pub groups: GroupMap<D, E>,
+    pub top_level_groups: Vec<Group<D, E>>,
 }
 
-impl Configuration {
+impl<D, E> Default for Configuration<D, E> {
+    fn default() -> Self {
+        Self {
+            prefix: String::default(),
+            blocked_entities: BlockedEntities::default(),
+            groups: GroupMap::default(),
+            top_level_groups: Vec::default(),
+        }
+    }
+}
+
+impl<D, E> Configuration<D, E> {
     pub fn new() -> Self {
         Self::default()
     }
@@ -29,6 +43,30 @@ impl Configuration {
         I: Into<String>,
     {
         self.prefix = prefix.into();
+        self
+    }
+
+    pub fn group(mut self, group: GroupConstructor<D, E>) -> Self {
+        let id = GroupId::from(group);
+
+        let group = group();
+
+        if group.prefixes.is_empty() {
+            assert!(
+                group.subgroups.is_empty(),
+                "top level groups must not have prefixes nor subgroups"
+            );
+
+            self.top_level_groups.push(group);
+            return self;
+        }
+
+        for prefix in &group.prefixes {
+            self.groups.insert_name(prefix.clone(), id);
+        }
+
+        self.groups.insert(id, group);
+
         self
     }
 

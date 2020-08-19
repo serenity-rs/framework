@@ -1,4 +1,4 @@
-use crate::command::{CommandConstructor, CommandId, CommandMap};
+use crate::command::{CommandConstructor, CommandMap};
 use crate::utils::IdMap;
 use crate::{DefaultData, DefaultError};
 
@@ -40,6 +40,22 @@ impl<D, E> Group<D, E> {
     }
 }
 
+impl<D, E> GroupMap<D, E> {
+    pub fn add(&mut self, group: GroupConstructor<D, E>) {
+        let id = GroupId::from(group);
+
+        let group = group();
+
+        assert!(!group.prefixes.is_empty(), "group cannot have no prefixes");
+
+        for prefix in &group.prefixes {
+            self.insert_name(prefix.clone(), id);
+        }
+
+        self.insert(id, group);
+    }
+}
+
 #[derive(Debug, Clone)]
 pub struct GroupBuilder<D = DefaultData, E = DefaultError> {
     inner: Group<D, E>,
@@ -64,35 +80,12 @@ impl<D, E> GroupBuilder<D, E> {
     }
 
     pub fn command(mut self, command: CommandConstructor<D, E>) -> Self {
-        let id = CommandId::from(command);
-
-        let command = command();
-
-        for name in &command.names {
-            self.inner.commands.insert_name(name.clone(), id);
-        }
-
-        self.inner.commands.insert(id, command);
-
+        self.inner.commands.add(command);
         self
     }
 
     pub fn subgroup(mut self, group: GroupConstructor<D, E>) -> Self {
-        let id = GroupId::from(group);
-
-        let group = group();
-
-        assert!(
-            !group.prefixes.is_empty(),
-            "subgroups cannot have zero prefixes"
-        );
-
-        for prefix in &group.prefixes {
-            self.inner.subgroups.insert_name(prefix.clone(), id);
-        }
-
-        self.inner.subgroups.insert(id, group);
-
+        self.inner.subgroups.add(group);
         self
     }
 

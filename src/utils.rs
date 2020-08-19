@@ -64,6 +64,15 @@ where
         self.get_id(name).and_then(|id| self.aggregrates.get(&id))
     }
 
+    pub fn get_pair<B: ?Sized>(&self, name: &B) -> Option<(Id, &Aggr)>
+    where
+        Name: Borrow<B>,
+        B: Hash + Eq,
+    {
+        let id = self.get_id(name)?;
+        self.aggregrates.get(&id).map(|aggr| (id, aggr))
+    }
+
     pub fn get_by_name_mut<B: ?Sized>(&mut self, name: &B) -> Option<&mut Aggr>
     where
         Name: Borrow<B>,
