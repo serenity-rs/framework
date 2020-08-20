@@ -1,5 +1,5 @@
 use std::borrow::Borrow;
-use std::collections::HashMap;
+use std::collections::hash_map::{HashMap, IntoIter, Iter, IterMut, Keys, Values, ValuesMut};
 use std::hash::Hash;
 use std::ops::{Index, IndexMut};
 
@@ -33,6 +33,26 @@ impl<Name, Id, Aggr> IdMap<Name, Id, Aggr> {
 
     pub fn is_empty(&self) -> bool {
         self.len() == 0
+    }
+
+    pub fn iter_names(&self) -> Keys<'_, Name, Id> {
+        self.name_to_id.keys()
+    }
+
+    pub fn iter_ids(&self) -> Values<'_, Name, Id> {
+        self.name_to_id.values()
+    }
+
+    pub fn iter_ids_mut(&mut self) -> ValuesMut<'_, Name, Id> {
+        self.name_to_id.values_mut()
+    }
+
+    pub fn iter(&self) -> Iter<'_, Id, Aggr> {
+        self.aggregrates.iter()
+    }
+
+    pub fn iter_mut(&mut self) -> IterMut<'_, Id, Aggr> {
+        self.aggregrates.iter_mut()
     }
 }
 
@@ -118,5 +138,32 @@ where
     fn index_mut(&mut self, index: Id) -> &mut Self::Output {
         self.get_mut(index)
             .expect("ID with an associated aggregate")
+    }
+}
+
+impl<Name, Id, Aggr> IntoIterator for IdMap<Name, Id, Aggr> {
+    type IntoIter = IntoIter<Id, Aggr>;
+    type Item = (Id, Aggr);
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.aggregrates.into_iter()
+    }
+}
+
+impl<'a, Name, Id, Aggr> IntoIterator for &'a IdMap<Name, Id, Aggr> {
+    type IntoIter = Iter<'a, Id, Aggr>;
+    type Item = (&'a Id, &'a Aggr);
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.aggregrates.iter()
+    }
+}
+
+impl<'a, Name, Id, Aggr> IntoIterator for &'a mut IdMap<Name, Id, Aggr> {
+    type IntoIter = IterMut<'a, Id, Aggr>;
+    type Item = (&'a Id, &'a mut Aggr);
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.aggregrates.iter_mut()
     }
 }

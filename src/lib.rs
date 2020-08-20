@@ -3,6 +3,7 @@ use serenity::prelude::{Context as SerenityContext, RwLock, Mutex};
 
 use std::error::Error as StdError;
 use std::sync::Arc;
+use std::borrow::Cow;
 
 pub mod command;
 pub mod configuration;
@@ -48,27 +49,22 @@ impl<D, E> Framework<D, E> {
         let command = {
             let conf = self.conf.lock().await;
 
-            let content = if msg.is_private() && conf.no_dm_prefix {
-                &msg.content
-            } else {
-                parse::prefix(&conf, &msg.content).ok_or(())?
-            };
+            let content = parse::content(&conf, &msg).ok_or(())?;
 
-            let mut segments = parse::segments(content, ' ');
-
-            let command_name = *segments.peek().ok_or(())?;
+            let mut segments = segments(content, ' ', conf.case_insensitive).peekable();
+            let command_name = segments.peek().ok_or(())?.clone();
 
             let group = parse::groups(&conf.groups, &mut segments).last();
 
             let command = match group {
-                Some(group) => group.commands.get_by_name(segments.next().ok_or(())?),
+                Some(group) => group.commands.get_by_name(&*segments.next().ok_or(())?),
                 None => {
                     segments.next();
 
                     conf
                         .top_level_groups
                         .iter()
-                        .find_map(|g| g.commands.get_by_name(command_name))
+                        .find_map(|g| g.commands.get_by_name(&*command_name))
                 },
             };
 
@@ -91,6 +87,15 @@ impl<D, E> Framework<D, E> {
 
         Ok(())
     }
+}
+
+fn segments<'a>(content: &'a str, delimiter: char, case_insensitive: bool) -> impl Iterator<Item = Cow<'a, str>> {
+    parse::segments(content, delimiter)
+        .map(move |s| if case_insensitive {
+            Cow::Owned(s.to_lowercase())
+        } else {
+            Cow::Borrowed(s)
+        })
 }
 
 #[cfg(test)]

@@ -2,12 +2,14 @@ use crate::command::{Command, CommandMap};
 use crate::group::{Group, GroupMap};
 use crate::Configuration;
 
+use serenity::model::channel::Message;
+
 use std::iter::Peekable;
 
 pub fn prefix<'a, D, E>(conf: &Configuration<D, E>, content: &'a str) -> Option<&'a str> {
     if let Some(mention) = &conf.on_mention {
         if content.starts_with("<@") {
-            let content = content["<@".len()..].trim_start_matches('!');
+            let content = content[2..].trim_start_matches('!');
 
             if let Some(index) = content.find('>') {
                 let id = &content[..index];
@@ -24,6 +26,14 @@ pub fn prefix<'a, D, E>(conf: &Configuration<D, E>, content: &'a str) -> Option<
         Some(&content[prefix.len()..])
     } else {
         None
+    }
+}
+
+pub fn content<'a, D, E>(conf: &Configuration<D, E>, msg: &'a Message) -> Option<&'a str> {
+    if msg.is_private() && conf.no_dm_prefix {
+        Some(&msg.content)
+    } else {
+        prefix(conf, &msg.content)
     }
 }
 
@@ -50,62 +60,84 @@ impl<'a> Iterator for Segments<'a> {
     }
 }
 
-pub fn segments(src: &str, delimiter: char) -> Peekable<Segments<'_>> {
-    Segments { src, delimiter }.peekable()
+pub fn segments(src: &str, delimiter: char) -> Segments<'_> {
+    Segments { src, delimiter }
 }
 
-#[derive(Debug)]
-pub struct Groups<'a, 'b, D, E> {
+pub struct Groups<'a, 'b, D, E, It>
+where
+    It: Iterator,
+    It::Item: AsRef<str>,
+{
     map: &'a GroupMap<D, E>,
-    segments: &'b mut Peekable<Segments<'a>>,
+    iter: &'b mut Peekable<It>,
 }
 
-impl<'a, 'b, D, E> Iterator for Groups<'a, 'b, D, E> {
+impl<'a, 'b, D, E, It> Iterator for Groups<'a, 'b, D, E, It>
+where
+    It: Iterator,
+    It::Item: AsRef<str>,
+{
     type Item = &'a Group<D, E>;
 
     fn next(&mut self) -> Option<Self::Item> {
-        let name = self.segments.peek()?;
-        let group = self.map.get_by_name(*name)?;
+        let name = self.iter.peek()?;
+        let group = self.map.get_by_name(name.as_ref())?;
 
-        self.segments.next();
+        self.iter.next();
         self.map = &group.subgroups;
 
         Some(group)
     }
 }
 
-pub fn groups<'a, 'b, D, E>(
+pub fn groups<'a, 'b, D, E, It>(
     map: &'a GroupMap<D, E>,
-    segments: &'b mut Peekable<Segments<'a>>,
-) -> Groups<'a, 'b, D, E> {
-    Groups { map, segments }
+    iter: &'b mut Peekable<It>,
+) -> Groups<'a, 'b, D, E, It>
+where
+    It: Iterator,
+    It::Item: AsRef<str>,
+{
+    Groups { map, iter }
 }
 
-#[derive(Debug)]
-pub struct Commands<'a, 'b, D, E> {
+pub struct Commands<'a, 'b, D, E, It>
+where
+    It: Iterator,
+    It::Item: AsRef<str>,
+{
     map: &'a CommandMap<D, E>,
-    segments: &'b mut Peekable<Segments<'a>>,
+    iter: &'b mut Peekable<It>,
 }
 
-impl<'a, 'b, D, E> Iterator for Commands<'a, 'b, D, E> {
+impl<'a, 'b, D, E, It> Iterator for Commands<'a, 'b, D, E, It>
+where
+    It: Iterator,
+    It::Item: AsRef<str>,
+{
     type Item = &'a Command<D, E>;
 
     fn next(&mut self) -> Option<Self::Item> {
-        let name = self.segments.peek()?;
-        let command = self.map.get_by_name(*name)?;
+        let name = self.iter.peek()?;
+        let command = self.map.get_by_name(name.as_ref())?;
 
-        self.segments.next();
+        self.iter.next();
         self.map = &command.subcommands;
 
         Some(command)
     }
 }
 
-pub fn commands<'a, 'b, D, E>(
+pub fn commands<'a, 'b, D, E, It>(
     map: &'a CommandMap<D, E>,
-    segments: &'b mut Peekable<Segments<'a>>,
-) -> Commands<'a, 'b, D, E> {
-    Commands { map, segments }
+    iter: &'b mut Peekable<It>,
+) -> Commands<'a, 'b, D, E, It>
+where
+    It: Iterator,
+    It::Item: AsRef<str>,
+{
+    Commands { map, iter }
 }
 
 #[cfg(test)]

@@ -50,7 +50,13 @@ impl<D, E> Configuration<D, E> {
     where
         I: Into<String>,
     {
-        self.prefixes.push(prefix.into());
+        let mut prefix = prefix.into();
+
+        if self.case_insensitive {
+            prefix = prefix.to_lowercase();
+        }
+
+        self.prefixes.push(prefix);
         self
     }
 
@@ -58,7 +64,12 @@ impl<D, E> Configuration<D, E> {
     where
         I: Into<String>,
     {
-        self.prefixes = prefixes.into_iter().map(|p| p.into()).collect();
+        self.prefixes.clear();
+
+        for prefix in prefixes {
+            self = self.prefix(prefix);
+        }
+
         self
     }
 
