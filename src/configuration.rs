@@ -4,13 +4,15 @@ use crate::{DefaultData, DefaultError};
 
 use serenity::model::id::{ChannelId, GuildId, UserId};
 
+use std::collections::HashSet;
+
 #[derive(Debug, Default, Clone)]
 pub struct BlockedEntities {
-    pub channels: Vec<ChannelId>,
-    pub guilds: Vec<GuildId>,
-    pub users: Vec<UserId>,
-    pub commands: Vec<CommandId>,
-    pub groups: Vec<GroupId>,
+    pub channels: HashSet<ChannelId>,
+    pub guilds: HashSet<GuildId>,
+    pub users: HashSet<UserId>,
+    pub commands: HashSet<CommandId>,
+    pub groups: HashSet<GroupId>,
 }
 
 #[non_exhaustive]

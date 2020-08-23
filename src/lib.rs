@@ -51,6 +51,20 @@ impl<D, E> Framework<D, E> {
         let (group_id, command_id, func, args) = {
             let conf = self.conf.lock().await;
 
+            if conf.blocked_entities.users.contains(&msg.author.id) {
+               return Err(());
+            }
+
+            if conf.blocked_entities.channels.contains(&msg.channel_id) {
+                return Err(());
+            }
+
+            if let Some(guild_id) = msg.guild_id {
+                if conf.blocked_entities.guilds.contains(&guild_id) {
+                    return Err(());
+                }
+            }
+
             let content = parse::content(&conf, &msg).ok_or(())?;
             let mut segments = parse::Segments::new(&content, ' ', conf.case_insensitive);
 
@@ -63,6 +77,10 @@ impl<D, E> Framework<D, E> {
                 // Check whether there's a subgroup.
                 // Only assign it to `group` if it's a part of `group`'s subgroups.
                 if let Some((id, aggr)) = conf.groups.get_pair(&*name) {
+                    if conf.blocked_entities.groups.contains(&id) {
+                        return Err(());
+                    }
+
                     if g.subgroups.contains(&id) {
                         group = Some(aggr);
                         continue;
@@ -94,6 +112,10 @@ impl<D, E> Framework<D, E> {
 
             while let Some(name) = segments.next() {
                 if let Some((id, aggr)) = conf.commands.get_pair(&*name) {
+                    if conf.blocked_entities.commands.contains(&id) {
+                        return Err(());
+                    }
+
                     if command.subcommands.contains(&id) {
                         command = aggr;
                         args = segments.src;
