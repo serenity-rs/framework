@@ -94,12 +94,19 @@ mod tests {
 
     #[test]
     fn segment_splitting() {
-        let content = "abc foo      bar";
+        let content = "Abc fOo      bar";
         let mut segments = Segments::new(content, ' ', false);
 
-        assert_eq!(segments.next(), Some(Cow::Borrowed("abc")));
-        assert_eq!(segments.next(), Some(Cow::Borrowed("foo")));
+        assert_eq!(segments.next(), Some(Cow::Borrowed("Abc")));
+        assert_eq!(segments.next(), Some(Cow::Borrowed("fOo")));
         assert_eq!(segments.next(), Some(Cow::Borrowed("bar")));
+        assert_eq!(segments.next(), None);
+
+        segments = Segments::new(content, ' ', true);
+
+        assert_eq!(segments.next(), Some(Cow::Owned("abc".to_string())));
+        assert_eq!(segments.next(), Some(Cow::Owned("foo".to_string())));
+        assert_eq!(segments.next(), Some(Cow::Owned("bar".to_string())));
         assert_eq!(segments.next(), None);
     }
 }
