@@ -1,6 +1,6 @@
+use crate::command::{CommandConstructor, CommandId, CommandMap};
+use crate::group::{Group, GroupConstructor, GroupId, GroupMap};
 use crate::{DefaultData, DefaultError};
-use crate::command::CommandId;
-use crate::group::{GroupId, Group, GroupMap, GroupConstructor};
 
 use serenity::model::id::{ChannelId, GuildId, UserId};
 
@@ -22,8 +22,9 @@ pub struct Configuration<D = DefaultData, E = DefaultError> {
     pub no_dm_prefix: bool,
     pub on_mention: Option<String>,
     pub blocked_entities: BlockedEntities,
-    pub groups: GroupMap<D, E>,
-    pub top_level_groups: Vec<Group<D, E>>,
+    pub groups: GroupMap,
+    pub top_level_groups: Vec<Group>,
+    pub commands: CommandMap<D, E>,
 }
 
 impl<D, E> Default for Configuration<D, E> {
@@ -37,6 +38,7 @@ impl<D, E> Default for Configuration<D, E> {
             blocked_entities: BlockedEntities::default(),
             groups: GroupMap::default(),
             top_level_groups: Vec::default(),
+            commands: CommandMap::default(),
         }
     }
 }
@@ -46,7 +48,7 @@ impl<D, E> Configuration<D, E> {
         Self::default()
     }
 
-    pub fn prefix<I>(mut self, prefix: I) -> Self
+    pub fn prefix<I>(&mut self, prefix: I) -> &mut Self
     where
         I: Into<String>,
     {
@@ -60,20 +62,20 @@ impl<D, E> Configuration<D, E> {
         self
     }
 
-    pub fn prefixes<I>(mut self, prefixes: impl IntoIterator<Item = I>) -> Self
+    pub fn prefixes<I>(&mut self, prefixes: impl IntoIterator<Item = I>) -> &mut Self
     where
         I: Into<String>,
     {
         self.prefixes.clear();
 
         for prefix in prefixes {
-            self = self.prefix(prefix);
+            self.prefix(prefix);
         }
 
         self
     }
 
-    pub fn owners<I>(mut self, iter: impl IntoIterator<Item = I>) -> Self
+    pub fn owners<I>(&mut self, iter: impl IntoIterator<Item = I>) -> &mut Self
     where
         I: Into<UserId>,
     {
@@ -81,7 +83,7 @@ impl<D, E> Configuration<D, E> {
         self
     }
 
-    pub fn case_insensitive(mut self, b: bool) -> Self {
+    pub fn case_insensitive(&mut self, b: bool) -> &mut Self {
         self.case_insensitive = b;
 
         if b {
@@ -93,17 +95,17 @@ impl<D, E> Configuration<D, E> {
         self
     }
 
-    pub fn no_dm_prefix(mut self, b: bool) -> Self {
+    pub fn no_dm_prefix(&mut self, b: bool) -> &mut Self {
         self.no_dm_prefix = b;
         self
     }
 
-    pub fn on_mention(mut self, id: Option<UserId>) -> Self {
+    pub fn on_mention(&mut self, id: Option<UserId>) -> &mut Self {
         self.on_mention = id.map(|id| id.to_string());
         self
     }
 
-    pub fn blocked_channels<I>(mut self, iter: impl IntoIterator<Item = I>) -> Self
+    pub fn blocked_channels<I>(&mut self, iter: impl IntoIterator<Item = I>) -> &mut Self
     where
         I: Into<ChannelId>,
     {
@@ -111,7 +113,7 @@ impl<D, E> Configuration<D, E> {
         self
     }
 
-    pub fn blocked_guilds<I>(mut self, iter: impl IntoIterator<Item = I>) -> Self
+    pub fn blocked_guilds<I>(&mut self, iter: impl IntoIterator<Item = I>) -> &mut Self
     where
         I: Into<GuildId>,
     {
@@ -119,7 +121,7 @@ impl<D, E> Configuration<D, E> {
         self
     }
 
-    pub fn blocked_users<I>(mut self, iter: impl IntoIterator<Item = I>) -> Self
+    pub fn blocked_users<I>(&mut self, iter: impl IntoIterator<Item = I>) -> &mut Self
     where
         I: Into<UserId>,
     {
@@ -127,20 +129,56 @@ impl<D, E> Configuration<D, E> {
         self
     }
 
-    pub fn blocked_commands(mut self, iter: impl IntoIterator<Item = CommandId>) -> Self {
+    pub fn blocked_commands(&mut self, iter: impl IntoIterator<Item = CommandId>) -> &mut Self {
         self.blocked_entities.commands = iter.into_iter().collect();
         self
     }
 
-    pub fn blocked_groups(mut self, iter: impl IntoIterator<Item = GroupId>) -> Self {
+    pub fn blocked_groups(&mut self, iter: impl IntoIterator<Item = GroupId>) -> &mut Self {
         self.blocked_entities.groups = iter.into_iter().collect();
         self
     }
 
-    pub fn group(mut self, group: GroupConstructor<D, E>) -> Self {
+    fn _group(&mut self, group: Group) -> &mut Self {
+        for prefix in &group.prefixes {
+            let prefix = if self.case_insensitive {
+                prefix.to_lowercase()
+            } else {
+                prefix.clone()
+            };
+
+            self.groups.insert_name(prefix, group.id);
+        }
+
+        for id in &group.subgroups {
+            // SAFETY: GroupId in user code can only be constructed by its
+            // `From<GroupConstructor>` impl. This makes the transmute safe.
+            let constructor: GroupConstructor = unsafe { std::mem::transmute(id.0 as *const ()) };
+
+            let mut subgroup = constructor();
+            subgroup.id = *id;
+            self._group(subgroup);
+        }
+
+        for id in &group.commands {
+            // SAFETY: CommandId in user code can only be constructed by its
+            // `From<CommandConstructor<D, E>>` impl. This makes the transmute safe.
+            let constructor: CommandConstructor<D, E> =
+                unsafe { std::mem::transmute(id.0 as *const ()) };
+
+            self.command(constructor);
+        }
+
+        self.groups.insert(group.id, group);
+
+        self
+    }
+
+    pub fn group(&mut self, group: GroupConstructor) -> &mut Self {
         let id = GroupId::from(group);
 
-        let group = group();
+        let mut group = group();
+        group.id = id;
 
         if group.prefixes.is_empty() {
             assert!(
@@ -152,12 +190,37 @@ impl<D, E> Configuration<D, E> {
             return self;
         }
 
-        for prefix in &group.prefixes {
-            self.groups.insert_name(prefix.clone(), id);
+        self._group(group)
+    }
+
+    pub fn command(&mut self, command: CommandConstructor<D, E>) -> &mut Self {
+        let id = CommandId::from(command);
+
+        let mut command = command();
+        command.id = id;
+
+        assert!(!command.names.is_empty(), "command cannot have no names");
+
+        for name in &command.names {
+            let name = if self.case_insensitive {
+                name.to_lowercase()
+            } else {
+                name.clone()
+            };
+
+            self.commands.insert_name(name, id);
         }
 
-        self.groups.insert(id, group);
+        for id in &command.subcommands {
+            // SAFETY: CommandId in user code can only be constructed by its
+            // `From<CommandConstructor<D, E>>` impl. This makes the transmute safe.
+            let constructor: CommandConstructor<D, E> =
+                unsafe { std::mem::transmute(id.0 as *const ()) };
 
+            self.command(constructor);
+        }
+
+        self.commands.insert(id, command);
         self
     }
 }

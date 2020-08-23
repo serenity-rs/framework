@@ -1,10 +1,12 @@
-use crate::{DefaultData, DefaultError};
+use crate::command::CommandId;
 use crate::configuration::Configuration;
+use crate::group::GroupId;
+use crate::{DefaultData, DefaultError};
 
 use serenity::cache::Cache;
 use serenity::client::Context as SerenityContext;
 use serenity::http::{CacheHttp, Http};
-use serenity::prelude::{RwLock, Mutex};
+use serenity::prelude::{Mutex, RwLock};
 
 use std::sync::Arc;
 
@@ -13,6 +15,9 @@ pub struct Context<D = DefaultData, E = DefaultError> {
     pub data: Arc<RwLock<D>>,
     pub conf: Arc<Mutex<Configuration<D, E>>>,
     pub serenity_ctx: SerenityContext,
+    pub group_id: GroupId,
+    pub command_id: CommandId,
+    pub args: String,
 }
 
 impl<D, E> AsRef<Http> for Context<D, E> {

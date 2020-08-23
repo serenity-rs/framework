@@ -1,9 +1,8 @@
 use serenity::model::channel::Message;
-use serenity::prelude::{Context as SerenityContext, RwLock, Mutex};
+use serenity::prelude::{Context as SerenityContext, Mutex, RwLock};
 
 use std::error::Error as StdError;
 use std::sync::Arc;
-use std::borrow::Cow;
 
 pub mod command;
 pub mod configuration;
@@ -26,7 +25,7 @@ pub struct Framework<D = DefaultData, E = DefaultError> {
 
 impl<D, E> Framework<D, E>
 where
-    D: Default
+    D: Default,
 {
     pub fn new(conf: Configuration<D, E>) -> Self {
         Self::with_data(conf, D::default())
@@ -49,48 +48,75 @@ impl<D, E> Framework<D, E> {
     where
         E: std::fmt::Display,
     {
-        let command = {
+        let (group_id, command_id, func, args) = {
             let conf = self.conf.lock().await;
 
             let content = parse::content(&conf, &msg).ok_or(())?;
-            let content = if conf.case_insensitive {
-                Cow::Owned(content.to_lowercase())
-            } else {
-                Cow::Borrowed(content)
-            };
+            let mut segments = parse::Segments::new(&content, ' ', conf.case_insensitive);
 
-            let mut segments = parse::segments(&content, ' ').peekable();
+            let mut name = segments.next().ok_or(())?;
+            let mut group = conf.groups.get_by_name(&*name);
 
-            let group = parse::groups(&conf.groups, &mut segments).last();
+            while let Some(g) = group {
+                name = segments.next().ok_or(())?;
 
-            // If we did not find a group, then this will be the first segment
-            // of the message.
-            let command_name = segments.next().ok_or(())?;
+                // Check whether there's a subgroup.
+                // Only assign it to `group` if it's a part of `group`'s subgroups.
+                if let Some((id, aggr)) = conf.groups.get_pair(&*name) {
+                    if g.subgroups.contains(&id) {
+                        group = Some(aggr);
+                        continue;
+                    }
+                }
 
-            let command = match group {
-                Some(group) => group.commands.get_by_name(command_name),
+                // No more subgroups to be found.
+                break;
+            }
+
+            // If we could not find more subgroups, `name` will be the segment
+            // after the `group`. If we could not find a group itself, `name`
+            // will be the segment after the prefix.
+            let mut command = conf.commands.get_by_name(&*name).ok_or(())?;
+
+            let group = match group {
+                Some(group) if group.commands.contains(&command.id) => group,
+                Some(_) => return Err(()),
                 None => conf
                     .top_level_groups
                     .iter()
-                    .find_map(|g| g.commands.get_by_name(command_name)),
+                    .find(|g| g.commands.contains(&command.id))
+                    .ok_or(())?,
             };
 
-            let mut command = command.ok_or(())?;
+            // Regardless whether we found a group (and its subgroups) or not,
+            // `args` will be a substring of the message after the command.
+            let mut args = segments.src;
 
-            for c in parse::commands(&command.subcommands, &mut segments) {
-                command = c;
+            while let Some(name) = segments.next() {
+                if let Some((id, aggr)) = conf.commands.get_pair(&*name) {
+                    if command.subcommands.contains(&id) {
+                        command = aggr;
+                        args = segments.src;
+                        continue;
+                    }
+                }
+
+                break;
             }
 
-            command.function
+            (group.id, command.id, command.function, args.to_string())
         };
 
         let ctx = Context {
             data: Arc::clone(&self.data),
             conf: Arc::clone(&self.conf),
             serenity_ctx: ctx,
+            group_id,
+            command_id,
+            args,
         };
 
-        if let Err(err) = command(ctx, msg).await {
+        if let Err(err) = func(ctx, msg).await {
             eprintln!("error executing command: {}", err);
         }
 
@@ -100,10 +126,10 @@ impl<D, E> Framework<D, E> {
 
 #[cfg(test)]
 mod tests {
-    use crate::command::{CommandMap, Command, CommandResult};
+    use crate::command::{Command, CommandResult};
+    use crate::configuration::Configuration;
     use crate::context::Context;
     use crate::group::Group;
-    use crate::configuration::Configuration;
     use crate::{DefaultError, Framework};
 
     use serenity::futures::future::{BoxFuture, FutureExt};
@@ -114,7 +140,7 @@ mod tests {
         text: String,
     }
 
-    fn ping(ctx: Context<TestData>, _msg: Message) -> BoxFuture<'static, CommandResult> {
+    fn _ping(ctx: Context<TestData>, _msg: Message) -> BoxFuture<'static, CommandResult> {
         async move {
             println!("{:?}", ctx.data.read().await.text);
             Ok(())
@@ -122,16 +148,12 @@ mod tests {
         .boxed()
     }
 
-    fn _ping() -> Command<TestData> {
-        Command {
-            function: ping,
-            names: vec!["ping".to_string()],
-            subcommands: CommandMap::new(),
-        }
+    fn ping() -> Command<TestData> {
+        Command::builder("ping").function(_ping).build()
     }
 
-    fn general() -> Group<TestData> {
-        Group::builder().name("general").command(_ping).build()
+    fn general() -> Group {
+        Group::builder("general").command(ping).build()
     }
 
     #[tokio::test]
@@ -140,11 +162,14 @@ mod tests {
         let _framework: Framework<(), DefaultError> = Framework::new(Configuration::new());
         let _framework: Framework<TestData> = Framework::new(Configuration::new());
 
-        let conf = Configuration::new()
-            .group(general);
+        let mut conf = Configuration::new();
+        conf.group(general);
 
-        let _framework: Framework<TestData> = Framework::with_data(conf, TestData {
-            text: "42 is the answer to life, the universe, and everything.".to_string(),
-        });
+        let _framework: Framework<TestData> = Framework::with_data(
+            conf,
+            TestData {
+                text: "42 is the answer to life, the universe, and everything.".to_string(),
+            },
+        );
     }
 }

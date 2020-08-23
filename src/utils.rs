@@ -101,6 +101,14 @@ where
         self.get_id(name)
             .and_then(move |id| self.aggregrates.get_mut(&id))
     }
+
+    pub fn contains<B: ?Sized>(&self, name: &B) -> bool
+    where
+        Name: Borrow<B>,
+        B: Hash + Eq,
+    {
+        self.name_to_id.contains_key(name)
+    }
 }
 
 impl<Name, Id, Aggr> IdMap<Name, Id, Aggr>
