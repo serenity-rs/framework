@@ -1,16 +1,17 @@
 use crate::command::{CommandConstructor, CommandId, CommandMap};
+use crate::context::PrefixContext;
 use crate::group::{Group, GroupConstructor, GroupId, GroupMap};
 use crate::{DefaultData, DefaultError};
-use crate::context::PrefixContext;
 
-use serenity::model::id::{ChannelId, GuildId, UserId};
-use serenity::model::channel::Message;
 use serenity::futures::future::BoxFuture;
+use serenity::model::channel::Message;
+use serenity::model::id::{ChannelId, GuildId, UserId};
 
 use std::collections::HashSet;
-use std::fmt::{self, Debug};
+use std::fmt;
 
-pub type DynamicPrefix<D, E> = for<'a> fn(ctx: &'a PrefixContext<'a, D, E>, msg: &'a Message) -> BoxFuture<'a, Option<usize>>;
+pub type DynamicPrefix<D, E> =
+    for<'a> fn(ctx: &'a PrefixContext<'a, D, E>, msg: &'a Message) -> BoxFuture<'a, Option<usize>>;
 
 #[derive(Debug, Default, Clone)]
 pub struct BlockedEntities {
@@ -228,7 +229,7 @@ impl<D, E> Configuration<D, E> {
     }
 }
 
-impl<D: Debug, E: Debug> Debug for Configuration<D, E> {
+impl<D: fmt::Debug, E: fmt::Debug> fmt::Debug for Configuration<D, E> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("Configuration")
             .field("prefixes", &self.prefixes)

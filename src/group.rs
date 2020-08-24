@@ -6,10 +6,10 @@ use std::collections::HashSet;
 pub type GroupMap = IdMap<String, GroupId, Group>;
 
 #[derive(Debug, Default, Clone, Copy, Hash, PartialEq, Eq, PartialOrd, Ord)]
-pub struct GroupId(pub(crate) u64);
+pub struct GroupId(pub(crate) usize);
 
 impl GroupId {
-    pub fn into_u64(self) -> u64 {
+    pub fn into_usize(self) -> usize {
         self.0
     }
 }
@@ -18,7 +18,7 @@ pub type GroupConstructor = fn() -> Group;
 
 impl From<GroupConstructor> for GroupId {
     fn from(f: GroupConstructor) -> Self {
-        Self(f as u64)
+        Self(f as usize)
     }
 }
 

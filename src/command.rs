@@ -16,17 +16,17 @@ pub type CommandFn<D = DefaultData, E = DefaultError> =
 pub type CommandConstructor<D = DefaultData, E = DefaultError> = fn() -> Command<D, E>;
 
 #[derive(Debug, Default, Clone, Copy, Hash, PartialEq, Eq, PartialOrd, Ord)]
-pub struct CommandId(pub(crate) u64);
+pub struct CommandId(pub(crate) usize);
 
 impl CommandId {
-    pub fn into_u64(self) -> u64 {
+    pub fn into_usize(self) -> usize {
         self.0
     }
 }
 
 impl<D, E> From<CommandConstructor<D, E>> for CommandId {
     fn from(f: CommandConstructor<D, E>) -> Self {
-        Self(f as u64)
+        Self(f as usize)
     }
 }
 

@@ -24,7 +24,10 @@ pub fn mention<'a>(content: &'a str, id: &str) -> Option<(&'a str, &'a str)> {
     }
 }
 
-pub async fn prefix<'a, D, E>(ctx: PrefixContext<'a, D, E>, msg: &'a Message) -> Option<(&'a str, &'a str)> {
+pub async fn prefix<'a, D, E>(
+    ctx: PrefixContext<'a, D, E>,
+    msg: &'a Message,
+) -> Option<(&'a str, &'a str)> {
     if let Some(id) = &ctx.conf.on_mention {
         if let Some(pair) = mention(&msg.content, &id) {
             return Some(pair);
@@ -49,7 +52,10 @@ pub async fn prefix<'a, D, E>(ctx: PrefixContext<'a, D, E>, msg: &'a Message) ->
     }
 }
 
-pub async fn content<'a, D, E>(ctx: PrefixContext<'a, D, E>, msg: &'a Message) -> Option<(&'a str, &'a str)> {
+pub async fn content<'a, D, E>(
+    ctx: PrefixContext<'a, D, E>,
+    msg: &'a Message,
+) -> Option<(&'a str, &'a str)> {
     if msg.is_private() && ctx.conf.no_dm_prefix {
         Some(("", &msg.content))
     } else {
@@ -82,7 +88,10 @@ impl<'a> Iterator for Segments<'a> {
             return None;
         }
 
-        let index = self.src.find(self.delimiter).unwrap_or(self.src.len());
+        let index = self
+            .src
+            .find(self.delimiter)
+            .unwrap_or_else(|| self.src.len());
         let (segment, rest) = self.src.split_at(index);
 
         self.src = rest.trim_start_matches(self.delimiter);

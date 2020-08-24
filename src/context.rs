@@ -17,6 +17,7 @@ pub struct Context<D = DefaultData, E = DefaultError> {
     pub serenity_ctx: SerenityContext,
     pub group_id: GroupId,
     pub command_id: CommandId,
+    pub command_name: String,
     pub prefix: String,
     pub args: String,
 }
