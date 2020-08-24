@@ -17,6 +17,7 @@ pub struct Context<D = DefaultData, E = DefaultError> {
     pub serenity_ctx: SerenityContext,
     pub group_id: GroupId,
     pub command_id: CommandId,
+    pub prefix: String,
     pub args: String,
 }
 
@@ -44,4 +45,11 @@ where
     fn cache(&self) -> Option<&Arc<Cache>> {
         Some(&self.serenity_ctx.cache)
     }
+}
+
+#[derive(Clone)]
+pub struct PrefixContext<'a, D = DefaultData, E = DefaultError> {
+    pub data: Arc<RwLock<D>>,
+    pub conf: &'a Configuration<D, E>,
+    pub serenity_ctx: &'a SerenityContext,
 }

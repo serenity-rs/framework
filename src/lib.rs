@@ -12,12 +12,12 @@ pub mod parse;
 pub mod utils;
 
 use configuration::Configuration;
-use context::Context;
+use context::{Context, PrefixContext};
 
 pub type DefaultData = ();
 pub type DefaultError = Box<dyn StdError + Send + Sync>;
 
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub struct Framework<D = DefaultData, E = DefaultError> {
     pub conf: Arc<Mutex<Configuration<D, E>>>,
     pub data: Arc<RwLock<D>>,
@@ -48,7 +48,7 @@ impl<D, E> Framework<D, E> {
     where
         E: std::fmt::Display,
     {
-        let (group_id, command_id, func, args) = {
+        let (group_id, command_id, func, prefix, args) = {
             let conf = self.conf.lock().await;
 
             if conf.blocked_entities.users.contains(&msg.author.id) {
@@ -65,7 +65,13 @@ impl<D, E> Framework<D, E> {
                 }
             }
 
-            let content = parse::content(&conf, &msg).ok_or(())?;
+            let prefix_ctx = PrefixContext {
+                data: self.data.clone(),
+                conf: &conf,
+                serenity_ctx: &ctx,
+            };
+
+            let (prefix, content) = parse::content(prefix_ctx, &msg).await.ok_or(())?;
             let mut segments = parse::Segments::new(&content, ' ', conf.case_insensitive);
 
             let mut name = segments.next().ok_or(())?;
@@ -126,7 +132,7 @@ impl<D, E> Framework<D, E> {
                 break;
             }
 
-            (group.id, command.id, command.function, args.to_string())
+            (group.id, command.id, command.function, prefix.to_string(), args.to_string())
         };
 
         let ctx = Context {
@@ -135,6 +141,7 @@ impl<D, E> Framework<D, E> {
             serenity_ctx: ctx,
             group_id,
             command_id,
+            prefix,
             args,
         };
 

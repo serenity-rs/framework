@@ -1,10 +1,10 @@
-use crate::Configuration;
+use crate::context::PrefixContext;
 
 use serenity::model::channel::Message;
 
 use std::borrow::Cow;
 
-pub fn mention<'a>(content: &'a str, id: &str) -> Option<&'a str> {
+pub fn mention<'a>(content: &'a str, id: &str) -> Option<(&'a str, &'a str)> {
     if !content.starts_with("<@") {
         return None;
     }
@@ -16,35 +16,44 @@ pub fn mention<'a>(content: &'a str, id: &str) -> Option<&'a str> {
 
     if mention == id {
         // + 1 to remove the angle bracket
-        Some(&content[index + 1..].trim_start())
+        let (mention, mut rest) = content.split_at(index + 1);
+        rest = rest.trim_start();
+        Some((mention, rest))
     } else {
         None
     }
 }
 
-pub fn prefix<'a, D, E>(conf: &Configuration<D, E>, content: &'a str) -> Option<&'a str> {
-    if let Some(id) = &conf.on_mention {
-        if let Some(content) = mention(content, &id) {
-            return Some(content);
+pub async fn prefix<'a, D, E>(ctx: PrefixContext<'a, D, E>, msg: &'a Message) -> Option<(&'a str, &'a str)> {
+    if let Some(id) = &ctx.conf.on_mention {
+        if let Some(pair) = mention(&msg.content, &id) {
+            return Some(pair);
         }
     }
 
-    if let Some(prefix) = conf
+    if let Some(dynamic_prefix) = ctx.conf.dynamic_prefix {
+        if let Some(index) = dynamic_prefix(&ctx, msg).await {
+            return Some(msg.content.split_at(index));
+        }
+    }
+
+    if let Some(prefix) = ctx
+        .conf
         .prefixes
         .iter()
-        .find(|p| content.starts_with(p.as_str()))
+        .find(|p| msg.content.starts_with(p.as_str()))
     {
-        Some(&content[prefix.len()..])
+        Some(msg.content.split_at(prefix.len()))
     } else {
         None
     }
 }
 
-pub fn content<'a, D, E>(conf: &Configuration<D, E>, msg: &'a Message) -> Option<&'a str> {
-    if msg.is_private() && conf.no_dm_prefix {
-        Some(&msg.content)
+pub async fn content<'a, D, E>(ctx: PrefixContext<'a, D, E>, msg: &'a Message) -> Option<(&'a str, &'a str)> {
+    if msg.is_private() && ctx.conf.no_dm_prefix {
+        Some(("", &msg.content))
     } else {
-        prefix(conf, &msg.content)
+        prefix(ctx, msg).await
     }
 }
 

@@ -1,10 +1,16 @@
 use crate::command::{CommandConstructor, CommandId, CommandMap};
 use crate::group::{Group, GroupConstructor, GroupId, GroupMap};
 use crate::{DefaultData, DefaultError};
+use crate::context::PrefixContext;
 
 use serenity::model::id::{ChannelId, GuildId, UserId};
+use serenity::model::channel::Message;
+use serenity::futures::future::BoxFuture;
 
 use std::collections::HashSet;
+use std::fmt::{self, Debug};
+
+pub type DynamicPrefix<D, E> = for<'a> fn(ctx: &'a PrefixContext<'a, D, E>, msg: &'a Message) -> BoxFuture<'a, Option<usize>>;
 
 #[derive(Debug, Default, Clone)]
 pub struct BlockedEntities {
@@ -16,9 +22,10 @@ pub struct BlockedEntities {
 }
 
 #[non_exhaustive]
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub struct Configuration<D = DefaultData, E = DefaultError> {
     pub prefixes: Vec<String>,
+    pub dynamic_prefix: Option<DynamicPrefix<D, E>>,
     pub owners: Vec<UserId>,
     pub case_insensitive: bool,
     pub no_dm_prefix: bool,
@@ -33,6 +40,7 @@ impl<D, E> Default for Configuration<D, E> {
     fn default() -> Self {
         Self {
             prefixes: Vec::default(),
+            dynamic_prefix: None,
             owners: Vec::default(),
             case_insensitive: false,
             no_dm_prefix: false,
@@ -54,13 +62,7 @@ impl<D, E> Configuration<D, E> {
     where
         I: Into<String>,
     {
-        let mut prefix = prefix.into();
-
-        if self.case_insensitive {
-            prefix = prefix.to_lowercase();
-        }
-
-        self.prefixes.push(prefix);
+        self.prefixes.push(prefix.into());
         self
     }
 
@@ -77,6 +79,11 @@ impl<D, E> Configuration<D, E> {
         self
     }
 
+    pub fn dynamic_prefix(&mut self, prefix: DynamicPrefix<D, E>) -> &mut Self {
+        self.dynamic_prefix = Some(prefix);
+        self
+    }
+
     pub fn owners<I>(&mut self, iter: impl IntoIterator<Item = I>) -> &mut Self
     where
         I: Into<UserId>,
@@ -87,12 +94,6 @@ impl<D, E> Configuration<D, E> {
 
     pub fn case_insensitive(&mut self, b: bool) -> &mut Self {
         self.case_insensitive = b;
-
-        if b {
-            for prefix in &mut self.prefixes {
-                *prefix = prefix.to_lowercase();
-            }
-        }
 
         self
     }
@@ -224,5 +225,22 @@ impl<D, E> Configuration<D, E> {
 
         self.commands.insert(id, command);
         self
+    }
+}
+
+impl<D: Debug, E: Debug> Debug for Configuration<D, E> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("Configuration")
+            .field("prefixes", &self.prefixes)
+            .field("dynamic_prefix", &"<fn>")
+            .field("owners", &self.owners)
+            .field("case_insensitive", &self.case_insensitive)
+            .field("no_dm_prefix", &self.no_dm_prefix)
+            .field("on_mention", &self.on_mention)
+            .field("blocked_entities", &self.blocked_entities)
+            .field("groups", &self.groups)
+            .field("top_level_groups", &self.top_level_groups)
+            .field("commands", &self.commands)
+            .finish()
     }
 }

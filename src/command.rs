@@ -9,9 +9,9 @@ use std::collections::HashSet;
 
 pub type CommandMap<D = DefaultData, E = DefaultError> = IdMap<String, CommandId, Command<D, E>>;
 
-pub type CommandResult<E = DefaultError> = std::result::Result<(), E>;
+pub type CommandResult<T = (), E = DefaultError> = std::result::Result<T, E>;
 pub type CommandFn<D = DefaultData, E = DefaultError> =
-    fn(ctx: Context<D, E>, msg: Message) -> BoxFuture<'static, CommandResult<E>>;
+    fn(ctx: Context<D, E>, msg: Message) -> BoxFuture<'static, CommandResult<(), E>>;
 
 pub type CommandConstructor<D = DefaultData, E = DefaultError> = fn() -> Command<D, E>;
 
