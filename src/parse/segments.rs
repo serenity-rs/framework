@@ -1,68 +1,17 @@
-use crate::context::PrefixContext;
-
-use serenity::model::channel::Message;
-
 use std::borrow::Cow;
 
-pub fn mention<'a>(content: &'a str, id: &str) -> Option<(&'a str, &'a str)> {
-    if !content.starts_with("<@") {
-        return None;
-    }
-
-    let content = content[2..].trim_start_matches('!');
-
-    let index = content.find('>').unwrap_or(0);
-    let mention = &content[..index];
-
-    if mention == id {
-        // + 1 to remove the angle bracket
-        let (mention, mut rest) = content.split_at(index + 1);
-        rest = rest.trim_start();
-        Some((mention, rest))
-    } else {
-        None
-    }
-}
-
-pub async fn prefix<'a, D, E>(
-    ctx: PrefixContext<'a, D, E>,
-    msg: &'a Message,
-) -> Option<(&'a str, &'a str)> {
-    if let Some(id) = &ctx.conf.on_mention {
-        if let Some(pair) = mention(&msg.content, &id) {
-            return Some(pair);
-        }
-    }
-
-    if let Some(dynamic_prefix) = ctx.conf.dynamic_prefix {
-        if let Some(index) = dynamic_prefix(&ctx, msg).await {
-            return Some(msg.content.split_at(index));
-        }
-    }
-
-    if let Some(prefix) = ctx
-        .conf
-        .prefixes
-        .iter()
-        .find(|p| msg.content.starts_with(p.as_str()))
-    {
-        Some(msg.content.split_at(prefix.len()))
-    } else {
-        None
-    }
-}
-
-pub async fn content<'a, D, E>(
-    ctx: PrefixContext<'a, D, E>,
-    msg: &'a Message,
-) -> Option<(&'a str, &'a str)> {
-    if msg.is_private() && ctx.conf.no_dm_prefix {
-        Some(("", &msg.content))
-    } else {
-        prefix(ctx, msg).await
-    }
-}
-
+/// An [`Iterator`] type that splits a string into *segments* by a delimiter.
+/// It returns [`Cow`] values to handle case sensitivity. [`Cow::Borrowed`] is
+/// returned if the [`case_insensitive`] field is `false`, as the segment is a
+/// slice to the string. [`Cow::Owned`] is returned if [`case_insensitive`] is
+/// `true`, as the segment is converted to lowercase using [`str::to_lowercase`].
+///
+/// [`Iterator`]: std::iter::Iterator
+/// [`Cow`]: std::borrow::Cow
+/// [`Cow::Borrowed`]: std::borrow::Cow::Borrowed
+/// [`Cow::Owned`]: std::borrow::Cow::Owned
+/// [`case_insensitive`]: Segments::case_insensitive
+/// [`str::to_lowercase`]: str::to_lowercase
 #[derive(Debug, Clone)]
 pub struct Segments<'a> {
     pub src: &'a str,
@@ -71,6 +20,7 @@ pub struct Segments<'a> {
 }
 
 impl<'a> Segments<'a> {
+    /// Creates a `Segments` instance.
     pub fn new(src: &'a str, delimiter: char, case_insensitive: bool) -> Self {
         Self {
             src,
@@ -92,6 +42,7 @@ impl<'a> Iterator for Segments<'a> {
             .src
             .find(self.delimiter)
             .unwrap_or_else(|| self.src.len());
+
         let (segment, rest) = self.src.split_at(index);
 
         self.src = rest.trim_start_matches(self.delimiter);
@@ -106,9 +57,7 @@ impl<'a> Iterator for Segments<'a> {
 
 #[cfg(test)]
 mod tests {
-    use super::Segments;
-
-    use std::borrow::Cow;
+    use super::*;
 
     #[test]
     fn segment_splitting() {

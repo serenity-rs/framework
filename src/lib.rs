@@ -11,6 +11,7 @@ pub mod context;
 pub mod error;
 pub mod group;
 pub mod parse;
+pub mod prelude;
 pub mod utils;
 
 use command::{CommandFn, CommandResult};
@@ -67,7 +68,7 @@ impl<D, E> Framework<D, E> {
         F: FnOnce(Context<D, E>, Message, CommandFn<D, E>) -> Fut,
         Fut: Future<Output = CommandResult<(), E>>,
     {
-        let (func, group_id, command_id, command_name, prefix, args) = {
+        let (func, group_id, command_id, command_name, prefix, args) = 'block: loop {
             let conf = self.conf.lock().await;
 
             if conf.blocked_entities.users.contains(&msg.author.id) {
@@ -94,14 +95,33 @@ impl<D, E> Framework<D, E> {
 
             let (prefix, content) = parse::content(prefix_ctx, &msg)
                 .await
-                .ok_or(DispatchError::NormalMessage)?;
+                .ok_or(Error::Dispatch(DispatchError::NormalMessage))?;
+
             let mut segments = parse::Segments::new(&content, ' ', conf.case_insensitive);
 
-            let mut name = segments.next().ok_or(DispatchError::MissingContent)?;
+            let mut name = segments.next().ok_or(DispatchError::PrefixOnly)?;
             let mut group = conf.groups.get_by_name(&*name);
 
             while let Some(g) = group {
-                name = segments.next().ok_or(DispatchError::MissingContent)?;
+                name = match segments.next() {
+                    Some(name) => name,
+                    None => {
+                        if let Some(id) = g.default_command {
+                            let command = &conf.commands[id];
+
+                            break 'block (
+                                command.function,
+                                g.id,
+                                command.id,
+                                command.names[0].clone(),
+                                prefix.to_string(),
+                                "".to_string(),
+                            );
+                        }
+
+                        return Err(Error::Dispatch(DispatchError::MissingContent));
+                    }
+                };
 
                 // Check whether there's a subgroup.
                 // Only assign it to `group` if it's a part of `group`'s subgroups.
@@ -136,15 +156,14 @@ impl<D, E> Framework<D, E> {
                 Some(group) if group.commands.contains(&command.id) => group,
                 Some(group) => {
                     return Err(Error::Dispatch(DispatchError::InvalidCommand(
-                        Some(group.id),
-                        command.id,
+                        group.id, command.id,
                     )))
                 }
                 None => conf
                     .top_level_groups
                     .iter()
                     .find(|g| g.commands.contains(&command.id))
-                    .ok_or(DispatchError::InvalidCommand(None, command.id))?,
+                    .expect("command does not belong to any group"),
             };
 
             // Regardless whether we found a group (and its subgroups) or not,
@@ -167,14 +186,14 @@ impl<D, E> Framework<D, E> {
                 break;
             }
 
-            (
+            break 'block (
                 command.function,
                 group.id,
                 command.id,
                 name.into_owned(),
                 prefix.to_string(),
                 args.to_string(),
-            )
+            );
         };
 
         let ctx = Context {
@@ -189,55 +208,5 @@ impl<D, E> Framework<D, E> {
         };
 
         hook(ctx, msg, func).await.map_err(Error::User)
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use crate::command::{Command, CommandResult};
-    use crate::configuration::Configuration;
-    use crate::context::Context;
-    use crate::group::Group;
-    use crate::{DefaultError, Framework};
-
-    use serenity::futures::future::{BoxFuture, FutureExt};
-    use serenity::model::channel::Message;
-
-    #[derive(Default)]
-    struct TestData {
-        text: String,
-    }
-
-    fn _ping(ctx: Context<TestData>, _msg: Message) -> BoxFuture<'static, CommandResult> {
-        async move {
-            println!("{:?}", ctx.data.read().await.text);
-            Ok(())
-        }
-        .boxed()
-    }
-
-    fn ping() -> Command<TestData> {
-        Command::builder("ping").function(_ping).build()
-    }
-
-    fn general() -> Group {
-        Group::builder("general").command(ping).build()
-    }
-
-    #[tokio::test]
-    async fn construction() {
-        let _framework: Framework = Framework::new(Configuration::new());
-        let _framework: Framework<(), DefaultError> = Framework::new(Configuration::new());
-        let _framework: Framework<TestData> = Framework::new(Configuration::new());
-
-        let mut conf = Configuration::new();
-        conf.group(general);
-
-        let _framework: Framework<TestData> = Framework::with_data(
-            conf,
-            TestData {
-                text: "42 is the answer to life, the universe, and everything.".to_string(),
-            },
-        );
     }
 }

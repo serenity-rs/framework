@@ -9,15 +9,27 @@ use std::fmt;
 
 #[derive(Debug, Clone)]
 pub enum DispatchError {
+    /// A channel is blocked. Contains the ID of the channel.
     BlockedChannel(ChannelId),
+    /// A guild is blocked. Contains the ID of the guild.
     BlockedGuild(GuildId),
+    /// A user is blocked. Contains the ID of the user.
     BlockedUser(UserId),
+    /// A command is blocked. Contains the ID of the command.
     BlockedCommand(CommandId),
+    /// A group is blocked. Contains the ID of the group.
     BlockedGroup(GroupId),
+    /// The message does not contain a command invocation.
     NormalMessage,
+    /// The message only contains a prefix.
+    PrefixOnly,
+    /// The message is missing information needed to complete its command invocation.
     MissingContent,
+    /// An invalid name for a command was passed.
     InvalidCommandName(String),
-    InvalidCommand(Option<GroupId>, CommandId),
+    /// An invalid command was passed. Contains the ID to the group, which the
+    /// command, whose ID is also contained, does not belong to.
+    InvalidCommand(GroupId, CommandId),
 }
 
 impl fmt::Display for DispatchError {
@@ -32,31 +44,35 @@ impl fmt::Display for DispatchError {
             DispatchError::BlockedUser(id) => {
                 write!(f, "failed to dispatch because user {} is blocked", id.0)
             }
-            DispatchError::BlockedCommand(id) => write!(f,
+            DispatchError::BlockedCommand(id) => write!(
+                f,
                 "failed to dispatch because command {} is blocked",
                 id.into_usize()
             ),
-            DispatchError::BlockedGroup(id) => write!(f,
+            DispatchError::BlockedGroup(id) => write!(
+                f,
                 "failed to dispatch because group {} is blocked",
                 id.into_usize()
             ),
             DispatchError::NormalMessage => {
                 write!(f, "failed to dispatch because the message is normal")
             }
-            DispatchError::MissingContent => {
-                write!(f, "failed to dispatch because the message content is missing information")
+            DispatchError::PrefixOnly => {
+                write!(f, "failed to dispatch because only the prefix is present")
             }
-            DispatchError::InvalidCommandName(name) => write!(f,
+            DispatchError::MissingContent => write!(
+                f,
+                "failed to dispatch because the message content is missing information"
+            ),
+            DispatchError::InvalidCommandName(name) => write!(
+                f,
                 "failed to dispatch because \"{}\" is not a valid command",
                 name
             ),
-            DispatchError::InvalidCommand(Some(group), command) => write!(f,
+            DispatchError::InvalidCommand(group, command) => write!(
+                f,
                 "failed to dispatch because command {} does not belong to group {}",
                 group.into_usize(),
-                command.into_usize()
-            ),
-            DispatchError::InvalidCommand(None, command) => write!(f,
-                "failed to dispatch because command {} does not belong to any group",
                 command.into_usize()
             ),
         }

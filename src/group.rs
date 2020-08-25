@@ -29,6 +29,8 @@ pub struct Group {
     pub prefixes: Vec<String>,
     pub commands: HashSet<CommandId>,
     pub subgroups: HashSet<GroupId>,
+    pub default_command: Option<CommandId>,
+    pub description: Option<String>,
 }
 
 impl Group {
@@ -85,6 +87,19 @@ impl GroupBuilder {
 
     pub fn subgroup(mut self, group: GroupConstructor) -> Self {
         self.inner.subgroups.insert(GroupId::from(group));
+        self
+    }
+
+    pub fn default_command<D, E>(mut self, command: CommandConstructor<D, E>) -> Self {
+        self.inner.default_command = Some(CommandId::from(command));
+        self
+    }
+
+    pub fn description<I>(mut self, description: I) -> Self
+    where
+        I: Into<String>,
+    {
+        self.inner.description = Some(description.into());
         self
     }
 

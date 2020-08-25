@@ -229,7 +229,7 @@ impl<D, E> Configuration<D, E> {
     }
 }
 
-impl<D: fmt::Debug, E: fmt::Debug> fmt::Debug for Configuration<D, E> {
+impl<D, E> fmt::Debug for Configuration<D, E> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("Configuration")
             .field("prefixes", &self.prefixes)
