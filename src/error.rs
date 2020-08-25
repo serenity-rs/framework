@@ -86,8 +86,8 @@ impl<E: fmt::Display> fmt::Display for Error<E> {
     }
 }
 
-impl<E: StdError> StdError for Error<E> {
-    fn cause(&self) -> Option<&dyn StdError> {
+impl<E: StdError + 'static> StdError for Error<E> {
+    fn source(&self) -> Option<&(dyn StdError + 'static)> {
         match self {
             Error::Dispatch(err) => Some(err),
             Error::User(err) => Some(err),
