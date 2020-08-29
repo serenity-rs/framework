@@ -18,6 +18,7 @@ use command::{CommandFn, CommandResult};
 use configuration::Configuration;
 use context::{Context, PrefixContext};
 use error::{DispatchError, Error};
+use utils::Segments;
 
 pub type DefaultData = ();
 pub type DefaultError = Box<dyn StdError + Send + Sync>;
@@ -97,7 +98,7 @@ impl<D, E> Framework<D, E> {
                 .await
                 .ok_or(Error::Dispatch(DispatchError::NormalMessage))?;
 
-            let mut segments = parse::Segments::new(&content, ' ', conf.case_insensitive);
+            let mut segments = Segments::new(&content, ' ', conf.case_insensitive);
 
             let mut name = segments.next().ok_or(DispatchError::PrefixOnly)?;
             let mut group = conf.groups.get_by_name(&*name);
@@ -168,7 +169,7 @@ impl<D, E> Framework<D, E> {
 
             // Regardless whether we found a group (and its subgroups) or not,
             // `args` will be a substring of the message after the command.
-            let mut args = segments.src;
+            let mut args = segments.source();
 
             while let Some(name) = segments.next() {
                 if let Some((id, aggr)) = conf.commands.get_pair(&*name) {
@@ -178,7 +179,7 @@ impl<D, E> Framework<D, E> {
 
                     if command.subcommands.contains(&id) {
                         command = aggr;
-                        args = segments.src;
+                        args = segments.source();
                         continue;
                     }
                 }
