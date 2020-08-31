@@ -149,6 +149,16 @@ impl<D, E> GroupBuilder<D, E> {
     }
 
     pub fn build(self) -> Group<D, E> {
+        if let Some(id) = self.inner.default_command {
+            if !self.inner.commands.contains(&id) {
+                panic!(
+                    "default command {} does not belong to the \"{}\" group's commands map",
+                    id.into_usize(),
+                    self.inner.name
+                );
+            }
+        }
+
         self.inner
     }
 }

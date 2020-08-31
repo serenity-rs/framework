@@ -17,7 +17,6 @@ pub struct Context<D = DefaultData, E = DefaultError> {
     pub serenity_ctx: SerenityContext,
     pub group_id: GroupId,
     pub command_id: CommandId,
-    pub command_name: String,
     pub prefix: String,
     pub args: String,
 }
@@ -30,7 +29,6 @@ impl<D, E> Clone for Context<D, E> {
             serenity_ctx: self.serenity_ctx.clone(),
             group_id: self.group_id,
             command_id: self.command_id,
-            command_name: self.command_name.clone(),
             prefix: self.prefix.clone(),
             args: self.args.clone(),
         }
@@ -80,12 +78,38 @@ impl<'a, D, E> Clone for PrefixContext<'a, D, E> {
     }
 }
 
+impl<D, E> AsRef<Http> for PrefixContext<'_, D, E> {
+    fn as_ref(&self) -> &Http {
+        &self.serenity_ctx.http
+    }
+}
+
+impl<D, E> AsRef<Cache> for PrefixContext<'_, D, E> {
+    fn as_ref(&self) -> &Cache {
+        &self.serenity_ctx.cache
+    }
+}
+
+impl<D, E> CacheHttp for PrefixContext<'_, D, E>
+where
+    D: Send + Sync,
+    E: Send + Sync,
+{
+    fn http(&self) -> &Http {
+        &self.serenity_ctx.http
+    }
+
+    fn cache(&self) -> Option<&Arc<Cache>> {
+        Some(&self.serenity_ctx.cache)
+    }
+}
+
 #[non_exhaustive]
 pub struct CheckContext<'a, D = DefaultData, E = DefaultError> {
     pub data: &'a Arc<RwLock<D>>,
     pub conf: &'a Configuration<D, E>,
     pub serenity_ctx: &'a SerenityContext,
-    pub group_id: Option<GroupId>,
+    pub group_id: GroupId,
     pub command_id: Option<CommandId>,
 }
 
@@ -98,5 +122,31 @@ impl<'a, D, E> Clone for CheckContext<'a, D, E> {
             group_id: self.group_id,
             command_id: self.command_id,
         }
+    }
+}
+
+impl<D, E> AsRef<Http> for CheckContext<'_, D, E> {
+    fn as_ref(&self) -> &Http {
+        &self.serenity_ctx.http
+    }
+}
+
+impl<D, E> AsRef<Cache> for CheckContext<'_, D, E> {
+    fn as_ref(&self) -> &Cache {
+        &self.serenity_ctx.cache
+    }
+}
+
+impl<D, E> CacheHttp for CheckContext<'_, D, E>
+where
+    D: Send + Sync,
+    E: Send + Sync,
+{
+    fn http(&self) -> &Http {
+        &self.serenity_ctx.http
+    }
+
+    fn cache(&self) -> Option<&Arc<Cache>> {
+        Some(&self.serenity_ctx.cache)
     }
 }

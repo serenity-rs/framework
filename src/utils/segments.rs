@@ -132,6 +132,24 @@ impl<'a> Segments<'a> {
     pub fn case_insensitive(&self) -> bool {
         self.case_insensitive
     }
+
+    /// Returns a boolean indicating that the source string is empty.
+    pub fn is_empty(&self) -> bool {
+        self.src.is_empty()
+    }
+
+    /// Returns the current segment.
+    ///
+    /// If the source string is empty, `None` is returned.
+    pub fn current(&self) -> Option<Cow<'a, str>> {
+        let segment = segment(self.src, self.delimiter)?;
+
+        if self.case_insensitive {
+            Some(Cow::Owned(segment.to_lowercase()))
+        } else {
+            Some(Cow::Borrowed(segment))
+        }
+    }
 }
 
 impl<'a> Iterator for Segments<'a> {

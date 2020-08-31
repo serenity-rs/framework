@@ -28,9 +28,9 @@ pub enum DispatchError {
     MissingContent,
     /// An invalid name for a command was passed.
     InvalidCommandName(String),
-    /// An invalid command was passed. Contains the ID to the group, which the
-    /// command, whose ID is also contained, does not belong to.
-    InvalidCommand(GroupId, CommandId),
+    /// An invalid command was passed. Contains the ID to the group (if it was present),
+    /// which the command, whose ID is also contained, does not belong to.
+    InvalidCommand(Option<GroupId>, CommandId),
     /// A check failed. Contains its name and the reasoning why it failed.
     CheckFailed(String, Reason),
 }
@@ -72,10 +72,15 @@ impl fmt::Display for DispatchError {
                 "failed to dispatch because \"{}\" is not a valid command",
                 name
             ),
-            DispatchError::InvalidCommand(group, command) => write!(
+            DispatchError::InvalidCommand(Some(group), command) => write!(
                 f,
                 "failed to dispatch because command {} does not belong to group {}",
                 group.into_usize(),
+                command.into_usize()
+            ),
+            DispatchError::InvalidCommand(None, command) => write!(
+                f,
+                "failed to dispatch because command {} does not belong to any top-level group",
                 command.into_usize()
             ),
             DispatchError::CheckFailed(name, _) => write!(

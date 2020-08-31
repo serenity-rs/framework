@@ -20,7 +20,7 @@ fn ping() -> Command<TestData> {
     Command::builder("ping").function(_ping).build()
 }
 
-fn general() -> Group {
+fn general() -> Group<TestData> {
     Group::builder("general").command(ping).build()
 }
 
