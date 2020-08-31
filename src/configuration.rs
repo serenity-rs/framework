@@ -11,7 +11,7 @@ use std::collections::HashSet;
 use std::fmt;
 
 pub type DynamicPrefix<D, E> =
-    for<'a> fn(ctx: &'a PrefixContext<'a, D, E>, msg: &'a Message) -> BoxFuture<'a, Option<usize>>;
+    for<'a> fn(ctx: PrefixContext<'_, D, E>, msg: &'a Message) -> BoxFuture<'a, Option<usize>>;
 
 #[derive(Debug, Default, Clone)]
 pub struct BlockedEntities {
@@ -23,7 +23,6 @@ pub struct BlockedEntities {
 }
 
 #[non_exhaustive]
-#[derive(Clone)]
 pub struct Configuration<D = DefaultData, E = DefaultError> {
     pub prefixes: Vec<String>,
     pub dynamic_prefix: Option<DynamicPrefix<D, E>>,
@@ -32,9 +31,26 @@ pub struct Configuration<D = DefaultData, E = DefaultError> {
     pub no_dm_prefix: bool,
     pub on_mention: Option<String>,
     pub blocked_entities: BlockedEntities,
-    pub groups: GroupMap,
-    pub top_level_groups: Vec<Group>,
+    pub groups: GroupMap<D, E>,
+    pub top_level_groups: Vec<Group<D, E>>,
     pub commands: CommandMap<D, E>,
+}
+
+impl<D, E> Clone for Configuration<D, E> {
+    fn clone(&self) -> Self {
+        Self {
+            prefixes: self.prefixes.clone(),
+            dynamic_prefix: self.dynamic_prefix,
+            owners: self.owners.clone(),
+            case_insensitive: self.case_insensitive,
+            no_dm_prefix: self.no_dm_prefix,
+            on_mention: self.on_mention.clone(),
+            blocked_entities: self.blocked_entities.clone(),
+            groups: self.groups.clone(),
+            top_level_groups: self.top_level_groups.clone(),
+            commands: self.commands.clone(),
+        }
+    }
 }
 
 impl<D, E> Default for Configuration<D, E> {
@@ -67,29 +83,16 @@ impl<D, E> Configuration<D, E> {
         self
     }
 
-    pub fn prefixes<I>(&mut self, prefixes: impl IntoIterator<Item = I>) -> &mut Self
-    where
-        I: Into<String>,
-    {
-        self.prefixes.clear();
-
-        for prefix in prefixes {
-            self.prefix(prefix);
-        }
-
-        self
-    }
-
     pub fn dynamic_prefix(&mut self, prefix: DynamicPrefix<D, E>) -> &mut Self {
         self.dynamic_prefix = Some(prefix);
         self
     }
 
-    pub fn owners<I>(&mut self, iter: impl IntoIterator<Item = I>) -> &mut Self
+    pub fn owner<I>(&mut self, owner: I) -> &mut Self
     where
         I: Into<UserId>,
     {
-        self.owners = iter.into_iter().map(|u| u.into()).collect();
+        self.owners.push(owner.into());
         self
     }
 
@@ -109,41 +112,12 @@ impl<D, E> Configuration<D, E> {
         self
     }
 
-    pub fn blocked_channels<I>(&mut self, iter: impl IntoIterator<Item = I>) -> &mut Self
-    where
-        I: Into<ChannelId>,
-    {
-        self.blocked_entities.channels = iter.into_iter().map(|c| c.into()).collect();
+    pub fn blocked_entities(&mut self, blocked_entities: BlockedEntities) -> &mut Self {
+        self.blocked_entities = blocked_entities;
         self
     }
 
-    pub fn blocked_guilds<I>(&mut self, iter: impl IntoIterator<Item = I>) -> &mut Self
-    where
-        I: Into<GuildId>,
-    {
-        self.blocked_entities.guilds = iter.into_iter().map(|c| c.into()).collect();
-        self
-    }
-
-    pub fn blocked_users<I>(&mut self, iter: impl IntoIterator<Item = I>) -> &mut Self
-    where
-        I: Into<UserId>,
-    {
-        self.blocked_entities.users = iter.into_iter().map(|c| c.into()).collect();
-        self
-    }
-
-    pub fn blocked_commands(&mut self, iter: impl IntoIterator<Item = CommandId>) -> &mut Self {
-        self.blocked_entities.commands = iter.into_iter().collect();
-        self
-    }
-
-    pub fn blocked_groups(&mut self, iter: impl IntoIterator<Item = GroupId>) -> &mut Self {
-        self.blocked_entities.groups = iter.into_iter().collect();
-        self
-    }
-
-    fn _group(&mut self, group: Group) -> &mut Self {
+    fn _group(&mut self, group: Group<D, E>) -> &mut Self {
         for prefix in &group.prefixes {
             let prefix = if self.case_insensitive {
                 prefix.to_lowercase()
@@ -157,7 +131,8 @@ impl<D, E> Configuration<D, E> {
         for id in &group.subgroups {
             // SAFETY: GroupId in user code can only be constructed by its
             // `From<GroupConstructor>` impl. This makes the transmute safe.
-            let constructor: GroupConstructor = unsafe { std::mem::transmute(id.0 as *const ()) };
+            let constructor: GroupConstructor<D, E> =
+                unsafe { std::mem::transmute(id.0 as *const ()) };
 
             let mut subgroup = constructor();
             subgroup.id = *id;
@@ -178,7 +153,7 @@ impl<D, E> Configuration<D, E> {
         self
     }
 
-    pub fn group(&mut self, group: GroupConstructor) -> &mut Self {
+    pub fn group(&mut self, group: GroupConstructor<D, E>) -> &mut Self {
         let id = GroupId::from(group);
 
         let mut group = group();

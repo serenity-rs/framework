@@ -5,6 +5,7 @@ use std::error::Error as StdError;
 use std::future::Future;
 use std::sync::Arc;
 
+pub mod check;
 pub mod command;
 pub mod configuration;
 pub mod context;
@@ -16,7 +17,7 @@ pub mod utils;
 
 use command::{CommandFn, CommandResult};
 use configuration::Configuration;
-use context::{Context, PrefixContext};
+use context::{CheckContext, Context};
 use error::{DispatchError, Error};
 use utils::Segments;
 
@@ -72,31 +73,12 @@ impl<D, E> Framework<D, E> {
         let (func, group_id, command_id, command_name, prefix, args) = 'block: loop {
             let conf = self.conf.lock().await;
 
-            if conf.blocked_entities.users.contains(&msg.author.id) {
-                return Err(Error::Dispatch(DispatchError::BlockedUser(msg.author.id)));
-            }
+            is_blocked(&conf, &msg)?;
 
-            if conf.blocked_entities.channels.contains(&msg.channel_id) {
-                return Err(Error::Dispatch(DispatchError::BlockedChannel(
-                    msg.channel_id,
-                )));
-            }
-
-            if let Some(guild_id) = msg.guild_id {
-                if conf.blocked_entities.guilds.contains(&guild_id) {
-                    return Err(Error::Dispatch(DispatchError::BlockedGuild(guild_id)));
-                }
-            }
-
-            let prefix_ctx = PrefixContext {
-                data: self.data.clone(),
-                conf: &conf,
-                serenity_ctx: &ctx,
+            let (prefix, content) = match parse::content(&self.data, &conf, &ctx, &msg).await {
+                Some(pair) => pair,
+                None => return Err(Error::Dispatch(DispatchError::NormalMessage)),
             };
-
-            let (prefix, content) = parse::content(prefix_ctx, &msg)
-                .await
-                .ok_or(Error::Dispatch(DispatchError::NormalMessage))?;
 
             let mut segments = Segments::new(&content, ' ', conf.case_insensitive);
 
@@ -104,6 +86,29 @@ impl<D, E> Framework<D, E> {
             let mut group = conf.groups.get_by_name(&*name);
 
             while let Some(g) = group {
+                if conf.blocked_entities.groups.contains(&g.id) {
+                    return Err(Error::Dispatch(DispatchError::BlockedGroup(g.id)));
+                }
+
+                {
+                    let ctx = CheckContext {
+                        data: &self.data,
+                        conf: &conf,
+                        serenity_ctx: &ctx,
+                        group_id: Some(g.id),
+                        command_id: None,
+                    };
+
+                    for check in &g.checks {
+                        if let Err(reason) = (check.function)(&ctx, &msg).await {
+                            return Err(Error::Dispatch(DispatchError::CheckFailed(
+                                check.name.clone(),
+                                reason,
+                            )));
+                        }
+                    }
+                }
+
                 name = match segments.next() {
                     Some(name) => name,
                     None => {
@@ -127,10 +132,6 @@ impl<D, E> Framework<D, E> {
                 // Check whether there's a subgroup.
                 // Only assign it to `group` if it's a part of `group`'s subgroups.
                 if let Some((id, aggr)) = conf.groups.get_pair(&*name) {
-                    if conf.blocked_entities.groups.contains(&id) {
-                        return Err(Error::Dispatch(DispatchError::BlockedGroup(id)));
-                    }
-
                     if g.subgroups.contains(&id) {
                         group = Some(aggr);
                         continue;
@@ -152,6 +153,25 @@ impl<D, E> Framework<D, E> {
                     )))
                 }
             };
+
+            {
+                let ctx = CheckContext {
+                    data: &self.data,
+                    conf: &conf,
+                    serenity_ctx: &ctx,
+                    group_id: group.as_ref().map(|g| g.id),
+                    command_id: Some(command.id),
+                };
+
+                for check in &command.checks {
+                    if let Err(reason) = (check.function)(&ctx, &msg).await {
+                        return Err(Error::Dispatch(DispatchError::CheckFailed(
+                            check.name.clone(),
+                            reason,
+                        )));
+                    }
+                }
+            }
 
             let group = match group {
                 Some(group) if group.commands.contains(&command.id) => group,
@@ -175,6 +195,25 @@ impl<D, E> Framework<D, E> {
                 if let Some((id, aggr)) = conf.commands.get_pair(&*name) {
                     if conf.blocked_entities.commands.contains(&id) {
                         return Err(Error::Dispatch(DispatchError::BlockedCommand(id)));
+                    }
+
+                    {
+                        let ctx = CheckContext {
+                            data: &self.data,
+                            conf: &conf,
+                            serenity_ctx: &ctx,
+                            group_id: Some(group.id),
+                            command_id: Some(aggr.id),
+                        };
+
+                        for check in &aggr.checks {
+                            if let Err(reason) = (check.function)(&ctx, &msg).await {
+                                return Err(Error::Dispatch(DispatchError::CheckFailed(
+                                    check.name.clone(),
+                                    reason,
+                                )));
+                            }
+                        }
                     }
 
                     if command.subcommands.contains(&id) {
@@ -210,4 +249,22 @@ impl<D, E> Framework<D, E> {
 
         hook(ctx, msg, func).await.map_err(Error::User)
     }
+}
+
+fn is_blocked<D, E>(conf: &Configuration<D, E>, msg: &Message) -> Result<(), DispatchError> {
+    if conf.blocked_entities.users.contains(&msg.author.id) {
+        return Err(DispatchError::BlockedUser(msg.author.id));
+    }
+
+    if conf.blocked_entities.channels.contains(&msg.channel_id) {
+        return Err(DispatchError::BlockedChannel(msg.channel_id));
+    }
+
+    if let Some(guild_id) = msg.guild_id {
+        if conf.blocked_entities.guilds.contains(&guild_id) {
+            return Err(DispatchError::BlockedGuild(guild_id));
+        }
+    }
+
+    Ok(())
 }

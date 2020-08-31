@@ -55,7 +55,7 @@
 //! ```
 
 use std::borrow::Borrow;
-use std::collections::hash_map::{HashMap, IntoIter, Iter, IterMut, Keys, Values, ValuesMut};
+use std::collections::hash_map::{HashMap, IntoIter, Iter, IterMut, Keys, Values};
 use std::hash::Hash;
 use std::ops::{Index, IndexMut};
 
@@ -210,7 +210,7 @@ where
         B: Hash + Eq,
     {
         match self.get_id(name) {
-            Some(id) => self.structures.contains_key(name),
+            Some(id) => self.structures.contains_key(&id),
             None => false,
         }
     }
@@ -221,6 +221,11 @@ where
     Id: Hash + Eq,
 {
     /// Assigns a structure to an identifier.
+    ///
+    /// Returns `None` if the identifier does not exist in the map.
+    ///
+    /// Returns `Some(old_struct)` if the identifier exists in the map.
+    /// The structure is overwritten with the new structure.
     pub fn insert(&mut self, id: Id, aggr: Struct) -> Option<Struct> {
         self.structures.insert(id, aggr)
     }

@@ -1,6 +1,11 @@
+use crate::configuration::Configuration;
 use crate::context::PrefixContext;
 
+use serenity::client::Context as SerenityContext;
 use serenity::model::channel::Message;
+use serenity::prelude::RwLock;
+
+use std::sync::Arc;
 
 /// Parses a mention from the message. A mention is defined as text starting with `<@`,
 /// which may be followed by `!`, proceeded by a user id, and ended by a `>`.
@@ -11,7 +16,8 @@ use serenity::model::channel::Message;
 /// - <@110372470472613888>
 /// - <@!110372470472613888>
 ///
-/// Returns the mention and the [`content`].
+/// Returns the mention and the rest of the message after the mention, with trimmed
+/// whitespace.
 pub fn mention<'a>(msg: &'a str, id: &str) -> Option<(&'a str, &'a str)> {
     if !msg.starts_with("<@") {
         return None;
@@ -32,61 +38,81 @@ pub fn mention<'a>(msg: &'a str, id: &str) -> Option<(&'a str, &'a str)> {
     }
 }
 
-/// Parses a prefix from the message. A prefix is defined as
+/// Parses a prefix from the message dynamically using the [`Configuration::dynamic_prefix`]
+/// hook.
 ///
+/// If the hook is not registered, or the hook returned `None`, `None` is returned.
+/// Otherwise, the prefix and the rest of the message after the prefix is returned.
+///
+/// [`Configuration::dynamic_prefix`]: ../configuration/struct.Configuration.html#structfield.dynamic_prefix
+pub async fn dynamic_prefix<'a, D, E>(
+    ctx: PrefixContext<'_, D, E>,
+    msg: &'a Message,
+) -> Option<(&'a str, &'a str)> {
+    if let Some(dynamic_prefix) = ctx.conf.dynamic_prefix {
+        let index = dynamic_prefix(ctx, msg).await?;
+        Some(msg.content.split_at(index))
+    } else {
+        None
+    }
+}
+
+/// Parses a prefix from the message statically from a list of prefixes.
+///
+/// If none of the prefixes stored in the list are found in the message, `None` is returned.
+/// Otherwise, the prefix and the rest of the message after the prefix is returned.
+pub fn static_prefix<'a>(msg: &'a str, prefixes: &[String]) -> Option<(&'a str, &'a str)> {
+    prefixes
+        .iter()
+        .find(|p| msg.starts_with(p.as_str()))
+        .map(|p| msg.split_at(p.len()))
+}
+
+/// Returns the content of the message after parsing a prefix. The content is defined
+/// as the substring of the message after the prefix. If the [`Configuration::no_dm_prefix`]
+/// option is enabled, the content is the whole message.
+///
+/// The prefix is defined as:
 /// 1: a [mention]
 /// 2: a [dynamically chosen prefix][dyn_prefix]
 /// 3: or a [statically defined prefix from a list][prefixes],
 ///
 /// It is parsed in that order.
 ///
-/// The prefix and the [`content`] are returned on success.
+/// If [`Configuration::no_dm_prefix`] is `false` and no prefix is found, `None` is returned.
+/// Otherwise, the prefix and the content are returned.
 ///
-/// [mention]: crate::configuration::Configuration::on_mention
-/// [dyn_prefix]: crate::configuration::Configuration::dynamic_prefix
-/// [prefixes]: crate::configuration::Configuration::prefixes
-pub async fn prefix<'a, D, E>(
-    ctx: PrefixContext<'_, D, E>,
+/// [`Configuration::no_dm_prefix`]: ../configuration/struct.Configuration.html#structfield.no_dm_prefix
+/// [mention]: fn.mention.html
+/// [dyn_prefix]: fn.dynamic_prefix.html
+/// [prefixes]: fn.static_prefix.html
+pub async fn content<'a, D, E>(
+    data: &Arc<RwLock<D>>,
+    conf: &Configuration<D, E>,
+    serenity_ctx: &SerenityContext,
     msg: &'a Message,
 ) -> Option<(&'a str, &'a str)> {
-    if let Some(id) = &ctx.conf.on_mention {
-        if let Some(pair) = mention(&msg.content, &id) {
+    if msg.is_private() && conf.no_dm_prefix {
+        return Some(("", &msg.content));
+    }
+
+    if let Some(on_mention) = &conf.on_mention {
+        if let Some(pair) = mention(&msg.content, &on_mention) {
             return Some(pair);
         }
     }
 
-    if let Some(dynamic_prefix) = ctx.conf.dynamic_prefix {
-        if let Some(index) = dynamic_prefix(&ctx, msg).await {
-            return Some(msg.content.split_at(index));
+    {
+        let ctx = PrefixContext {
+            data,
+            conf,
+            serenity_ctx,
+        };
+
+        if let Some(pair) = dynamic_prefix(ctx, msg).await {
+            return Some(pair);
         }
     }
 
-    if let Some(prefix) = ctx
-        .conf
-        .prefixes
-        .iter()
-        .find(|p| msg.content.starts_with(p.as_str()))
-    {
-        Some(msg.content.split_at(prefix.len()))
-    } else {
-        None
-    }
-}
-
-/// Parses the content of the message. The content is defined as the substring of
-/// the message after the prefix. If the [`Configuration::no_dm_prefix`] option is enabled,
-/// the content is the whole message.
-///
-/// The prefix and the content are returned on success.
-///
-/// [`Configuration::no_dm_prefix`]: crate::configuration::Configuration::no_dm_prefix
-pub async fn content<'a, D, E>(
-    ctx: PrefixContext<'_, D, E>,
-    msg: &'a Message,
-) -> Option<(&'a str, &'a str)> {
-    if msg.is_private() && ctx.conf.no_dm_prefix {
-        Some(("", &msg.content))
-    } else {
-        prefix(ctx, msg).await
-    }
+    static_prefix(&msg.content, &conf.prefixes)
 }

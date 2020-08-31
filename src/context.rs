@@ -10,7 +10,7 @@ use serenity::prelude::{Mutex, RwLock};
 
 use std::sync::Arc;
 
-#[derive(Clone)]
+#[non_exhaustive]
 pub struct Context<D = DefaultData, E = DefaultError> {
     pub data: Arc<RwLock<D>>,
     pub conf: Arc<Mutex<Configuration<D, E>>>,
@@ -20,6 +20,21 @@ pub struct Context<D = DefaultData, E = DefaultError> {
     pub command_name: String,
     pub prefix: String,
     pub args: String,
+}
+
+impl<D, E> Clone for Context<D, E> {
+    fn clone(&self) -> Self {
+        Self {
+            data: Arc::clone(&self.data),
+            conf: Arc::clone(&self.conf),
+            serenity_ctx: self.serenity_ctx.clone(),
+            group_id: self.group_id,
+            command_id: self.command_id,
+            command_name: self.command_name.clone(),
+            prefix: self.prefix.clone(),
+            args: self.args.clone(),
+        }
+    }
 }
 
 impl<D, E> AsRef<Http> for Context<D, E> {
@@ -48,9 +63,40 @@ where
     }
 }
 
-#[derive(Clone)]
+#[non_exhaustive]
 pub struct PrefixContext<'a, D = DefaultData, E = DefaultError> {
-    pub data: Arc<RwLock<D>>,
+    pub data: &'a Arc<RwLock<D>>,
     pub conf: &'a Configuration<D, E>,
     pub serenity_ctx: &'a SerenityContext,
+}
+
+impl<'a, D, E> Clone for PrefixContext<'a, D, E> {
+    fn clone(&self) -> Self {
+        Self {
+            data: self.data,
+            conf: self.conf,
+            serenity_ctx: self.serenity_ctx,
+        }
+    }
+}
+
+#[non_exhaustive]
+pub struct CheckContext<'a, D = DefaultData, E = DefaultError> {
+    pub data: &'a Arc<RwLock<D>>,
+    pub conf: &'a Configuration<D, E>,
+    pub serenity_ctx: &'a SerenityContext,
+    pub group_id: Option<GroupId>,
+    pub command_id: Option<CommandId>,
+}
+
+impl<'a, D, E> Clone for CheckContext<'a, D, E> {
+    fn clone(&self) -> Self {
+        Self {
+            data: self.data,
+            conf: self.conf,
+            serenity_ctx: self.serenity_ctx,
+            group_id: self.group_id,
+            command_id: self.command_id,
+        }
+    }
 }
