@@ -1,3 +1,13 @@
+//! Functions and types relating to commands.
+//!
+//! A command is a function that performs work. It is invoked by a user on Discord.
+//! It may have many names by which it can be invoked, but will always at least one
+//! name. It may possess subcommands to arrange functionality together. It may have
+//! information that relays to the user what it does, what it is for, and how it
+//! is used. It may have [`check`]s to allow/deny a user's access to the command.
+//!
+//! [`check`]: ../check/index.html
+
 use crate::check::{Check, CheckConstructor};
 use crate::context::Context;
 use crate::utils::IdMap;
@@ -9,23 +19,52 @@ use serenity::model::channel::Message;
 use std::collections::HashSet;
 use std::fmt;
 
+/// A function to dynamically create a string.
+///
+/// Used for [`Command::dynamic_description`] and [`Command::dynamic_usage`].
+///
+/// [`Command::dynamic_description`]: struct.Command.html#structfield.dynamic_description
+/// [`Command::dynamic_usage`]: struct.Command.html#structfield.dynamic_usage
 pub type StringHook<D = DefaultData, E = DefaultError> =
-    fn(ctx: &Context<D, E>, msg: &Message) -> BoxFuture<'static, Option<String>>;
-pub type StringsHook<D = DefaultData, E = DefaultError> =
-    fn(ctx: &Context<D, E>, msg: &Message) -> BoxFuture<'static, Vec<String>>;
+    for<'a> fn(ctx: &'a Context<D, E>, msg: &'a Message) -> BoxFuture<'a, Option<String>>;
 
+/// A function to dynamically create a list of strings.
+///
+/// Used for [`Command::dynamic_examples`].
+///
+/// [`Command::dynamic_examples`]: struct.Command.html#structfield.dynamic_examples
+pub type StringsHook<D = DefaultData, E = DefaultError> =
+    for<'a> fn(ctx: &'a Context<D, E>, msg: &'a Message) -> BoxFuture<'a, Vec<String>>;
+
+/// [`IdMap`] for storing commands.
+///
+/// [`IdMap`]: ../utils/id_map/struct.IdMap.html
 pub type CommandMap<D = DefaultData, E = DefaultError> = IdMap<String, CommandId, Command<D, E>>;
 
+/// The result type of a [command function][fn].
+///
+/// [fn]: type.CommandFn.html
 pub type CommandResult<T = (), E = DefaultError> = std::result::Result<T, E>;
+
+/// The definition of a command function.
 pub type CommandFn<D = DefaultData, E = DefaultError> =
     fn(Context<D, E>, Message) -> BoxFuture<'static, CommandResult<(), E>>;
 
+/// A constructor of the [`Command`] type provided by the consumer of the framework.
 pub type CommandConstructor<D = DefaultData, E = DefaultError> = fn() -> Command<D, E>;
 
+/// A unique identifier of a [`Command`] stored in the [`CommandMap`].
+///
+/// It is constructed from [`CommandConstructor`]
+///
+/// [`Command`]: struct.Command.html
+/// [`CommandMap`]: type.CommandMap.html
+/// [`CommandConstructor`]: type.CommandConstructor.html
 #[derive(Debug, Clone, Copy, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct CommandId(pub(crate) usize);
 
 impl CommandId {
+    /// Converts the identifier to its internal representation.
     pub fn into_usize(self) -> usize {
         self.0
     }
@@ -37,19 +76,36 @@ impl<D, E> From<CommandConstructor<D, E>> for CommandId {
     }
 }
 
+/// Data surrounding a command.
+///
+/// Refer to the [module-level documentation][docs].
+///
+/// [docs]: index.html
 #[non_exhaustive]
 pub struct Command<D = DefaultData, E = DefaultError> {
+    /// The identifier of this command.
     pub id: CommandId,
+    /// The function of this command.
     pub function: CommandFn<D, E>,
+    /// The names of this command by which it can be invoked.
     pub names: Vec<String>,
+    /// The subcommands belonging to this command.
     pub subcommands: HashSet<CommandId>,
+    /// A string describing this command.
     pub description: Option<String>,
+    /// A function to dynamically describe this command.
     pub dynamic_description: Option<StringHook>,
+    /// A string to express usage of this command.
     pub usage: Option<String>,
+    /// A function to dynamically express usage of this command.
     pub dynamic_usage: Option<StringHook>,
+    /// A list of strings demonstrating usage of this command.
     pub examples: Vec<String>,
+    /// A function to dynamically demonstrate usage of this command.
     pub dynamic_examples: Option<StringsHook>,
+    /// A boolean to indicate whether the command can be shown in help commands.
     pub help_available: bool,
+    /// A list of functions that allow/deny access to this command.
     pub checks: Vec<Check<D, E>>,
 }
 
@@ -111,6 +167,9 @@ impl<D, E> fmt::Debug for Command<D, E> {
 }
 
 impl<D, E> Command<D, E> {
+    /// Constructs a builder that will be used to create a command from scratch.
+    ///
+    /// Argument is the main name of the command.
     pub fn builder<I>(name: I) -> CommandBuilder<D, E>
     where
         I: Into<String>,
@@ -119,11 +178,17 @@ impl<D, E> Command<D, E> {
     }
 }
 
+/// A builder type for creating a [`Command`] from scratch.
+///
+/// [`Command`]: struct.Command.html
 pub struct CommandBuilder<D = DefaultData, E = DefaultError> {
     inner: Command<D, E>,
 }
 
 impl<D, E> CommandBuilder<D, E> {
+    /// Constructs a new instance of the builder.
+    ///
+    /// Argument is the main name of the command.
     pub fn new<I>(name: I) -> Self
     where
         I: Into<String>,
@@ -131,6 +196,11 @@ impl<D, E> CommandBuilder<D, E> {
         Self::default().name(name)
     }
 
+    /// Assigns a name to this command.
+    ///
+    /// The name is added to the [`names`] list.
+    ///
+    /// [`names`]: struct.Command.html#structfield.names
     pub fn name<I>(mut self, name: I) -> Self
     where
         I: Into<String>,
@@ -139,16 +209,23 @@ impl<D, E> CommandBuilder<D, E> {
         self
     }
 
+    /// Assigns the function to this command.
     pub fn function(mut self, f: CommandFn<D, E>) -> Self {
         self.inner.function = f;
         self
     }
 
+    /// Assigns a subcommand to this command.
+    ///
+    /// The subcommand is added to the [`subcommands`] list.
+    ///
+    /// [`subcommands`]: struct.Command.html#structfield.subcommands
     pub fn subcommand(mut self, subcommand: CommandConstructor<D, E>) -> Self {
         self.inner.subcommands.insert(CommandId::from(subcommand));
         self
     }
 
+    /// Assigns a static description to this command.
     pub fn description<I>(mut self, description: I) -> Self
     where
         I: Into<String>,
@@ -157,11 +234,13 @@ impl<D, E> CommandBuilder<D, E> {
         self
     }
 
+    /// Assigns a function to dynamically create a description to this command.
     pub fn dynamic_description(mut self, hook: StringHook) -> Self {
         self.inner.dynamic_description = Some(hook);
         self
     }
 
+    /// Assigns a static usage to this command.
     pub fn usage<I>(mut self, usage: I) -> Self
     where
         I: Into<String>,
@@ -170,11 +249,17 @@ impl<D, E> CommandBuilder<D, E> {
         self
     }
 
+    /// Assigns a function to dynamically create a usage to this command.
     pub fn dynamic_usage(mut self, hook: StringHook) -> Self {
         self.inner.dynamic_usage = Some(hook);
         self
     }
 
+    /// Assigns a static example of usage to this command.
+    ///
+    /// The example is added to the [`examples`] list.
+    ///
+    /// [`examples`]: struct.Command.html#structfield.examples
     pub fn example<I>(mut self, example: I) -> Self
     where
         I: Into<String>,
@@ -183,16 +268,24 @@ impl<D, E> CommandBuilder<D, E> {
         self
     }
 
+    /// Assigns a function to dynamically create a list of examples to this command.
     pub fn dynamic_examples(mut self, hook: StringsHook) -> Self {
         self.inner.dynamic_examples = Some(hook);
         self
     }
 
+    /// Assigns a [`check`] function to this command.
+    ///
+    /// The check is added to the [`checks`] list.
+    ///
+    /// [`check`]: ../check/index.html
+    /// [`checks`]: struct.Command.html#structfield.checks
     pub fn check(mut self, check: CheckConstructor<D, E>) -> Self {
         self.inner.checks.push(check());
         self
     }
 
+    /// Complete building a command.
     pub fn build(self) -> Command<D, E> {
         self.inner
     }

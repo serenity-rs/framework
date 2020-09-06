@@ -1,3 +1,51 @@
+//! The official command framework for [Serenity] bots.
+//!
+//! The framework provides an interface between functionality of the bot and
+//! a user on Discord through the concept of *commands*. They are functions
+//! that the user invokes in a guild channel or private channel.
+//!
+//! Command invocations start with a *prefix* at the beginning of the message.
+//! The prefix distinguishes normal messages and command invocations. If the prefix
+//! is unique, it also avoids collision with command invocations of other bots.
+//! The bot may have many prefixes, statically or dynamically defined.
+//!
+//! Assuming the prefix is `!` and a command with the name `ping` exists, a typical
+//! invocation might look like:
+//!
+//! ```ignore
+//! !ping
+//! ```
+//!
+//! Commands can accept arguments. These are the content of the message after
+//! the command name. As an example:
+//!
+//! ```ignore
+//! !sort 4 2 8 -3
+//! ```
+//!
+//! The arguments of the `sort` command is a `"4 2 8 -3"` string. Arguments are
+//! not processed by the framework, as it is the responsibility of each command
+//! to decide the correct format of its arguments, and how they should be parsed.
+//!
+//! All commands have be assigned to *groups*. Groups are a collection of commands,
+//! which most likely share a theme, such as moderation. Groups may
+//! participate in the invocation on one of its commands if they have *prefixes*
+//! (not to confuse with invocation prefixes). If a group has prefixes, they must be
+//! present in the command invocation. Assumming `mod` is a prefix, and `kick` is a
+//! command of the group:
+//!
+//! ```ignore
+//! !mod kick @clyde
+//! ```
+//!
+//! Groups without prefixes are called Top Level Groups, as they can only appear once
+//! at the beginning of the message implicitly. They are transparent, or "invisible"
+//! to the user on Discord.
+//!
+//! [Serenity]: https://github.com/serenity-rs/serenity
+
+#![warn(missing_docs)]
+
 use serenity::model::channel::Message;
 use serenity::prelude::{Context as SerenityContext, Mutex, RwLock};
 
@@ -23,12 +71,22 @@ use error::{DispatchError, Error};
 use group::Group;
 use utils::Segments;
 
+/// The default type for [user data][data] when it is unspecified.
+///
+/// [data]: struct.Framework.html#structfield.data
 pub type DefaultData = ();
+
+/// The default type for [command errors][errors] when it is unspecified.
+///
+/// [errors]: command/type.CommandResult.html
 pub type DefaultError = Box<dyn StdError + Send + Sync>;
 
+/// The core of the framework.
 #[derive(Clone)]
 pub struct Framework<D = DefaultData, E = DefaultError> {
+    /// Configuration of the framework that dictates its behaviour.
     pub conf: Arc<Mutex<Configuration<D, E>>>,
+    /// User data that is accessable in every command and function hook.
     pub data: Arc<RwLock<D>>,
 }
 
@@ -36,6 +94,12 @@ impl<D, E> Framework<D, E>
 where
     D: Default,
 {
+    /// Creates a new instanstiation of the framework using a given configuration.
+    ///
+    /// The [`data`] field is [`Default`] initialized.
+    ///
+    /// [`data`]: #structfield.data
+    /// [`Default`]: std::default::Default
     #[inline]
     pub fn new(conf: Configuration<D, E>) -> Self {
         Self::with_data(conf, D::default())
@@ -43,17 +107,27 @@ where
 }
 
 impl<D, E> Framework<D, E> {
+    /// Creates new instanstiation of the framework using a given configuration and data.
+    ///
+    /// # Notes
+    ///
+    /// This consumes the data.
+    ///
+    /// If you need to retain ownership of the data, consider using [`with_arc_data`].
+    ///
+    /// [`with_arc_data`]: #method.with_arc_data
+    #[inline]
+    pub fn with_data(conf: Configuration<D, E>, data: D) -> Self {
+        Self::with_arc_data(conf, Arc::new(RwLock::new(data)))
+    }
+
+    /// Creates new instanstiation of the framework using a given configuration and data.
     #[inline]
     pub fn with_arc_data(conf: Configuration<D, E>, data: Arc<RwLock<D>>) -> Self {
         Self {
             conf: Arc::new(Mutex::new(conf)),
             data,
         }
-    }
-
-    #[inline]
-    pub fn with_data(conf: Configuration<D, E>, data: D) -> Self {
-        Self::with_arc_data(conf, Arc::new(RwLock::new(data)))
     }
 
     #[inline]

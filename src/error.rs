@@ -1,3 +1,5 @@
+//! Defines error types used by the framework.
+
 use crate::check::Reason;
 use crate::command::CommandId;
 use crate::group::GroupId;
@@ -8,6 +10,9 @@ use serenity::model::id::{ChannelId, GuildId, UserId};
 use std::error::Error as StdError;
 use std::fmt;
 
+/// An error describing why [`dispatch`]ing failed.
+///
+/// [`dispatch`]: ../struct.Framework.html#method.dispatch
 #[derive(Debug, Clone)]
 pub enum DispatchError {
     /// A channel is blocked. Contains the ID of the channel.
@@ -94,9 +99,14 @@ impl fmt::Display for DispatchError {
 
 impl StdError for DispatchError {}
 
+/// Returned when the call of [`dispatch`] fails.
+///
+/// [`dispatch`]: ../struct.Framework.html#method.dispatch
 #[derive(Debug, Clone)]
 pub enum Error<E = DefaultError> {
+    /// Failed to dispatch a command.
     Dispatch(DispatchError),
+    /// A command returned an error.
     User(E),
 }
 

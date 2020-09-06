@@ -1,3 +1,5 @@
+//! Configuration of the framework.
+
 use crate::command::{CommandConstructor, CommandId, CommandMap};
 use crate::context::PrefixContext;
 use crate::group::{Group, GroupConstructor, GroupId, GroupMap};
@@ -10,29 +12,58 @@ use serenity::model::id::{ChannelId, GuildId, UserId};
 use std::collections::HashSet;
 use std::fmt;
 
+/// The definition of the dynamic prefix hook.
 pub type DynamicPrefix<D, E> =
     for<'a> fn(ctx: PrefixContext<'_, D, E>, msg: &'a Message) -> BoxFuture<'a, Option<usize>>;
 
+/// Entities that are forbidden from invoking commands.
 #[derive(Debug, Default, Clone)]
 pub struct BlockedEntities {
+    /// Set of channels where invoking commands is forbidden.
     pub channels: HashSet<ChannelId>,
+    /// Set of guilds where invoking commands is forbidden.
     pub guilds: HashSet<GuildId>,
+    /// Set of users who are forbidden from invoking commands.
     pub users: HashSet<UserId>,
+    /// Set of commands that are forbidden from being invoked.
     pub commands: HashSet<CommandId>,
+    /// Set of groups whose commands are forbidden from being invoked.
     pub groups: HashSet<GroupId>,
 }
 
+/// The configuration of the framework.
 #[non_exhaustive]
 pub struct Configuration<D = DefaultData, E = DefaultError> {
+    /// A list of static prefixes.
     pub prefixes: Vec<String>,
+    /// A function to dynamically parse the prefix.
     pub dynamic_prefix: Option<DynamicPrefix<D, E>>,
-    pub owners: Vec<UserId>,
+    /// A boolean indicating whether casing of the letters in static prefixes,
+    /// group prefixes, or command names does not matter.
     pub case_insensitive: bool,
+    /// A boolean indicating whether the prefix is not necessary in direct messages.
     pub no_dm_prefix: bool,
+    /// A user id of the bot that is used to compare mentions in prefix position.
+    ///
+    /// If filled, this allows for invoking commands by mentioning the bot.
     pub on_mention: Option<String>,
+    /// Entities that are forbidden from invoking commands.
     pub blocked_entities: BlockedEntities,
+    /// An [`IdMap`] containing all [`Group`]s.
+    ///
+    /// [`IdMap`]: ../utils/id_map/struct.IdMap.html
+    /// [`Group`]: ../group/struct.Group.html
     pub groups: GroupMap<D, E>,
+    /// A list of prefixless [`Group`]s.
+    ///
+    /// These are invisible to the user on Discord.
+    ///
+    /// [`Group`]: ../group/struct.Group.html
     pub top_level_groups: Vec<Group<D, E>>,
+    /// An [`IdMap`] containing all [`Command`]s.
+    ///
+    /// [`IdMap`]: ../utils/id_map/struct.IdMap.html
+    /// [`Command`]: ../group/struct.Command.html
     pub commands: CommandMap<D, E>,
 }
 
@@ -41,7 +72,6 @@ impl<D, E> Clone for Configuration<D, E> {
         Self {
             prefixes: self.prefixes.clone(),
             dynamic_prefix: self.dynamic_prefix,
-            owners: self.owners.clone(),
             case_insensitive: self.case_insensitive,
             no_dm_prefix: self.no_dm_prefix,
             on_mention: self.on_mention.clone(),
@@ -58,7 +88,6 @@ impl<D, E> Default for Configuration<D, E> {
         Self {
             prefixes: Vec::default(),
             dynamic_prefix: None,
-            owners: Vec::default(),
             case_insensitive: false,
             no_dm_prefix: false,
             on_mention: None,
@@ -71,10 +100,16 @@ impl<D, E> Default for Configuration<D, E> {
 }
 
 impl<D, E> Configuration<D, E> {
+    /// Creates a new instance of the framework configuration.
     pub fn new() -> Self {
         Self::default()
     }
 
+    /// Assigns a prefix to this configuration.
+    ///
+    /// The prefix is added to the [`prefixes`] list.
+    ///
+    /// [`prefixes`]: struct.Configuration.html#structfield.prefixes
     pub fn prefix<I>(&mut self, prefix: I) -> &mut Self
     where
         I: Into<String>,
@@ -83,35 +118,34 @@ impl<D, E> Configuration<D, E> {
         self
     }
 
+    /// Assigns a function to dynamically parse the prefix.
     pub fn dynamic_prefix(&mut self, prefix: DynamicPrefix<D, E>) -> &mut Self {
         self.dynamic_prefix = Some(prefix);
         self
     }
 
-    pub fn owner<I>(&mut self, owner: I) -> &mut Self
-    where
-        I: Into<UserId>,
-    {
-        self.owners.push(owner.into());
-        self
-    }
-
+    /// Assigns a boolean indicating whether the casing of letters in static prefixes,
+    /// group prefixes or command names does not matter.
     pub fn case_insensitive(&mut self, b: bool) -> &mut Self {
         self.case_insensitive = b;
 
         self
     }
 
+    /// Assigns a boolean indicating whether the prefix is not necessary in
+    /// direct messages.
     pub fn no_dm_prefix(&mut self, b: bool) -> &mut Self {
         self.no_dm_prefix = b;
         self
     }
 
-    pub fn on_mention(&mut self, id: Option<UserId>) -> &mut Self {
-        self.on_mention = id.map(|id| id.to_string());
+    /// Assigns a user id of the bot that will allow for mentions in prefix position.
+    pub fn on_mention(&mut self, id: UserId) -> &mut Self {
+        self.on_mention = Some(id.to_string());
         self
     }
 
+    /// Assigns entities that are forbidden from invoking commands.
     pub fn blocked_entities(&mut self, blocked_entities: BlockedEntities) -> &mut Self {
         self.blocked_entities = blocked_entities;
         self
@@ -153,6 +187,15 @@ impl<D, E> Configuration<D, E> {
         self
     }
 
+    /// Assigns a group to this configuration.
+    ///
+    /// The group is added to the [`groups`] list.
+    ///
+    /// A group without prefixes is automatically added to the [`top_level_groups`]
+    /// list instead of the [`groups`] list.
+    ///
+    /// [`groups`]: struct.Configuration.html#structfield.groups
+    /// [`top_level_groups`]: struct.Configuration.html#structfield.top_level_groups
     pub fn group(&mut self, group: GroupConstructor<D, E>) -> &mut Self {
         let id = GroupId::from(group);
 
@@ -172,6 +215,11 @@ impl<D, E> Configuration<D, E> {
         self._group(group)
     }
 
+    /// Assigns a command to this configuration.
+    ///
+    /// The command is added to the [`commands`] list.
+    ///
+    /// [`commands`]: struct.Configuration.html#structfield.commands
     pub fn command(&mut self, command: CommandConstructor<D, E>) -> &mut Self {
         let id = CommandId::from(command);
 
@@ -209,7 +257,6 @@ impl<D, E> fmt::Debug for Configuration<D, E> {
         f.debug_struct("Configuration")
             .field("prefixes", &self.prefixes)
             .field("dynamic_prefix", &"<fn>")
-            .field("owners", &self.owners)
             .field("case_insensitive", &self.case_insensitive)
             .field("no_dm_prefix", &self.no_dm_prefix)
             .field("on_mention", &self.on_mention)

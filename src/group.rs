@@ -1,3 +1,16 @@
+//! Functions and types relating to groups.
+//!
+//! A group is a collection of commands. It may have prefixes that create
+//! an association between it and its commands for the user on Discord invoking
+//! one of the commands. It may have none, in which case it is regarded as a
+//! Top Level Group. It is transparent to the user, and only useful for applying
+//! [`check`]s across all of its commands or displaying information in help commands.
+//! It may have subgroups to arrange functionality together. If a group has prefixes,
+//! it may define a default command. This command is chosen when an invocation only
+//! contains one of the group's prefixes.
+//!
+//! [`check`]: ../check/index.html
+
 use crate::check::{Check, CheckConstructor};
 use crate::command::{CommandConstructor, CommandId};
 use crate::utils::IdMap;
@@ -6,18 +19,30 @@ use crate::{DefaultData, DefaultError};
 use std::collections::HashSet;
 use std::fmt;
 
+/// [`IdMap`] for storing groups.
+///
+/// [`IdMap`]: ../utils/id_map/struct.IdMap.html
 pub type GroupMap<D = DefaultData, E = DefaultError> = IdMap<String, GroupId, Group<D, E>>;
 
+/// A constructor of the [`Group`] type provided by the consumer of the framework.
+pub type GroupConstructor<D = DefaultData, E = DefaultError> = fn() -> Group<D, E>;
+
+/// A unique identifier of a [`Group`] stored in the [`GroupMap`].
+///
+/// It is constructed from [`GroupConstructor`]
+///
+/// [`Group`]: struct.Group.html
+/// [`GroupMap`]: type.GroupMap.html
+/// [`GroupConstructor`]: type.GroupConstructor.html
 #[derive(Debug, Clone, Copy, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct GroupId(pub(crate) usize);
 
 impl GroupId {
+    /// Converts the identifier to its internal representation.
     pub fn into_usize(self) -> usize {
         self.0
     }
 }
-
-pub type GroupConstructor<D = DefaultData, E = DefaultError> = fn() -> Group<D, E>;
 
 impl<D, E> From<GroupConstructor<D, E>> for GroupId {
     fn from(f: GroupConstructor<D, E>) -> Self {
@@ -25,15 +50,24 @@ impl<D, E> From<GroupConstructor<D, E>> for GroupId {
     }
 }
 
+/// Data surrounding a group.
 #[non_exhaustive]
 pub struct Group<D = DefaultData, E = DefaultError> {
+    /// The identifier of this group.
     pub id: GroupId,
+    /// The name of this group.
     pub name: String,
+    /// The prefixes of this group by which it can be invoked.
     pub prefixes: Vec<String>,
+    /// The commands belonging to this group.
     pub commands: HashSet<CommandId>,
+    /// A list of subgroups of this group.
     pub subgroups: HashSet<GroupId>,
+    /// A default command of this group.
     pub default_command: Option<CommandId>,
+    /// A string describing this group.
     pub description: Option<String>,
+    /// A list of functions that allow/deny access to this command.
     pub checks: Vec<Check<D, E>>,
 }
 
@@ -83,6 +117,9 @@ impl<D, E> fmt::Debug for Group<D, E> {
 }
 
 impl<D, E> Group<D, E> {
+    /// Constructs a builder that will be used to create a group from scratch.
+    ///
+    /// Argument is the name of the group.
     pub fn builder<I>(name: I) -> GroupBuilder<D, E>
     where
         I: Into<String>,
@@ -91,11 +128,17 @@ impl<D, E> Group<D, E> {
     }
 }
 
+/// A builder type for creating a [`Group`] from scratch.
+///
+/// [`Group`]: struct.Group.html
 pub struct GroupBuilder<D = DefaultData, E = DefaultError> {
     inner: Group<D, E>,
 }
 
 impl<D, E> GroupBuilder<D, E> {
+    /// Constructs a new instance of the builder.
+    ///
+    /// Argument is the name of the group.
     pub fn new<I>(name: I) -> Self
     where
         I: Into<String>,
@@ -103,6 +146,7 @@ impl<D, E> GroupBuilder<D, E> {
         Self::default().name(name)
     }
 
+    /// Assing the name of this group.
     pub fn name<I>(mut self, name: I) -> Self
     where
         I: Into<String>,
@@ -112,6 +156,11 @@ impl<D, E> GroupBuilder<D, E> {
         self
     }
 
+    /// Assign a prefix to this group.
+    ///
+    /// The prefix is added to the [`prefixes`] list.
+    ///
+    /// [`prefixes`]: struct.Group.html#structfield.prefixes
     pub fn prefix<I>(mut self, prefix: I) -> Self
     where
         I: Into<String>,
@@ -120,21 +169,33 @@ impl<D, E> GroupBuilder<D, E> {
         self
     }
 
+    /// Assign a command to this group.
+    ///
+    /// The command is added to the [`commands`] list.
+    ///
+    /// [`commands`]: struct.Group.html#structfield.commands
     pub fn command(mut self, command: CommandConstructor<D, E>) -> Self {
         self.inner.commands.insert(CommandId::from(command));
         self
     }
 
+    /// Assign a subgroup to this group.
+    ///
+    /// The subgroup is added to the [`subgroups`] list.
+    ///
+    /// [`subgroups`]: struct.Group.html#structfield.subgroups
     pub fn subgroup(mut self, group: GroupConstructor<D, E>) -> Self {
         self.inner.subgroups.insert(GroupId::from(group));
         self
     }
 
+    /// Assign a default command to this group.
     pub fn default_command(mut self, command: CommandConstructor<D, E>) -> Self {
         self.inner.default_command = Some(CommandId::from(command));
         self
     }
 
+    /// Assign a description to this group.
     pub fn description<I>(mut self, description: I) -> Self
     where
         I: Into<String>,
@@ -143,22 +204,18 @@ impl<D, E> GroupBuilder<D, E> {
         self
     }
 
+    /// Assign a check to this group.
+    ///
+    /// The check is added to the [`checks`] list.
+    ///
+    /// [`checks`]: struct.Group.html#structfield.checks
     pub fn check(mut self, check: CheckConstructor<D, E>) -> Self {
         self.inner.checks.push(check());
         self
     }
 
+    /// Complete building a group.
     pub fn build(self) -> Group<D, E> {
-        if let Some(id) = self.inner.default_command {
-            if !self.inner.commands.contains(&id) {
-                panic!(
-                    "default command {} does not belong to the \"{}\" group's commands map",
-                    id.into_usize(),
-                    self.inner.name
-                );
-            }
-        }
-
         self.inner
     }
 }

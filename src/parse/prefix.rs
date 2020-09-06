@@ -1,3 +1,9 @@
+//! Functions to parse the prefix out of a message.
+//!
+//! Refer to the [`content`] function for the definition of a prefix.
+//!
+//! [`content`]: fn.content.html
+
 use crate::configuration::Configuration;
 use crate::context::PrefixContext;
 

@@ -1,3 +1,12 @@
+//! Data provided in different *contexts*.
+//!
+//! A context type contains data that is only available in certain phases of command
+//! dispatch. Other than [the Discord message][msg], data is placed into the context
+//! types in order to arrange them together and to allow extending the types in future
+//! releases without breaking function definitions.
+//!
+//! [msg]: serenity::model::channel::Message
+
 use crate::command::CommandId;
 use crate::configuration::Configuration;
 use crate::group::GroupId;
@@ -10,14 +19,33 @@ use serenity::prelude::{Mutex, RwLock};
 
 use std::sync::Arc;
 
+/// The final context type.
+///
+/// [Ownership of this context is given to the consumer of the framework][ctx],
+/// as it's created in the last phase of the dispatch process: Invoking
+/// the command function. Consequently, this context type contains
+/// every data that's relevant to the command.
+///
+/// [ctx]: ../command/type.CommandFn.html
 #[non_exhaustive]
 pub struct Context<D = DefaultData, E = DefaultError> {
+    /// User data.
     pub data: Arc<RwLock<D>>,
+    /// Framework configuration.
     pub conf: Arc<Mutex<Configuration<D, E>>>,
+    /// Serenity's context type.
     pub serenity_ctx: SerenityContext,
+    /// The identifier of the group the command belongs to.
     pub group_id: GroupId,
+    /// The identifier of the command.
     pub command_id: CommandId,
+    /// The [prefix] that was used to invoke this command.
+    ///
+    /// [prefix]: ../parse/prefix/fn.content.html
     pub prefix: String,
+    /// The arguments of the command.
+    ///
+    /// This is the content of the message after the command.
     pub args: String,
 }
 
@@ -61,10 +89,18 @@ where
     }
 }
 
+/// The prefix context.
+///
+/// This is passed in the [dynamic prefix][dyn_prefix] hook.
+///
+/// [dyn_prefix]: ../configuration/type.DynamicPrefix.html
 #[non_exhaustive]
 pub struct PrefixContext<'a, D = DefaultData, E = DefaultError> {
+    /// User data.
     pub data: &'a Arc<RwLock<D>>,
+    /// Framework configuration.
     pub conf: &'a Configuration<D, E>,
+    /// Serenity's context type.
     pub serenity_ctx: &'a SerenityContext,
 }
 
@@ -104,12 +140,24 @@ where
     }
 }
 
+/// The check context.
+///
+/// This is passed to the [check function][fn].
+///
+/// [fn]: ../check/type.CheckFn.html
 #[non_exhaustive]
 pub struct CheckContext<'a, D = DefaultData, E = DefaultError> {
+    /// User data.
     pub data: &'a Arc<RwLock<D>>,
+    /// Framework configuration.
     pub conf: &'a Configuration<D, E>,
+    /// Serenity's context type.
     pub serenity_ctx: &'a SerenityContext,
+    /// The identifier of the group that is being checked upon.
     pub group_id: GroupId,
+    /// The identifier of the command that is being checked upon.
+    ///
+    /// This is `Some(...)` when the checks for the command are applied.
     pub command_id: Option<CommandId>,
 }
 
