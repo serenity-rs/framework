@@ -12,14 +12,14 @@
 //! Assuming the prefix is `!` and a command with the name `ping` exists, a typical
 //! invocation might look like:
 //!
-//! ```ignore
+//! ```text
 //! !ping
 //! ```
 //!
 //! Commands can accept arguments. These are the content of the message after
 //! the command name. As an example:
 //!
-//! ```ignore
+//! ```text
 //! !sort 4 2 8 -3
 //! ```
 //!
@@ -34,7 +34,7 @@
 //! present in the command invocation. Assumming `mod` is a prefix, and `kick` is a
 //! command of the group:
 //!
-//! ```ignore
+//! ```text
 //! !mod kick @clyde
 //! ```
 //!
@@ -130,12 +130,14 @@ impl<D, E> Framework<D, E> {
         }
     }
 
+    /// Dispatches a command.
     #[inline]
     pub async fn dispatch(&self, ctx: SerenityContext, msg: Message) -> Result<(), Error<E>> {
-        self.dispatch_with_hook(ctx, msg, |ctx, msg, f| async move { f(ctx, msg).await })
+        self.dispatch_with_hook(ctx, msg, |ctx, msg, f| f(ctx, msg))
             .await
     }
 
+    /// Dispatches a command with a hook.
     pub async fn dispatch_with_hook<F, Fut>(
         &self,
         ctx: SerenityContext,

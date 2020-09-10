@@ -35,7 +35,7 @@ pub fn segment_index(src: &str, delimiter: char) -> usize {
 /// assert_eq!(segment("world", ' '), Some("world"));
 /// assert_eq!(segment("", ' '), None);
 /// ```
-pub fn segment<'a>(src: &'a str, delimiter: char) -> Option<&'a str> {
+pub fn segment(src: &str, delimiter: char) -> Option<&str> {
     if src.is_empty() {
         None
     } else {
