@@ -80,8 +80,8 @@ pub fn static_prefix<'a>(msg: &'a str, prefixes: &[String]) -> Option<(&'a str, 
 ///
 /// The prefix is defined as:
 /// 1: a [mention]
-/// 2: a [dynamically chosen prefix][dyn_prefix]
-/// 3: or a [statically defined prefix from a list][prefixes],
+/// 3: a [statically defined prefix from a list][prefixes]
+/// 2: or a [dynamically chosen prefix][dyn_prefix]
 ///
 /// It is parsed in that order.
 ///
@@ -90,8 +90,8 @@ pub fn static_prefix<'a>(msg: &'a str, prefixes: &[String]) -> Option<(&'a str, 
 ///
 /// [`Configuration::no_dm_prefix`]: ../configuration/struct.Configuration.html#structfield.no_dm_prefix
 /// [mention]: fn.mention.html
-/// [dyn_prefix]: fn.dynamic_prefix.html
 /// [prefixes]: fn.static_prefix.html
+/// [dyn_prefix]: fn.dynamic_prefix.html
 pub async fn content<'a, D, E>(
     data: &Arc<RwLock<D>>,
     conf: &Configuration<D, E>,
@@ -108,17 +108,15 @@ pub async fn content<'a, D, E>(
         }
     }
 
-    {
-        let ctx = PrefixContext {
-            data,
-            conf,
-            serenity_ctx,
-        };
-
-        if let Some(pair) = dynamic_prefix(ctx, msg).await {
-            return Some(pair);
-        }
+    if let Some(pair) = static_prefix(&msg.content, &conf.prefixes) {
+        return Some(pair);
     }
 
-    static_prefix(&msg.content, &conf.prefixes)
+    let ctx = PrefixContext {
+        data,
+        conf,
+        serenity_ctx,
+    };
+
+    dynamic_prefix(ctx, msg).await
 }
