@@ -105,8 +105,8 @@ pub struct Command<D = DefaultData, E = DefaultError> {
     pub dynamic_examples: Option<StringsHook>,
     /// A boolean to indicate whether the command can be shown in help commands.
     pub help_available: bool,
-    /// A list of functions that allow/deny access to this command.
-    pub checks: Vec<Check<D, E>>,
+    /// A function that allows/denies access to this command.
+    pub check: Option<Check<D, E>>,
 }
 
 impl<D, E> Clone for Command<D, E> {
@@ -123,7 +123,7 @@ impl<D, E> Clone for Command<D, E> {
             examples: self.examples.clone(),
             dynamic_examples: self.dynamic_examples,
             help_available: self.help_available,
-            checks: self.checks.clone(),
+            check: self.check.clone(),
         }
     }
 }
@@ -142,7 +142,7 @@ impl<D, E> Default for Command<D, E> {
             examples: Vec::default(),
             dynamic_examples: None,
             help_available: true,
-            checks: Vec::default(),
+            check: None,
         }
     }
 }
@@ -161,7 +161,7 @@ impl<D, E> fmt::Debug for Command<D, E> {
             .field("examples", &self.examples)
             .field("dynamic_examples", &"<fn>")
             .field("help_available", &self.help_available)
-            .field("checks", &self.checks)
+            .field("check", &self.check)
             .finish()
     }
 }
@@ -276,12 +276,9 @@ impl<D, E> CommandBuilder<D, E> {
 
     /// Assigns a [`check`] function to this command.
     ///
-    /// The check is added to the [`checks`] list.
-    ///
     /// [`check`]: ../check/index.html
-    /// [`checks`]: struct.Command.html#structfield.checks
     pub fn check(mut self, check: CheckConstructor<D, E>) -> Self {
-        self.inner.checks.push(check());
+        self.inner.check = Some(check());
         self
     }
 

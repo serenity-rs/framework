@@ -165,12 +165,12 @@ impl<D, E> Framework<D, E> {
             let mut segments = Segments::new(&content, ' ', conf.case_insensitive);
 
             let group = parse::group(&conf, &mut segments, |group| {
-                group_checks(&self.data, &conf, &ctx, &msg, group)
+                group_check(&self.data, &conf, &ctx, &msg, group)
             })
             .await?;
 
             let (group, command) = parse::command(&conf, &mut segments, group, |group, command| {
-                command_checks(&self.data, &conf, &ctx, &msg, group, command)
+                command_check(&self.data, &conf, &ctx, &msg, group, command)
             })
             .await?;
 
@@ -217,7 +217,7 @@ fn is_blocked<D, E>(conf: &Configuration<D, E>, msg: &Message) -> Result<(), Dis
     Ok(())
 }
 
-async fn group_checks<D, E>(
+async fn group_check<D, E>(
     data: &Arc<RwLock<D>>,
     conf: &Configuration<D, E>,
     serenity_ctx: &SerenityContext,
@@ -232,7 +232,7 @@ async fn group_checks<D, E>(
         command_id: None,
     };
 
-    for check in &group.checks {
+    if let Some(check) = &group.check {
         if let Err(reason) = (check.function)(&ctx, msg).await {
             return Err(Error::Dispatch(DispatchError::CheckFailed(
                 check.name.clone(),
@@ -244,7 +244,7 @@ async fn group_checks<D, E>(
     Ok(())
 }
 
-async fn command_checks<D, E>(
+async fn command_check<D, E>(
     data: &Arc<RwLock<D>>,
     conf: &Configuration<D, E>,
     serenity_ctx: &SerenityContext,
@@ -260,7 +260,7 @@ async fn command_checks<D, E>(
         command_id: Some(command.id),
     };
 
-    for check in &command.checks {
+    if let Some(check) = &command.check {
         if let Err(reason) = (check.function)(&ctx, msg).await {
             return Err(Error::Dispatch(DispatchError::CheckFailed(
                 check.name.clone(),

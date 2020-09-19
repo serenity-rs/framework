@@ -67,8 +67,8 @@ pub struct Group<D = DefaultData, E = DefaultError> {
     pub default_command: Option<CommandId>,
     /// A string describing this group.
     pub description: Option<String>,
-    /// A list of functions that allow/deny access to this command.
-    pub checks: Vec<Check<D, E>>,
+    /// A function that allows/denies access to this group's commands.
+    pub check: Option<Check<D, E>>,
 }
 
 impl<D, E> Clone for Group<D, E> {
@@ -81,7 +81,7 @@ impl<D, E> Clone for Group<D, E> {
             subgroups: self.subgroups.clone(),
             default_command: self.default_command,
             description: self.description.clone(),
-            checks: self.checks.clone(),
+            check: self.check.clone(),
         }
     }
 }
@@ -96,7 +96,7 @@ impl<D, E> Default for Group<D, E> {
             subgroups: HashSet::default(),
             default_command: None,
             description: None,
-            checks: Vec::default(),
+            check: None,
         }
     }
 }
@@ -111,7 +111,7 @@ impl<D, E> fmt::Debug for Group<D, E> {
             .field("subgroups", &self.subgroups)
             .field("default_command", &self.default_command)
             .field("description", &self.description)
-            .field("checks", &self.checks)
+            .field("check", &self.check)
             .finish()
     }
 }
@@ -205,12 +205,8 @@ impl<D, E> GroupBuilder<D, E> {
     }
 
     /// Assign a check to this group.
-    ///
-    /// The check is added to the [`checks`] list.
-    ///
-    /// [`checks`]: struct.Group.html#structfield.checks
     pub fn check(mut self, check: CheckConstructor<D, E>) -> Self {
-        self.inner.checks.push(check());
+        self.inner.check = Some(check());
         self
     }
 
