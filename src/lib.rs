@@ -151,15 +151,13 @@ impl<D, E> Framework<D, E> {
         let (func, group_id, command_id, prefix, args) = {
             let conf = self.conf.lock().await;
 
-            is_blocked(&conf, &msg)?;
-
             let (prefix, content) = match parse::content(&self.data, &conf, &ctx, &msg).await {
                 Some(pair) => pair,
                 None => return Err(Error::Dispatch(DispatchError::NormalMessage)),
             };
 
             if content.is_empty() {
-                return Err(Error::Dispatch(DispatchError::PrefixOnly));
+                return Err(Error::Dispatch(DispatchError::PrefixOnly(prefix.to_string())));
             }
 
             let mut segments = Segments::new(&content, ' ', conf.case_insensitive);
@@ -197,24 +195,6 @@ impl<D, E> Framework<D, E> {
 
         hook(ctx, msg, func).await.map_err(Error::User)
     }
-}
-
-fn is_blocked<D, E>(conf: &Configuration<D, E>, msg: &Message) -> Result<(), DispatchError> {
-    if conf.blocked_entities.users.contains(&msg.author.id) {
-        return Err(DispatchError::BlockedUser(msg.author.id));
-    }
-
-    if conf.blocked_entities.channels.contains(&msg.channel_id) {
-        return Err(DispatchError::BlockedChannel(msg.channel_id));
-    }
-
-    if let Some(guild_id) = msg.guild_id {
-        if conf.blocked_entities.guilds.contains(&guild_id) {
-            return Err(DispatchError::BlockedGuild(guild_id));
-        }
-    }
-
-    Ok(())
 }
 
 async fn group_check<D, E>(

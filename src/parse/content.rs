@@ -30,12 +30,7 @@ use std::future::Future;
 /// the group does not conform to certain conditions, such as its checks failing.
 /// If `f` returns an error, it is propagated to the caller of this function.
 ///
-/// Before `f` is called, however, the parsed group is first examined
-/// whether it is blocked. In the case that it is blocked, the [`BlockedGroup`]
-/// error is returned.
-///
 /// [`Group`]: ../../group/struct.Group.html
-/// [`BlockedGroup`]: ../../error/enum.DispatchError.html#variant.BlockedGroup
 pub async fn group<'a, D, E, F, Fut>(
     conf: &'a Configuration<D, E>,
     segments: &mut Segments<'_>,
@@ -53,10 +48,6 @@ where
                 if !group.subgroups.contains(&g.id) {
                     break;
                 }
-            }
-
-            if conf.blocked_entities.groups.contains(&g.id) {
-                return Err(Error::Dispatch(DispatchError::BlockedGroup(g.id)));
             }
 
             f(g).await?;
@@ -124,12 +115,7 @@ where
 /// such as its checks failing. If `f` returns an error, it is propagated
 /// to the caller of this function.
 ///
-/// Before `f` is called, however, the parsed command is first examined
-/// whether it is blocked. In the case that it is blocked, the [`BlockedCommand`]
-/// error is returned.
-///
 /// [`Command`]: ../../command/struct.Command.html
-/// [`BlockedCommand`]: ../../error/enum.DispatchError.html#variant.BlockedCommand
 /// [`MissingContent`]: ../../error/enum.DispatchError.html#variant.MissingContent
 pub async fn command<'a, D, E, F, Fut>(
     conf: &'a Configuration<D, E>,
@@ -154,10 +140,6 @@ where
         },
         Err(e) => default_command.ok_or(e)?,
     };
-
-    if conf.blocked_entities.commands.contains(&command.id) {
-        return Err(Error::Dispatch(DispatchError::BlockedCommand(command.id)));
-    }
 
     let group = match group {
         Some(group) if group.commands.contains(&command.id) => group,
@@ -187,10 +169,6 @@ where
         if let Some(cmd) = conf.commands.get_by_name(&*name) {
             if !command.subcommands.contains(&cmd.id) {
                 break;
-            }
-
-            if conf.blocked_entities.commands.contains(&cmd.id) {
-                return Err(Error::Dispatch(DispatchError::BlockedCommand(cmd.id)));
             }
 
             f(group, cmd).await?;

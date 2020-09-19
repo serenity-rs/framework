@@ -7,29 +7,13 @@ use crate::{DefaultData, DefaultError};
 
 use serenity::futures::future::BoxFuture;
 use serenity::model::channel::Message;
-use serenity::model::id::{ChannelId, GuildId, UserId};
+use serenity::model::id::UserId;
 
-use std::collections::HashSet;
 use std::fmt;
 
 /// The definition of the dynamic prefix hook.
 pub type DynamicPrefix<D, E> =
     for<'a> fn(ctx: PrefixContext<'_, D, E>, msg: &'a Message) -> BoxFuture<'a, Option<usize>>;
-
-/// Entities that are forbidden from invoking commands.
-#[derive(Debug, Default, Clone)]
-pub struct BlockedEntities {
-    /// Set of channels where invoking commands is forbidden.
-    pub channels: HashSet<ChannelId>,
-    /// Set of guilds where invoking commands is forbidden.
-    pub guilds: HashSet<GuildId>,
-    /// Set of users who are forbidden from invoking commands.
-    pub users: HashSet<UserId>,
-    /// Set of commands that are forbidden from being invoked.
-    pub commands: HashSet<CommandId>,
-    /// Set of groups whose commands are forbidden from being invoked.
-    pub groups: HashSet<GroupId>,
-}
 
 /// The configuration of the framework.
 #[non_exhaustive]
@@ -47,8 +31,6 @@ pub struct Configuration<D = DefaultData, E = DefaultError> {
     ///
     /// If filled, this allows for invoking commands by mentioning the bot.
     pub on_mention: Option<String>,
-    /// Entities that are forbidden from invoking commands.
-    pub blocked_entities: BlockedEntities,
     /// An [`IdMap`] containing all [`Group`]s.
     ///
     /// [`IdMap`]: ../utils/id_map/struct.IdMap.html
@@ -75,7 +57,6 @@ impl<D, E> Clone for Configuration<D, E> {
             case_insensitive: self.case_insensitive,
             no_dm_prefix: self.no_dm_prefix,
             on_mention: self.on_mention.clone(),
-            blocked_entities: self.blocked_entities.clone(),
             groups: self.groups.clone(),
             top_level_groups: self.top_level_groups.clone(),
             commands: self.commands.clone(),
@@ -91,7 +72,6 @@ impl<D, E> Default for Configuration<D, E> {
             case_insensitive: false,
             no_dm_prefix: false,
             on_mention: None,
-            blocked_entities: BlockedEntities::default(),
             groups: GroupMap::default(),
             top_level_groups: Vec::default(),
             commands: CommandMap::default(),
@@ -142,12 +122,6 @@ impl<D, E> Configuration<D, E> {
     /// Assigns a user id of the bot that will allow for mentions in prefix position.
     pub fn on_mention(&mut self, id: UserId) -> &mut Self {
         self.on_mention = Some(id.to_string());
-        self
-    }
-
-    /// Assigns entities that are forbidden from invoking commands.
-    pub fn blocked_entities(&mut self, blocked_entities: BlockedEntities) -> &mut Self {
-        self.blocked_entities = blocked_entities;
         self
     }
 
@@ -260,7 +234,6 @@ impl<D, E> fmt::Debug for Configuration<D, E> {
             .field("case_insensitive", &self.case_insensitive)
             .field("no_dm_prefix", &self.no_dm_prefix)
             .field("on_mention", &self.on_mention)
-            .field("blocked_entities", &self.blocked_entities)
             .field("groups", &self.groups)
             .field("top_level_groups", &self.top_level_groups)
             .field("commands", &self.commands)

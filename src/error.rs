@@ -5,8 +5,6 @@ use crate::command::CommandId;
 use crate::group::GroupId;
 use crate::DefaultError;
 
-use serenity::model::id::{ChannelId, GuildId, UserId};
-
 use std::error::Error as StdError;
 use std::fmt;
 
@@ -15,20 +13,10 @@ use std::fmt;
 /// [`dispatch`]: ../struct.Framework.html#method.dispatch
 #[derive(Debug, Clone)]
 pub enum DispatchError {
-    /// A channel is blocked. Contains the ID of the channel.
-    BlockedChannel(ChannelId),
-    /// A guild is blocked. Contains the ID of the guild.
-    BlockedGuild(GuildId),
-    /// A user is blocked. Contains the ID of the user.
-    BlockedUser(UserId),
-    /// A command is blocked. Contains the ID of the command.
-    BlockedCommand(CommandId),
-    /// A group is blocked. Contains the ID of the group.
-    BlockedGroup(GroupId),
     /// The message does not contain a command invocation.
     NormalMessage,
-    /// The message only contains a prefix.
-    PrefixOnly,
+    /// The message only contains a prefix. Contains the prefix.
+    PrefixOnly(String),
     /// The message is missing information needed to complete its command invocation.
     MissingContent,
     /// An invalid name for a command was passed.
@@ -43,30 +31,11 @@ pub enum DispatchError {
 impl fmt::Display for DispatchError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            DispatchError::BlockedChannel(id) => {
-                write!(f, "failed to dispatch because channel {} is blocked", id.0)
-            }
-            DispatchError::BlockedGuild(id) => {
-                write!(f, "failed to dispatch because guild {} is blocked", id.0)
-            }
-            DispatchError::BlockedUser(id) => {
-                write!(f, "failed to dispatch because user {} is blocked", id.0)
-            }
-            DispatchError::BlockedCommand(id) => write!(
-                f,
-                "failed to dispatch because command {} is blocked",
-                id.into_usize()
-            ),
-            DispatchError::BlockedGroup(id) => write!(
-                f,
-                "failed to dispatch because group {} is blocked",
-                id.into_usize()
-            ),
             DispatchError::NormalMessage => {
                 write!(f, "failed to dispatch because the message is normal")
             }
-            DispatchError::PrefixOnly => {
-                write!(f, "failed to dispatch because only the prefix is present")
+            DispatchError::PrefixOnly(prefix) => {
+                write!(f, "failed to dispatch because only the prefix (`{}`) is present", prefix)
             }
             DispatchError::MissingContent => write!(
                 f,
