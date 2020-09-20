@@ -34,9 +34,11 @@ impl fmt::Display for DispatchError {
             DispatchError::NormalMessage => {
                 write!(f, "failed to dispatch because the message is normal")
             }
-            DispatchError::PrefixOnly(prefix) => {
-                write!(f, "failed to dispatch because only the prefix (`{}`) is present", prefix)
-            }
+            DispatchError::PrefixOnly(prefix) => write!(
+                f,
+                "failed to dispatch because only the prefix (`{}`) is present",
+                prefix
+            ),
             DispatchError::MissingContent => write!(
                 f,
                 "failed to dispatch because the message content is missing information"

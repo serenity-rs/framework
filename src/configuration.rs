@@ -120,8 +120,11 @@ impl<D, E> Configuration<D, E> {
     }
 
     /// Assigns a user id of the bot that will allow for mentions in prefix position.
-    pub fn on_mention(&mut self, id: UserId) -> &mut Self {
-        self.on_mention = Some(id.to_string());
+    pub fn on_mention<I>(&mut self, id: I) -> &mut Self
+    where
+        I: Into<UserId>,
+    {
+        self.on_mention = Some(id.into().to_string());
         self
     }
 

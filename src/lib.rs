@@ -157,7 +157,9 @@ impl<D, E> Framework<D, E> {
             };
 
             if content.is_empty() {
-                return Err(Error::Dispatch(DispatchError::PrefixOnly(prefix.to_string())));
+                return Err(Error::Dispatch(DispatchError::PrefixOnly(
+                    prefix.to_string(),
+                )));
             }
 
             let mut segments = Segments::new(&content, ' ', conf.case_insensitive);

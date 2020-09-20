@@ -14,4 +14,4 @@ pub use crate::error::{DispatchError, Error as FrameworkError};
 pub use crate::group::Group;
 pub use crate::Framework;
 
-pub use command_attr::hook;
+pub use command_attr::{command, hook};
