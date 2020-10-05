@@ -50,7 +50,13 @@ pub fn impl_hook(attr: TokenStream, input: TokenStream) -> Result<TokenStream> {
     let result = quote! {
         #(#attrs)*
         #vis fn #ident<'fut>(#inputs) -> std::pin::Pin<Box<dyn std::future::Future<Output = #output> + 'fut + Send>> {
-            Box::pin(async move #block)
+            Box::pin(async move {
+                // Nudge the compiler into providing us with a good error message
+                // when the return type of the body does not match with the return
+                // type of the function.
+                let result: #output = #block;
+                result
+            })
         }
     };
 
