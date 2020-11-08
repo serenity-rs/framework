@@ -41,7 +41,7 @@ fn parse_attributes(function: &mut ItemFn) -> Result<(Vec<Attr>, Vec<Attribute>)
         "dynamic_description",
         "usage",
         "dynamic_usage",
-        "examples",
+        "example",
         "dynamic_examples",
         "help_available",
         "check",
