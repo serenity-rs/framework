@@ -1,16 +1,2 @@
-[package]
-name = "serenity_standard_framework"
-version = "0.1.0"
-authors = ["Alex M. M. <acdenissk69@gmail.com>"]
-edition = "2018"
-
 [workspace]
-members = ["command_attr"]
-
-[dependencies.command_attr]
-path = "command_attr"
-
-[dependencies.serenity]
-version = "0.9"
-default_features = false
-features = ["client", "model", "gateway", "cache", "rustls_backend"]
+members = ["framework", "command_attr"]

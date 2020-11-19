@@ -1,0 +1,18 @@
+[package]
+name = "serenity_framework"
+version = "0.1.0"
+authors = ["Alex M. M. <acdenissk69@gmail.com>"]
+edition = "2018"
+
+[dependencies.serenity]
+git = "https://github.com/serenity-rs/serenity"
+branch = "current"
+default_features = false
+features = ["client", "model", "gateway", "cache", "rustls_backend"]
+
+[dependencies.command_attr]
+path = "../command_attr"
+optional = true
+
+[features]
+macros = ["command_attr"]
