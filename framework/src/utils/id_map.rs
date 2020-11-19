@@ -20,7 +20,7 @@
 //! Using `IdMap` for your own purposes:
 //!
 //! ```rust
-//! use serenity_standard_framework::utils::IdMap;
+//! use serenity_framework::utils::IdMap;
 //!
 //! #[derive(Debug, PartialEq)]
 //! struct Foo {

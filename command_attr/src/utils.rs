@@ -8,7 +8,7 @@ use syn::{
 };
 
 pub fn crate_name() -> Ident {
-    Ident::new("serenity_standard_framework", Span::call_site())
+    Ident::new("serenity_framework", Span::call_site())
 }
 
 pub fn default_data(crate_name: &Ident) -> Box<Type> {

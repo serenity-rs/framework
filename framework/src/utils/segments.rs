@@ -13,7 +13,7 @@ use std::borrow::Cow;
 /// # Examples
 ///
 /// ```rust
-/// use serenity_standard_framework::utils::segment_index;
+/// use serenity_framework::utils::segment_index;
 ///
 /// assert_eq!(segment_index("hello world", ' '), 5);
 /// assert_eq!(segment_index("world", ' '), "world".len());
@@ -29,7 +29,7 @@ pub fn segment_index(src: &str, delimiter: char) -> usize {
 /// # Examples
 ///
 /// ```rust
-/// use serenity_standard_framework::utils::segment;
+/// use serenity_framework::utils::segment;
 ///
 /// assert_eq!(segment("hello world", ' '), Some("hello"));
 /// assert_eq!(segment("world", ' '), Some("world"));
@@ -53,7 +53,7 @@ pub fn segment(src: &str, delimiter: char) -> Option<&str> {
 /// # Examples
 ///
 /// ```rust
-/// use serenity_standard_framework::utils::segment_split;
+/// use serenity_framework::utils::segment_split;
 ///
 /// assert_eq!(segment_split("hello   world", ' '), Some(("hello", "world")));
 /// assert_eq!(segment_split("world", ' '), Some(("world", "")));
@@ -81,7 +81,7 @@ pub fn segment_split<'a>(src: &'a str, delimiter: char) -> Option<(&'a str, &'a 
 /// # Examples
 ///
 /// ```rust
-/// use serenity_standard_framework::utils::Segments;
+/// use serenity_framework::utils::Segments;
 ///
 /// use std::borrow::Cow;
 ///
