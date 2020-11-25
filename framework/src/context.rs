@@ -41,7 +41,7 @@ pub struct Context<D = DefaultData, E = DefaultError> {
     pub command_id: CommandId,
     /// The [prefix] that was used to invoke this command.
     ///
-    /// [prefix]: ../parse/prefix/fn.content.html
+    /// [prefix]: crate::parse::prefix::content
     pub prefix: String,
     /// The arguments of the command.
     ///

@@ -73,7 +73,7 @@ use utils::Segments;
 
 /// The default type for [user data][data] when it is unspecified.
 ///
-/// [data]: struct.Framework.html#structfield.data
+/// [data]: Framework::data
 pub type DefaultData = ();
 
 /// The default type for [command errors][errors] when it is unspecified.
