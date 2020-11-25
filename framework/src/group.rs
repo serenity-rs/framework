@@ -42,7 +42,7 @@ impl GroupId {
     pub fn into_usize(self) -> usize {
         self.0
     }
-    ///
+
     /// Converts the identifier to the constructor it points to.
     pub(crate) fn into_constructor<D, E>(self) -> GroupConstructor<D, E> {
         // SAFETY: GroupId in user code can only be constructed by its
