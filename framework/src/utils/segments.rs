@@ -99,7 +99,7 @@ pub fn segment_split<'a>(src: &'a str, delimiter: char) -> Option<(&'a str, &'a 
 /// ```
 ///
 /// [`Cow`]: std::borrow::Cow
-/// [`case_insensitive`]: struct.Segments.html#method.case_insensitive
+/// [`case_insensitive`]: Segments::case_insensitive
 #[derive(Debug, Clone)]
 pub struct Segments<'a> {
     src: &'a str,

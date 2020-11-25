@@ -33,19 +33,19 @@ pub struct Configuration<D = DefaultData, E = DefaultError> {
     pub on_mention: Option<String>,
     /// An [`IdMap`] containing all [`Group`]s.
     ///
-    /// [`IdMap`]: ../utils/id_map/struct.IdMap.html
-    /// [`Group`]: ../group/struct.Group.html
+    /// [`IdMap`]: crate::utils::IdMap
+    /// [`Group`]: crate::group::Group
     pub groups: GroupMap<D, E>,
     /// A list of prefixless [`Group`]s.
     ///
     /// These are invisible to the user on Discord.
     ///
-    /// [`Group`]: ../group/struct.Group.html
+    /// [`Group`]: crate::group::Group
     pub top_level_groups: Vec<Group<D, E>>,
     /// An [`IdMap`] containing all [`Command`]s.
     ///
-    /// [`IdMap`]: ../utils/id_map/struct.IdMap.html
-    /// [`Command`]: ../group/struct.Command.html
+    /// [`IdMap`]: crate::utils::IdMap
+    /// [`Command`]: crate::command::Command
     pub commands: CommandMap<D, E>,
 }
 
@@ -89,7 +89,7 @@ impl<D, E> Configuration<D, E> {
     ///
     /// The prefix is added to the [`prefixes`] list.
     ///
-    /// [`prefixes`]: struct.Configuration.html#structfield.prefixes
+    /// [`prefixes`]: Self::prefix
     pub fn prefix<I>(&mut self, prefix: I) -> &mut Self
     where
         I: Into<String>,
@@ -164,8 +164,8 @@ impl<D, E> Configuration<D, E> {
     /// A group without prefixes is automatically added to the [`top_level_groups`]
     /// list instead of the [`groups`] list.
     ///
-    /// [`groups`]: struct.Configuration.html#structfield.groups
-    /// [`top_level_groups`]: struct.Configuration.html#structfield.top_level_groups
+    /// [`groups`]: Self::groups
+    /// [`top_level_groups`]: Self::top_level_groups
     pub fn group(&mut self, group: GroupConstructor<D, E>) -> &mut Self {
         let id = GroupId::from(group);
 
@@ -189,7 +189,7 @@ impl<D, E> Configuration<D, E> {
     ///
     /// The command is added to the [`commands`] list.
     ///
-    /// [`commands`]: struct.Configuration.html#structfield.commands
+    /// [`commands`]: Self::commands
     pub fn command(&mut self, command: CommandConstructor<D, E>) -> &mut Self {
         let id = CommandId::from(command);
 

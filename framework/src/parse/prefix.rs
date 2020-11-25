@@ -1,8 +1,6 @@
 //! Functions to parse the prefix out of a message.
 //!
 //! Refer to the [`content`] function for the definition of a prefix.
-//!
-//! [`content`]: fn.content.html
 
 use crate::configuration::Configuration;
 use crate::context::PrefixContext;
@@ -50,7 +48,7 @@ pub fn mention<'a>(msg: &'a str, id: &str) -> Option<(&'a str, &'a str)> {
 /// If the hook is not registered, or the hook returned `None`, `None` is returned.
 /// Otherwise, the prefix and the rest of the message after the prefix is returned.
 ///
-/// [`Configuration::dynamic_prefix`]: ../configuration/struct.Configuration.html#structfield.dynamic_prefix
+/// [`Configuration::dynamic_prefix`]: crate::configuration::Configuration::dynamic_prefix
 pub async fn dynamic_prefix<'a, D, E>(
     ctx: PrefixContext<'_, D, E>,
     msg: &'a Message,
@@ -88,10 +86,9 @@ pub fn static_prefix<'a>(msg: &'a str, prefixes: &[String]) -> Option<(&'a str, 
 /// If [`Configuration::no_dm_prefix`] is `false` and no prefix is found, `None` is returned.
 /// Otherwise, the prefix and the content are returned.
 ///
-/// [`Configuration::no_dm_prefix`]: ../configuration/struct.Configuration.html#structfield.no_dm_prefix
-/// [mention]: fn.mention.html
-/// [prefixes]: fn.static_prefix.html
-/// [dyn_prefix]: fn.dynamic_prefix.html
+/// [`Configuration::no_dm_prefix`]: crate::configuration::Configuration::no_dm_prefix
+/// [prefixes]: static_prefix
+/// [dyn_prefix]: dynamic_prefix
 pub async fn content<'a, D, E>(
     data: &Arc<RwLock<D>>,
     conf: &Configuration<D, E>,

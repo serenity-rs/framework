@@ -5,9 +5,8 @@
 //! indicates whether it succeeded or failed. In the case of failure, additional
 //! information can be given, a reason, that describes the failure.
 //!
-//! [command]: ../command/index.html
-//! [group]: ../group/index.html
-//! [`CheckResult`]: type.CheckResult.html
+//! [command]: crate::command
+//! [group]: crate::group
 
 use crate::context::CheckContext;
 use crate::{DefaultData, DefaultError};
@@ -43,7 +42,7 @@ pub enum Reason {
 
 /// The result type of a [check function][fn]
 ///
-/// [fn]: type.CheckFn.html
+/// [fn]: CheckFn
 pub type CheckResult<T = ()> = std::result::Result<T, Reason>;
 
 /// The definition of a check function.
@@ -51,15 +50,13 @@ pub type CheckFn<D = DefaultData, E = DefaultError> =
     for<'fut> fn(&'fut CheckContext<'_, D, E>, &'fut Message) -> BoxFuture<'fut, CheckResult<()>>;
 
 /// A constructor of the [`Check`] type provided by the consumer of the framework.
-///
-/// [`Check`]: struct.Check.html
 pub type CheckConstructor<D = DefaultData, E = DefaultError> = fn() -> Check<D, E>;
 
 /// Data relating to a check.
 ///
 /// Refer to the [module-level documentation][docs]
 ///
-/// [docs]: index.html
+/// [docs]: crate::check
 #[non_exhaustive]
 pub struct Check<D = DefaultData, E = DefaultError> {
     /// Name of the check.
@@ -115,8 +112,6 @@ impl<D, E> Check<D, E> {
 }
 
 /// A builder type for creating a [`Check`] from scratch.
-///
-/// [`Check`]: struct.Check.html
 pub struct CheckBuilder<D, E> {
     inner: Check<D, E>,
 }
