@@ -1,0 +1,1 @@
+initSidebarItems({"mod":[["id_map","An Identifier Map. An abstraction for structures who may have many names, but only once instance."],["segments","Functions and types for handling segments."]]});

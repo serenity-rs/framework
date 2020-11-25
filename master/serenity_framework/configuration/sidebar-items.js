@@ -1,0 +1,1 @@
+initSidebarItems({"struct":[["Configuration","The configuration of the framework."]],"type":[["DynamicPrefix","The definition of the dynamic prefix hook."]]});

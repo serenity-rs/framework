@@ -1,0 +1,3 @@
+(function() {var implementors = {};
+implementors["serenity_framework"] = [{"text":"impl&lt;Name, Id, Struct&gt; IndexMut&lt;Id&gt; for IdMap&lt;Name, Id, Struct&gt; <span class=\"where fmt-newline\">where<br>&nbsp;&nbsp;&nbsp;&nbsp;Id: Hash + Eq,&nbsp;</span>","synthetic":false,"types":[]}];
+if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()

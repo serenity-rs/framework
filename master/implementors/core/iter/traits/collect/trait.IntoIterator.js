@@ -1,0 +1,3 @@
+(function() {var implementors = {};
+implementors["serenity_framework"] = [{"text":"impl&lt;Name, Id, Struct&gt; IntoIterator for IdMap&lt;Name, Id, Struct&gt;","synthetic":false,"types":[]},{"text":"impl&lt;'a, Name, Id, Struct&gt; IntoIterator for &amp;'a IdMap&lt;Name, Id, Struct&gt;","synthetic":false,"types":[]},{"text":"impl&lt;'a, Name, Id, Struct&gt; IntoIterator for &amp;'a mut IdMap&lt;Name, Id, Struct&gt;","synthetic":false,"types":[]}];
+if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()

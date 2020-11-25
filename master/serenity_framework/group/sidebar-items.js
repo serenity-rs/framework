@@ -1,0 +1,1 @@
+initSidebarItems({"struct":[["Group","Data surrounding a group."],["GroupBuilder","A builder type for creating a [`Group`] from scratch."],["GroupId","A unique identifier of a [`Group`] stored in the [`GroupMap`]."]],"type":[["GroupConstructor","A constructor of the [`Group`] type provided by the consumer of the framework."],["GroupMap","`IdMap` for storing groups."]]});

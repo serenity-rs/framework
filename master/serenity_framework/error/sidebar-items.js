@@ -1,0 +1,1 @@
+initSidebarItems({"enum":[["DispatchError","An error describing why `dispatch`ing failed."],["Error","Returned when the call of `dispatch` fails."]]});

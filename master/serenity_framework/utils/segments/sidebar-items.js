@@ -1,0 +1,1 @@
+initSidebarItems({"fn":[["segment","Returns a segment of the source."],["segment_index","Returns the index to the end of a segment in the source."],["segment_split","Returns a segment and the rest of the source after the delimiter."]],"struct":[["Segments","An iterator type that splits a string into segments using a delimiter."]]});
