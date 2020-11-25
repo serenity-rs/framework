@@ -33,7 +33,7 @@ impl fmt::Display for DispatchError {
         match self {
             DispatchError::NormalMessage => {
                 write!(f, "failed to dispatch because the message is normal")
-            }
+            },
             DispatchError::PrefixOnly(prefix) => write!(
                 f,
                 "failed to dispatch because only the prefix (`{}`) is present",

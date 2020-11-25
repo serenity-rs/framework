@@ -3,8 +3,21 @@ use quote::{quote, ToTokens};
 use syn::parse::{Parse, ParseStream};
 use syn::spanned::Spanned;
 use syn::{
-    parse2, Attribute, Error, FnArg, GenericArgument, Lit, LitStr, Meta, NestedMeta, Path,
-    PathArguments, Result, Signature, Token, Type,
+    parse2,
+    Attribute,
+    Error,
+    FnArg,
+    GenericArgument,
+    Lit,
+    LitStr,
+    Meta,
+    NestedMeta,
+    Path,
+    PathArguments,
+    Result,
+    Signature,
+    Token,
+    Type,
 };
 
 pub fn crate_name() -> Ident {
@@ -119,7 +132,7 @@ fn parse_attribute(attr: &Attribute) -> Result<Attr> {
                 .collect::<Result<Vec<_>>>()?;
 
             Ok(Attr::new(path, values))
-        }
+        },
         Meta::NameValue(_) => Err(Error::new(
             meta.span(),
             "`#[name = value]` syntax is not supported`",
@@ -239,9 +252,8 @@ fn get_path(t: &Type) -> Result<&Path> {
 fn get_generic_arguments(path: &Path) -> Result<impl Iterator<Item = &GenericArgument> + '_> {
     match &path.segments.last().unwrap().arguments {
         PathArguments::None => Ok(Vec::new().into_iter()),
-        PathArguments::AngleBracketed(arguments) => {
-            Ok(arguments.args.iter().collect::<Vec<_>>().into_iter())
-        }
+        PathArguments::AngleBracketed(arguments) =>
+            Ok(arguments.args.iter().collect::<Vec<_>>().into_iter()),
         _ => Err(Error::new(
             path.span(),
             "context type cannot have generic parameters in parenthesis",

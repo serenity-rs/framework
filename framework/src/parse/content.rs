@@ -136,30 +136,28 @@ where
                 segments.next();
 
                 cmd
-            }
+            },
         },
         Err(e) => default_command.ok_or(e)?,
     };
 
     let group = match group {
         Some(group) if group.commands.contains(&command.id) => group,
-        Some(group) => {
+        Some(group) =>
             return Err(Error::Dispatch(DispatchError::InvalidCommand(
                 Some(group.id),
                 command.id,
-            )))
-        }
+            ))),
         None => match conf
             .top_level_groups
             .iter()
             .find(|g| g.commands.contains(&command.id))
         {
             Some(group) => group,
-            None => {
+            None =>
                 return Err(Error::Dispatch(DispatchError::InvalidCommand(
                     None, command.id,
-                )))
-            }
+                ))),
         },
     };
 
