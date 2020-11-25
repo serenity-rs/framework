@@ -42,6 +42,14 @@ impl GroupId {
     pub fn into_usize(self) -> usize {
         self.0
     }
+    ///
+    /// Converts the identifier to the constructor it points to.
+    pub(crate) fn into_constructor<D, E>(self) -> GroupConstructor<D, E> {
+        // SAFETY: GroupId in user code can only be constructed by its
+        // `From<GroupConstructor<D, E>>` impl. This makes the transmute safe.
+
+        unsafe { std::mem::transmute(self.0 as *const ()) }
+    }
 }
 
 impl<D, E> From<GroupConstructor<D, E>> for GroupId {

@@ -140,23 +140,16 @@ impl<D, E> Configuration<D, E> {
         }
 
         for id in &group.subgroups {
-            // SAFETY: GroupId in user code can only be constructed by its
-            // `From<GroupConstructor>` impl. This makes the transmute safe.
-            let constructor: GroupConstructor<D, E> =
-                unsafe { std::mem::transmute(id.0 as *const ()) };
+            let ctor: GroupConstructor<D, E> = id.into_constructor();
 
-            let mut subgroup = constructor();
+            let mut subgroup = ctor();
             subgroup.id = *id;
             self._group(subgroup);
         }
 
         for id in &group.commands {
-            // SAFETY: CommandId in user code can only be constructed by its
-            // `From<CommandConstructor<D, E>>` impl. This makes the transmute safe.
-            let constructor: CommandConstructor<D, E> =
-                unsafe { std::mem::transmute(id.0 as *const ()) };
-
-            self.command(constructor);
+            let ctor: CommandConstructor<D, E> = id.into_constructor();
+            self.command(ctor);
         }
 
         self.groups.insert(group.id, group);
@@ -216,12 +209,8 @@ impl<D, E> Configuration<D, E> {
         }
 
         for id in &command.subcommands {
-            // SAFETY: CommandId in user code can only be constructed by its
-            // `From<CommandConstructor<D, E>>` impl. This makes the transmute safe.
-            let constructor: CommandConstructor<D, E> =
-                unsafe { std::mem::transmute(id.0 as *const ()) };
-
-            self.command(constructor);
+            let ctor: CommandConstructor<D, E> = id.into_constructor();
+            self.command(ctor);
         }
 
         self.commands.insert(id, command);

@@ -68,6 +68,14 @@ impl CommandId {
     pub fn into_usize(self) -> usize {
         self.0
     }
+
+    /// Converts the identifier to the constructor it points to.
+    pub(crate) fn into_constructor<D, E>(self) -> CommandConstructor<D, E> {
+        // SAFETY: CommandId in user code can only be constructed by its
+        // `From<CommandConstructor<D, E>>` impl. This makes the transmute safe.
+
+        unsafe { std::mem::transmute(self.0 as *const ()) }
+    }
 }
 
 impl<D, E> From<CommandConstructor<D, E>> for CommandId {
