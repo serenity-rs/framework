@@ -32,38 +32,25 @@ impl fmt::Display for DispatchError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             DispatchError::NormalMessage => {
-                write!(f, "failed to dispatch because the message is normal")
+                write!(f, "message is normal")
             },
-            DispatchError::PrefixOnly(prefix) => write!(
-                f,
-                "failed to dispatch because only the prefix (`{}`) is present",
-                prefix
-            ),
-            DispatchError::MissingContent => write!(
-                f,
-                "failed to dispatch because the message content is missing information"
-            ),
-            DispatchError::InvalidCommandName(name) => write!(
-                f,
-                "failed to dispatch because \"{}\" is not a valid command",
-                name
-            ),
+            DispatchError::PrefixOnly(prefix) =>
+                write!(f, "only the prefix (`{}`) is present", prefix),
+            DispatchError::MissingContent => write!(f, "message content is missing information"),
+            DispatchError::InvalidCommandName(name) =>
+                write!(f, "\"{}\" is not a valid command", name),
             DispatchError::InvalidCommand(Some(group), command) => write!(
                 f,
-                "failed to dispatch because command {} does not belong to group {}",
+                "command {} does not belong to group {}",
                 group.into_usize(),
                 command.into_usize()
             ),
             DispatchError::InvalidCommand(None, command) => write!(
                 f,
-                "failed to dispatch because command {} does not belong to any top-level group",
+                "command {} does not belong to any top-level group",
                 command.into_usize()
             ),
-            DispatchError::CheckFailed(name, _) => write!(
-                f,
-                "failed to dispatch because the \"{}\" check failed",
-                name
-            ),
+            DispatchError::CheckFailed(name, _) => write!(f, "\"{}\" check failed", name),
         }
     }
 }
