@@ -83,5 +83,5 @@ jobs:
         env:
           RUSTDOCFLAGS: -D broken_intra_doc_links
         run: |
-          cargo doc --no-deps -p framework
+          cargo doc --no-deps -p serenity_framework
           cargo doc --no-deps -p command_attr
