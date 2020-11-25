@@ -30,7 +30,7 @@ use std::future::Future;
 /// the group does not conform to certain conditions, such as its checks failing.
 /// If `f` returns an error, it is propagated to the caller of this function.
 ///
-/// [`Group`]: ../../group/struct.Group.html
+/// [`Group`]: crate::group::Group
 pub async fn group<'a, D, E, F, Fut>(
     conf: &'a Configuration<D, E>,
     segments: &mut Segments<'_>,
@@ -102,9 +102,6 @@ where
 /// If the first segment is a name not affiliated with any command, the [`InvalidCommandName`]
 /// error is returned. Otherwise, the command under that name is chosen as the initial command.
 ///
-/// After the initial command is determined, it is examined if it is blocked.
-/// In the case that it is blocked, the [`BlockedCommand`] error is returned.
-///
 /// If the group is not present, a search through [`Configuration::top_level_groups`]
 /// will be conducted. If this fails, the [`InvalidCommand`] error without the group id
 /// is returned.
@@ -115,8 +112,10 @@ where
 /// such as its checks failing. If `f` returns an error, it is propagated
 /// to the caller of this function.
 ///
-/// [`Command`]: ../../command/struct.Command.html
-/// [`MissingContent`]: ../../error/enum.DispatchError.html#variant.MissingContent
+/// [`Command`]: crate::command::Command
+/// [`MissingContent`]: crate::DispatchError::MissingContent
+/// [`InvalidCommandName`]: crate::DispatchError::InvalidCommandName
+/// [`InvalidCommand`]: crate::DispatchError::InvalidCommand
 pub async fn command<'a, D, E, F, Fut>(
     conf: &'a Configuration<D, E>,
     segments: &mut Segments<'_>,

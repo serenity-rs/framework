@@ -26,7 +26,7 @@ use std::sync::Arc;
 /// the command function. Consequently, this context type contains
 /// every data that's relevant to the command.
 ///
-/// [ctx]: ../command/type.CommandFn.html
+/// [ctx]: crate::command::CommandFn
 #[non_exhaustive]
 pub struct Context<D = DefaultData, E = DefaultError> {
     /// User data.
@@ -93,7 +93,7 @@ where
 ///
 /// This is passed in the [dynamic prefix][dyn_prefix] hook.
 ///
-/// [dyn_prefix]: ../configuration/type.DynamicPrefix.html
+/// [dyn_prefix]: crate::configuration::DynamicPrefix
 #[non_exhaustive]
 pub struct PrefixContext<'a, D = DefaultData, E = DefaultError> {
     /// User data.
@@ -144,7 +144,7 @@ where
 ///
 /// This is passed to the [check function][fn].
 ///
-/// [fn]: ../check/type.CheckFn.html
+/// [fn]: crate::check::CheckFn
 #[non_exhaustive]
 pub struct CheckContext<'a, D = DefaultData, E = DefaultError> {
     /// User data.

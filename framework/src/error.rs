@@ -10,7 +10,7 @@ use std::fmt;
 
 /// An error describing why [`dispatch`]ing failed.
 ///
-/// [`dispatch`]: ../struct.Framework.html#method.dispatch
+/// [`dispatch`]: crate::Framework::dispatch
 #[derive(Debug, Clone)]
 pub enum DispatchError {
     /// The message does not contain a command invocation.
@@ -72,7 +72,7 @@ impl StdError for DispatchError {}
 
 /// Returned when the call of [`dispatch`] fails.
 ///
-/// [`dispatch`]: ../struct.Framework.html#method.dispatch
+/// [`dispatch`]: crate::Framework::dispatch
 #[derive(Debug, Clone)]
 pub enum Error<E = DefaultError> {
     /// Failed to dispatch a command.

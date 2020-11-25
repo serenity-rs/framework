@@ -9,7 +9,7 @@
 //! it may define a default command. This command is chosen when an invocation only
 //! contains one of the group's prefixes.
 //!
-//! [`check`]: ../check/index.html
+//! [`check`]: crate::check
 
 use crate::check::{Check, CheckConstructor};
 use crate::command::{CommandConstructor, CommandId};
@@ -21,7 +21,7 @@ use std::fmt;
 
 /// [`IdMap`] for storing groups.
 ///
-/// [`IdMap`]: ../utils/id_map/struct.IdMap.html
+/// [`IdMap`]: crate::utils::IdMap
 pub type GroupMap<D = DefaultData, E = DefaultError> = IdMap<String, GroupId, Group<D, E>>;
 
 /// A constructor of the [`Group`] type provided by the consumer of the framework.
@@ -29,11 +29,7 @@ pub type GroupConstructor<D = DefaultData, E = DefaultError> = fn() -> Group<D, 
 
 /// A unique identifier of a [`Group`] stored in the [`GroupMap`].
 ///
-/// It is constructed from [`GroupConstructor`]
-///
-/// [`Group`]: struct.Group.html
-/// [`GroupMap`]: type.GroupMap.html
-/// [`GroupConstructor`]: type.GroupConstructor.html
+/// It is constructed from [`GroupConstructor`].
 #[derive(Debug, Clone, Copy, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct GroupId(pub(crate) usize);
 
@@ -137,8 +133,6 @@ impl<D, E> Group<D, E> {
 }
 
 /// A builder type for creating a [`Group`] from scratch.
-///
-/// [`Group`]: struct.Group.html
 pub struct GroupBuilder<D = DefaultData, E = DefaultError> {
     inner: Group<D, E>,
 }
@@ -168,7 +162,7 @@ impl<D, E> GroupBuilder<D, E> {
     ///
     /// The prefix is added to the [`prefixes`] list.
     ///
-    /// [`prefixes`]: struct.Group.html#structfield.prefixes
+    /// [`prefixes`]: Group::prefixes
     pub fn prefix<I>(mut self, prefix: I) -> Self
     where
         I: Into<String>,
@@ -181,7 +175,7 @@ impl<D, E> GroupBuilder<D, E> {
     ///
     /// The command is added to the [`commands`] list.
     ///
-    /// [`commands`]: struct.Group.html#structfield.commands
+    /// [`commands`]: Group::commands
     pub fn command(mut self, command: CommandConstructor<D, E>) -> Self {
         self.inner.commands.insert(CommandId::from(command));
         self
@@ -191,7 +185,7 @@ impl<D, E> GroupBuilder<D, E> {
     ///
     /// The subgroup is added to the [`subgroups`] list.
     ///
-    /// [`subgroups`]: struct.Group.html#structfield.subgroups
+    /// [`subgroups`]: Group::subgroups
     pub fn subgroup(mut self, group: GroupConstructor<D, E>) -> Self {
         self.inner.subgroups.insert(GroupId::from(group));
         self

@@ -6,7 +6,7 @@
 //! information that relays to the user what it does, what it is for, and how it
 //! is used. It may have [`check`]s to allow/deny a user's access to the command.
 //!
-//! [`check`]: ../check/index.html
+//! [`check`]: crate::check
 
 use crate::check::{Check, CheckConstructor};
 use crate::context::Context;
@@ -22,28 +22,23 @@ use std::fmt;
 /// A function to dynamically create a string.
 ///
 /// Used for [`Command::dynamic_description`] and [`Command::dynamic_usage`].
-///
-/// [`Command::dynamic_description`]: struct.Command.html#structfield.dynamic_description
-/// [`Command::dynamic_usage`]: struct.Command.html#structfield.dynamic_usage
 pub type StringHook<D = DefaultData, E = DefaultError> =
     for<'a> fn(ctx: &'a Context<D, E>, msg: &'a Message) -> BoxFuture<'a, Option<String>>;
 
 /// A function to dynamically create a list of strings.
 ///
 /// Used for [`Command::dynamic_examples`].
-///
-/// [`Command::dynamic_examples`]: struct.Command.html#structfield.dynamic_examples
 pub type StringsHook<D = DefaultData, E = DefaultError> =
     for<'a> fn(ctx: &'a Context<D, E>, msg: &'a Message) -> BoxFuture<'a, Vec<String>>;
 
 /// [`IdMap`] for storing commands.
 ///
-/// [`IdMap`]: ../utils/id_map/struct.IdMap.html
+/// [`IdMap`]: crate::utils::IdMap
 pub type CommandMap<D = DefaultData, E = DefaultError> = IdMap<String, CommandId, Command<D, E>>;
 
 /// The result type of a [command function][fn].
 ///
-/// [fn]: type.CommandFn.html
+/// [fn]: CommandFn
 pub type CommandResult<T = (), E = DefaultError> = std::result::Result<T, E>;
 
 /// The definition of a command function.
@@ -55,11 +50,7 @@ pub type CommandConstructor<D = DefaultData, E = DefaultError> = fn() -> Command
 
 /// A unique identifier of a [`Command`] stored in the [`CommandMap`].
 ///
-/// It is constructed from [`CommandConstructor`]
-///
-/// [`Command`]: struct.Command.html
-/// [`CommandMap`]: type.CommandMap.html
-/// [`CommandConstructor`]: type.CommandConstructor.html
+/// It is constructed from [`CommandConstructor`].
 #[derive(Debug, Clone, Copy, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct CommandId(pub(crate) usize);
 
@@ -187,8 +178,6 @@ impl<D, E> Command<D, E> {
 }
 
 /// A builder type for creating a [`Command`] from scratch.
-///
-/// [`Command`]: struct.Command.html
 pub struct CommandBuilder<D = DefaultData, E = DefaultError> {
     inner: Command<D, E>,
 }
@@ -208,7 +197,7 @@ impl<D, E> CommandBuilder<D, E> {
     ///
     /// The name is added to the [`names`] list.
     ///
-    /// [`names`]: struct.Command.html#structfield.names
+    /// [`names`]: Command::names
     pub fn name<I>(mut self, name: I) -> Self
     where
         I: Into<String>,
@@ -227,7 +216,7 @@ impl<D, E> CommandBuilder<D, E> {
     ///
     /// The subcommand is added to the [`subcommands`] list.
     ///
-    /// [`subcommands`]: struct.Command.html#structfield.subcommands
+    /// [`subcommands`]: Command::subcommands
     pub fn subcommand(mut self, subcommand: CommandConstructor<D, E>) -> Self {
         self.inner.subcommands.insert(CommandId::from(subcommand));
         self
@@ -267,7 +256,7 @@ impl<D, E> CommandBuilder<D, E> {
     ///
     /// The example is added to the [`examples`] list.
     ///
-    /// [`examples`]: struct.Command.html#structfield.examples
+    /// [`examples`]: Command::examples
     pub fn example<I>(mut self, example: I) -> Self
     where
         I: Into<String>,
@@ -284,7 +273,7 @@ impl<D, E> CommandBuilder<D, E> {
 
     /// Assigns a [`check`] function to this command.
     ///
-    /// [`check`]: ../check/index.html
+    /// [`check`]: crate::check
     pub fn check(mut self, check: CheckConstructor<D, E>) -> Self {
         self.inner.check = Some(check());
         self

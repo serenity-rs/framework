@@ -78,7 +78,7 @@ pub type DefaultData = ();
 
 /// The default type for [command errors][errors] when it is unspecified.
 ///
-/// [errors]: command/type.CommandResult.html
+/// [errors]: crate::command::CommandResult
 pub type DefaultError = Box<dyn StdError + Send + Sync>;
 
 /// The core of the framework.
@@ -98,7 +98,7 @@ where
     ///
     /// The [`data`] field is [`Default`] initialized.
     ///
-    /// [`data`]: #structfield.data
+    /// [`data`]: Self::data
     /// [`Default`]: std::default::Default
     #[inline]
     pub fn new(conf: Configuration<D, E>) -> Self {
@@ -115,7 +115,7 @@ impl<D, E> Framework<D, E> {
     ///
     /// If you need to retain ownership of the data, consider using [`with_arc_data`].
     ///
-    /// [`with_arc_data`]: #method.with_arc_data
+    /// [`with_arc_data`]: Self::with_arc_data
     #[inline]
     pub fn with_data(conf: Configuration<D, E>, data: D) -> Self {
         Self::with_arc_data(conf, Arc::new(RwLock::new(data)))
