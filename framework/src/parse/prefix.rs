@@ -49,6 +49,7 @@ pub fn mention<'a>(msg: &'a str, id: &str) -> Option<(&'a str, &'a str)> {
 /// Otherwise, the prefix and the rest of the message after the prefix is returned.
 ///
 /// [`Configuration::dynamic_prefix`]: crate::configuration::Configuration::dynamic_prefix
+#[allow(clippy::needless_lifetimes)]
 pub async fn dynamic_prefix<'a, D, E>(
     ctx: PrefixContext<'_, D, E>,
     msg: &'a Message,
@@ -89,6 +90,7 @@ pub fn static_prefix<'a>(msg: &'a str, prefixes: &[String]) -> Option<(&'a str, 
 /// [`Configuration::no_dm_prefix`]: crate::configuration::Configuration::no_dm_prefix
 /// [prefixes]: static_prefix
 /// [dyn_prefix]: dynamic_prefix
+#[allow(clippy::needless_lifetimes)]
 pub async fn content<'a, D, E>(
     data: &Arc<RwLock<D>>,
     conf: &Configuration<D, E>,
