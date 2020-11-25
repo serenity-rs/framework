@@ -59,7 +59,7 @@ pub fn segment(src: &str, delimiter: char) -> Option<&str> {
 /// assert_eq!(segment_split("world", ' '), Some(("world", "")));
 /// assert_eq!(segment_split("", ' '), None);
 /// ```
-pub fn segment_split<'a>(src: &'a str, delimiter: char) -> Option<(&'a str, &'a str)> {
+pub fn segment_split(src: &str, delimiter: char) -> Option<(&'_ str, &'_ str)> {
     if src.is_empty() {
         None
     } else {
