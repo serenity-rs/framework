@@ -264,6 +264,6 @@ fn get_generic_arguments(path: &Path) -> Result<impl Iterator<Item = &GenericArg
 fn get_generic_type(arg: &GenericArgument) -> Result<Box<Type>> {
     match arg {
         GenericArgument::Type(t) => Ok(Box::new(t.clone())),
-        _ => return Err(Error::new(arg.span(), "generic parameter must be a type")),
+        _ => Err(Error::new(arg.span(), "generic parameter must be a type")),
     }
 }
