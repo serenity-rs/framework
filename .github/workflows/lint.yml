@@ -18,7 +18,7 @@ jobs:
         id: toolchain
         uses: actions-rs/toolchain@v1
         with:
-          toolchain: stable
+          toolchain: nightly
           components: clippy
           profile: minimal
           override: true
@@ -49,7 +49,7 @@ jobs:
       - name: Install stable toolchain
         uses: actions-rs/toolchain@v1
         with:
-          toolchain: stable
+          toolchain: nightly
           components: rustfmt
           profile: minimal
           override: true
