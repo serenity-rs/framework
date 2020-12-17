@@ -17,13 +17,19 @@ pub enum DispatchError {
     NormalMessage,
     /// The message only contains a prefix. Contains the prefix.
     PrefixOnly(String),
-    /// The message is missing information needed to complete its command invocation.
+    /// The message is missing information needed for a proper command invocation.
     MissingContent,
-    /// An invalid name for a command was passed.
+    /// The message contains two groups that are not parent and child.
+    /// Contains the ID of the "parent" group and the ID of the "child" group.
+    InvalidSubgroup(GroupId, GroupId),
+    /// The message contains two commands that are not parent and child.
+    /// Contains the ID of the "parent" command and the ID of the "child" command.
+    InvalidSubcommand(CommandId, CommandId),
+    /// The message contains a command that does not belong to a group.
+    /// Contains the ID of the group and the command.
+    InvalidCommand(GroupId, CommandId),
+    /// The message contains a name not belonging to any command.
     InvalidCommandName(String),
-    /// An invalid command was passed. Contains the ID to the group (if it was present),
-    /// which the command, whose ID is also contained, does not belong to.
-    InvalidCommand(Option<GroupId>, CommandId),
     /// A check failed. Contains its name and the reasoning why it failed.
     CheckFailed(String, Reason),
 }
@@ -34,22 +40,30 @@ impl fmt::Display for DispatchError {
             DispatchError::NormalMessage => {
                 write!(f, "message is normal")
             },
-            DispatchError::PrefixOnly(prefix) =>
-                write!(f, "only the prefix (`{}`) is present", prefix),
+            DispatchError::PrefixOnly(prefix) => {
+                write!(f, "only the prefix (`{}`) is present", prefix)
+            },
             DispatchError::MissingContent => write!(f, "message content is missing information"),
-            DispatchError::InvalidCommandName(name) =>
-                write!(f, "\"{}\" is not a valid command", name),
-            DispatchError::InvalidCommand(Some(group), command) => write!(
+            DispatchError::InvalidSubgroup(par, chi) => write!(
+                f,
+                "group {} is not a subgroup of {}",
+                chi.into_usize(),
+                par.into_usize()
+            ),
+            DispatchError::InvalidSubcommand(par, chi) => write!(
+                f,
+                "command {} is not a subcommand of {}",
+                chi.into_usize(),
+                par.into_usize()
+            ),
+            DispatchError::InvalidCommand(group, command) => write!(
                 f,
                 "command {} does not belong to group {}",
-                group.into_usize(),
-                command.into_usize()
+                command.into_usize(),
+                group.into_usize()
             ),
-            DispatchError::InvalidCommand(None, command) => write!(
-                f,
-                "command {} does not belong to any top-level group",
-                command.into_usize()
-            ),
+            DispatchError::InvalidCommandName(name) =>
+                write!(f, "name \"{}\" does not refer to any command", name),
             DispatchError::CheckFailed(name, _) => write!(f, "\"{}\" check failed", name),
         }
     }

@@ -35,8 +35,8 @@ pub struct Context<D = DefaultData, E = DefaultError> {
     pub conf: Arc<Mutex<Configuration<D, E>>>,
     /// Serenity's context type.
     pub serenity_ctx: SerenityContext,
-    /// The identifier of the group the command belongs to.
-    pub group_id: GroupId,
+    /// The identifier of the group the command belongs to, if it does.
+    pub group_id: Option<GroupId>,
     /// The identifier of the command.
     pub command_id: CommandId,
     /// The [prefix] that was used to invoke this command.
@@ -154,10 +154,14 @@ pub struct CheckContext<'a, D = DefaultData, E = DefaultError> {
     /// Serenity's context type.
     pub serenity_ctx: &'a SerenityContext,
     /// The identifier of the group that is being checked upon.
-    pub group_id: GroupId,
+    ///
+    /// This is `Some(...)` when the checks for a group are applied.
+    /// It may be `Some(...)` when the checks for a command are applied as well,
+    /// but only if the command belongs to a group.
+    pub group_id: Option<GroupId>,
     /// The identifier of the command that is being checked upon.
     ///
-    /// This is `Some(...)` when the checks for the command are applied.
+    /// This is `Some(...)` when the checks for a command are applied.
     pub command_id: Option<CommandId>,
 }
 

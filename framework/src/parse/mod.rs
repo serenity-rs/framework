@@ -5,5 +5,5 @@
 pub mod content;
 pub mod prefix;
 
-pub use content::{command, group};
+pub use content::{commands, groups};
 pub use prefix::content;

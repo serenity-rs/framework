@@ -164,21 +164,35 @@ impl<D, E> Framework<D, E> {
 
             let mut segments = Segments::new(&content, ' ', conf.case_insensitive);
 
-            let group = parse::group(&conf, &mut segments, |group| {
-                group_check(&self.data, &conf, &ctx, &msg, group)
-            })
-            .await?;
+            let mut group = None;
 
-            let (group, command) = parse::command(&conf, &mut segments, group, |group, command| {
-                command_check(&self.data, &conf, &ctx, &msg, group, command)
-            })
-            .await?;
+            for g in parse::groups(&conf, &mut segments) {
+                let g = g?;
+
+                if let Some(group) = g {
+                    group_check(&self.data, &conf, &ctx, &msg, group).await?;
+                }
+
+                group = g;
+            }
+
+            let mut command = None;
+
+            for cmd in parse::commands(&conf, &mut segments, group) {
+                let cmd = cmd?;
+
+                command_check(&self.data, &conf, &ctx, &msg, group, cmd).await?;
+
+                command = Some(cmd);
+            }
+
+            let command = command.unwrap();
 
             let args = segments.source();
 
             (
                 command.function,
-                group.id,
+                group.map(|g| g.id),
                 command.id,
                 prefix.to_string(),
                 args.to_string(),
@@ -210,7 +224,7 @@ async fn group_check<D, E>(
         data,
         conf,
         serenity_ctx,
-        group_id: group.id,
+        group_id: Some(group.id),
         command_id: None,
     };
 
@@ -231,14 +245,14 @@ async fn command_check<D, E>(
     conf: &Configuration<D, E>,
     serenity_ctx: &SerenityContext,
     msg: &Message,
-    group: &Group<D, E>,
+    group: Option<&Group<D, E>>,
     command: &Command<D, E>,
 ) -> Result<(), Error<E>> {
     let ctx = CheckContext {
         data,
         conf,
         serenity_ctx,
-        group_id: group.id,
+        group_id: group.map(|g| g.id),
         command_id: Some(command.id),
     };
 
