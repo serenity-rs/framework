@@ -122,13 +122,9 @@ impl<D, E> Configuration<D, E> {
 
     /// Assigns a group to this configuration.
     ///
-    /// The group is added to the [`groups`] list.
-    ///
-    /// A group without prefixes is automatically added to the [`top_level_groups`]
-    /// list instead of the [`groups`] list.
+    /// The group is added to the [`groups`] map.
     ///
     /// [`groups`]: Self::groups
-    /// [`top_level_groups`]: Self::top_level_groups
     pub fn group(&mut self, group: GroupConstructor<D, E>) -> &mut Self {
         let id = GroupId::from(group);
 
