@@ -214,6 +214,8 @@ impl<D, E> GroupBuilder<D, E> {
 
     /// Complete building a group.
     pub fn build(self) -> Group<D, E> {
+        assert!(!self.inner.prefixes.is_empty(), "a group must have at least one prefix");
+
         self.inner
     }
 }

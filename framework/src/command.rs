@@ -281,6 +281,8 @@ impl<D, E> CommandBuilder<D, E> {
 
     /// Complete building a command.
     pub fn build(self) -> Command<D, E> {
+        assert!(!self.inner.names.is_empty(), "a command must have at least one name");
+
         self.inner
     }
 }

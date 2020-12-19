@@ -131,8 +131,6 @@ impl<D, E> Configuration<D, E> {
         let mut group = group();
         group.id = id;
 
-        assert!(!group.prefixes.is_empty(), "groups cannot have no prefixes");
-
         for prefix in &group.prefixes {
             let prefix = if self.case_insensitive {
                 prefix.to_lowercase()
@@ -168,8 +166,6 @@ impl<D, E> Configuration<D, E> {
 
         let mut command = command();
         command.id = id;
-
-        assert!(!command.names.is_empty(), "command cannot have no names");
 
         for name in &command.names {
             let name = if self.case_insensitive {
