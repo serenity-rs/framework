@@ -280,6 +280,12 @@ impl<D, E> CommandBuilder<D, E> {
     }
 
     /// Complete building a command.
+    ///
+    /// # Panics
+    ///
+    /// This function may panic if:
+    ///
+    /// - The command that is about to be built is missing names.
     pub fn build(self) -> Command<D, E> {
         assert!(!self.inner.names.is_empty(), "a command must have at least one name");
 
