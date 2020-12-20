@@ -62,6 +62,7 @@ pub mod group;
 pub mod parse;
 pub mod prelude;
 pub mod utils;
+pub mod category;
 
 use command::Command;
 use command::{CommandFn, CommandResult};
