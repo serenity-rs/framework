@@ -134,6 +134,7 @@ pub struct CommandIterator<'a, 'b, 'c, D, E> {
     conf: &'a Configuration<D, E>,
     segments: &'b mut Segments<'c>,
     command: Option<&'a Command<D, E>>,
+    beginning: bool,
 }
 
 impl<'a, 'b, 'c, D, E> Iterator for CommandIterator<'a, 'b, 'c, D, E> {
@@ -147,7 +148,15 @@ impl<'a, 'b, 'c, D, E> Iterator for CommandIterator<'a, 'b, 'c, D, E> {
                 self.segments.next();
                 cmd
             },
-            None => return Some(Err(DispatchError::InvalidCommandName(name.into_owned()))),
+            // At least one valid command must be present in the message.
+            // After the first command, we do not care if the "name" is invalid,
+            // as it may be the argument to the command at that point.
+            None if self.beginning => {
+                self.beginning = false;
+
+                return Some(Err(DispatchError::InvalidCommandName(name.into_owned())));
+            },
+            None => return None,
         };
 
         if let Some(command) = self.command {
@@ -171,14 +180,14 @@ impl<'a, 'b, 'c, D, E> Iterator for CommandIterator<'a, 'b, 'c, D, E> {
 ///
 /// The iterator will return items of the type `Result<&`[`Command`]`,`[`DispatchError`]`>`.
 ///
-/// The `Result` signifies whether a given name for a command was existed and the the command
+/// The `Result` signifies whether a given name for the first command exists or the command
 /// belongs to the previous parsed command.
 ///
-/// If the first case is not satisfied, the [`InvalidCommandName`] error is returned. On the second
-/// case, the [`InvalidSubcommand`] error is returned.
+/// If the former case is not satisfied, the [`InvalidCommandName`] error is returned. On the
+/// latter case, the [`InvalidSubcommand`] error is returned.
 ///
 /// The `Option` returned from calling [`Iterator::next`] will signify whether the content had a
-/// command, or was empty.
+/// command, did not have a command, or was empty.
 ///
 /// [iter]: self::CommandIterator
 /// [`Command`]: crate::command::Command
@@ -193,5 +202,6 @@ pub fn commands<'a, 'b, 'c, D, E>(
         conf,
         segments,
         command: None,
+        beginning: true,
     }
 }
