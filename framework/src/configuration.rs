@@ -1,8 +1,8 @@
 //! Configuration of the framework.
 
+use crate::category::Category;
 use crate::command::{CommandConstructor, CommandId, CommandMap};
 use crate::context::PrefixContext;
-use crate::group::{GroupConstructor, GroupId, GroupMap};
 use crate::{DefaultData, DefaultError};
 
 use serenity::futures::future::BoxFuture;
@@ -31,11 +31,10 @@ pub struct Configuration<D = DefaultData, E = DefaultError> {
     ///
     /// If filled, this allows for invoking commands by mentioning the bot.
     pub on_mention: Option<String>,
-    /// An [`IdMap`] containing all [`Group`]s.
+    /// A list of [`Category`]s.
     ///
-    /// [`IdMap`]: crate::utils::IdMap
-    /// [`Group`]: crate::group::Group
-    pub groups: GroupMap<D, E>,
+    /// [`Category`]: crate::category::Category
+    pub categories: Vec<Category>,
     /// An [`IdMap`] containing all [`Command`]s.
     ///
     /// [`IdMap`]: crate::utils::IdMap
@@ -51,7 +50,7 @@ impl<D, E> Clone for Configuration<D, E> {
             case_insensitive: self.case_insensitive,
             no_dm_prefix: self.no_dm_prefix,
             on_mention: self.on_mention.clone(),
-            groups: self.groups.clone(),
+            categories: self.categories.clone(),
             commands: self.commands.clone(),
         }
     }
@@ -65,7 +64,7 @@ impl<D, E> Default for Configuration<D, E> {
             case_insensitive: false,
             no_dm_prefix: false,
             on_mention: None,
-            groups: GroupMap::default(),
+            categories: Vec::default(),
             commands: CommandMap::default(),
         }
     }
@@ -120,38 +119,13 @@ impl<D, E> Configuration<D, E> {
         self
     }
 
-    /// Assigns a group to this configuration.
+    /// Assigns a category to this configuration.
     ///
-    /// The group is added to the [`groups`] map.
+    /// The category is added to the [`categories`] list.
     ///
-    /// [`groups`]: Self::groups
-    pub fn group(&mut self, group: GroupConstructor<D, E>) -> &mut Self {
-        let id = GroupId::from(group);
-
-        let mut group = group();
-        group.id = id;
-
-        for prefix in &group.prefixes {
-            let prefix = if self.case_insensitive {
-                prefix.to_lowercase()
-            } else {
-                prefix.clone()
-            };
-
-            self.groups.insert_name(prefix, group.id);
-        }
-
-        for id in &group.subgroups {
-            let ctor: GroupConstructor<D, E> = id.into_constructor();
-            self.group(ctor);
-        }
-
-        for id in &group.commands {
-            let ctor: CommandConstructor<D, E> = id.into_constructor();
-            self.command(ctor);
-        }
-
-        self.groups.insert(group.id, group);
+    /// [`categories`]: Self::categories
+    pub fn category(&mut self, category: Category) -> &mut Self {
+        self.categories.push(category);
 
         self
     }
@@ -196,7 +170,7 @@ impl<D, E> fmt::Debug for Configuration<D, E> {
             .field("case_insensitive", &self.case_insensitive)
             .field("no_dm_prefix", &self.no_dm_prefix)
             .field("on_mention", &self.on_mention)
-            .field("groups", &self.groups)
+            .field("categories", &self.categories)
             .field("commands", &self.commands)
             .finish()
     }

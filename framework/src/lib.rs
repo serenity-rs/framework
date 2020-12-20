@@ -53,23 +53,21 @@ use std::error::Error as StdError;
 use std::future::Future;
 use std::sync::Arc;
 
+pub mod category;
 pub mod check;
 pub mod command;
 pub mod configuration;
 pub mod context;
 pub mod error;
-pub mod group;
 pub mod parse;
 pub mod prelude;
 pub mod utils;
-pub mod category;
 
 use command::Command;
 use command::{CommandFn, CommandResult};
 use configuration::Configuration;
 use context::{CheckContext, Context};
 use error::{DispatchError, Error};
-use group::Group;
 use utils::Segments;
 
 /// The default type for [user data][data] when it is unspecified.
@@ -149,7 +147,7 @@ impl<D, E> Framework<D, E> {
         F: FnOnce(Context<D, E>, Message, CommandFn<D, E>) -> Fut,
         Fut: Future<Output = CommandResult<(), E>>,
     {
-        let (func, group_id, command_id, prefix, args) = {
+        let (func, command_id, prefix, args) = {
             let conf = self.conf.lock().await;
 
             let (prefix, content) = match parse::content(&self.data, &conf, &ctx, &msg).await {
@@ -165,35 +163,25 @@ impl<D, E> Framework<D, E> {
 
             let mut segments = Segments::new(&content, ' ', conf.case_insensitive);
 
-            let mut group = None;
-
-            for g in parse::groups(&conf, &mut segments) {
-                let g = g?;
-
-                if let Some(group) = g {
-                    group_check(&self.data, &conf, &ctx, &msg, group).await?;
-                }
-
-                group = g;
-            }
-
             let mut command = None;
 
-            for cmd in parse::commands(&conf, &mut segments, group) {
+            for cmd in parse::commands(&conf, &mut segments) {
                 let cmd = cmd?;
 
-                command_check(&self.data, &conf, &ctx, &msg, group, cmd).await?;
+                command_check(&self.data, &conf, &ctx, &msg, cmd).await?;
 
                 command = Some(cmd);
             }
 
-            let command = command.unwrap();
+            let command = match command {
+                Some(cmd) => cmd,
+                None => return Err(Error::Dispatch(DispatchError::MissingContent)),
+            };
 
             let args = segments.source();
 
             (
                 command.function,
-                group.map(|g| g.id),
                 command.id,
                 prefix.to_string(),
                 args.to_string(),
@@ -204,7 +192,6 @@ impl<D, E> Framework<D, E> {
             data: Arc::clone(&self.data),
             conf: Arc::clone(&self.conf),
             serenity_ctx: ctx,
-            group_id,
             command_id,
             prefix,
             args,
@@ -214,47 +201,18 @@ impl<D, E> Framework<D, E> {
     }
 }
 
-async fn group_check<D, E>(
-    data: &Arc<RwLock<D>>,
-    conf: &Configuration<D, E>,
-    serenity_ctx: &SerenityContext,
-    msg: &Message,
-    group: &Group<D, E>,
-) -> Result<(), Error<E>> {
-    let ctx = CheckContext {
-        data,
-        conf,
-        serenity_ctx,
-        group_id: Some(group.id),
-        command_id: None,
-    };
-
-    if let Some(check) = &group.check {
-        if let Err(reason) = (check.function)(&ctx, msg).await {
-            return Err(Error::Dispatch(DispatchError::CheckFailed(
-                check.name.clone(),
-                reason,
-            )));
-        }
-    }
-
-    Ok(())
-}
-
 async fn command_check<D, E>(
     data: &Arc<RwLock<D>>,
     conf: &Configuration<D, E>,
     serenity_ctx: &SerenityContext,
     msg: &Message,
-    group: Option<&Group<D, E>>,
     command: &Command<D, E>,
 ) -> Result<(), Error<E>> {
     let ctx = CheckContext {
         data,
         conf,
         serenity_ctx,
-        group_id: group.map(|g| g.id),
-        command_id: Some(command.id),
+        command_id: command.id,
     };
 
     if let Some(check) = &command.check {

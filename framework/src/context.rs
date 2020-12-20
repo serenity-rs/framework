@@ -9,7 +9,6 @@
 
 use crate::command::CommandId;
 use crate::configuration::Configuration;
-use crate::group::GroupId;
 use crate::{DefaultData, DefaultError};
 
 use serenity::cache::Cache;
@@ -35,8 +34,6 @@ pub struct Context<D = DefaultData, E = DefaultError> {
     pub conf: Arc<Mutex<Configuration<D, E>>>,
     /// Serenity's context type.
     pub serenity_ctx: SerenityContext,
-    /// The identifier of the group the command belongs to, if it does.
-    pub group_id: Option<GroupId>,
     /// The identifier of the command.
     pub command_id: CommandId,
     /// The [prefix] that was used to invoke this command.
@@ -55,7 +52,6 @@ impl<D, E> Clone for Context<D, E> {
             data: Arc::clone(&self.data),
             conf: Arc::clone(&self.conf),
             serenity_ctx: self.serenity_ctx.clone(),
-            group_id: self.group_id,
             command_id: self.command_id,
             prefix: self.prefix.clone(),
             args: self.args.clone(),
@@ -153,16 +149,8 @@ pub struct CheckContext<'a, D = DefaultData, E = DefaultError> {
     pub conf: &'a Configuration<D, E>,
     /// Serenity's context type.
     pub serenity_ctx: &'a SerenityContext,
-    /// The identifier of the group that is being checked upon.
-    ///
-    /// This is `Some(...)` when the checks for a group are applied.
-    /// It may be `Some(...)` when the checks for a command are applied as well,
-    /// but only if the command belongs to a group.
-    pub group_id: Option<GroupId>,
     /// The identifier of the command that is being checked upon.
-    ///
-    /// This is `Some(...)` when the checks for a command are applied.
-    pub command_id: Option<CommandId>,
+    pub command_id: CommandId,
 }
 
 impl<'a, D, E> Clone for CheckContext<'a, D, E> {
@@ -171,7 +159,6 @@ impl<'a, D, E> Clone for CheckContext<'a, D, E> {
             data: self.data,
             conf: self.conf,
             serenity_ctx: self.serenity_ctx,
-            group_id: self.group_id,
             command_id: self.command_id,
         }
     }
