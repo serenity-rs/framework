@@ -1,12 +1,11 @@
 //! Functions and types relating to checks.
 //!
-//! A check is a function that can be plugged into a [command] or [group]
-//! to allow/deny a user's access. The check returns a [`CheckResult`] that
-//! indicates whether it succeeded or failed. In the case of failure, additional
-//! information can be given, a reason, that describes the failure.
+//! A check is a function that can be plugged into a [command] to allow/deny
+//! a user's access. The check returns a [`CheckResult`] that indicates whether
+//! it succeeded or failed. In the case of failure, additional information
+//! can be given, a reason, that describes the failure.
 //!
 //! [command]: crate::command
-//! [group]: crate::group
 
 use crate::context::CheckContext;
 use crate::{DefaultData, DefaultError};

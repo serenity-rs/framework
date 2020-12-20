@@ -121,11 +121,27 @@ impl<D, E> Configuration<D, E> {
 
     /// Assigns a category to this configuration.
     ///
-    /// The category is added to the [`categories`] list.
+    /// The category is added to the [`categories`] list. Additionally,
+    /// all of its commands [are added][cmd] to the [`commands`] map
     ///
     /// [`categories`]: Self::categories
-    pub fn category(&mut self, category: Category) -> &mut Self {
-        self.categories.push(category);
+    /// [`commands`]: Self::commands
+    /// [cmd]: Self::command
+    pub fn category<I>(&mut self, name: I, cmds: &[CommandConstructor<D, E>]) -> &mut Self
+    where
+        I: Into<String>,
+    {
+        let mut commands = Vec::with_capacity(cmds.len());
+
+        for cmd in cmds {
+            self.command(*cmd);
+            commands.push(CommandId::from(*cmd));
+        }
+
+        self.categories.push(Category {
+            name: name.into(),
+            commands,
+        });
 
         self
     }
@@ -137,6 +153,11 @@ impl<D, E> Configuration<D, E> {
     /// [`commands`]: Self::commands
     pub fn command(&mut self, command: CommandConstructor<D, E>) -> &mut Self {
         let id = CommandId::from(command);
+
+        // Avoid instantiating the command if the map already contains it.
+        if self.commands.contains_id(id) {
+            return self;
+        }
 
         let mut command = command();
         command.id = id;

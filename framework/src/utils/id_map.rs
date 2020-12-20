@@ -96,7 +96,7 @@ impl<Name, Id, Struct> IdMap<Name, Id, Struct> {
         self.structures.len()
     }
 
-    /// Returns the a boolean indicating that the map is empty.
+    /// Returns a boolean indicating that the map is empty.
     ///
     /// The map is regarded as empty when it contains no structures.
     pub fn is_empty(&self) -> bool {
@@ -203,16 +203,21 @@ where
         self.structures.get(&id).map(|aggr| (id, aggr))
     }
 
-    /// Returns a boolean indicating that a structure exists under a name
+    /// Returns a boolean indicating that a structure exists under a name.
     pub fn contains<B: ?Sized>(&self, name: &B) -> bool
     where
         Name: Borrow<B>,
         B: Hash + Eq,
     {
         match self.get_id(name) {
-            Some(id) => self.structures.contains_key(&id),
+            Some(id) => self.contains_id(id),
             None => false,
         }
+    }
+
+    /// Returns a boolean indicating that a structure exists under an identifier.
+    pub fn contains_id(&self, id: Id) -> bool {
+        self.structures.contains_key(&id)
     }
 }
 
