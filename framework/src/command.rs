@@ -1,8 +1,8 @@
 //! Functions and types relating to commands.
 //!
 //! A command is a function that performs work. It is invoked by a user on Discord.
-//! It may have many names by which it can be invoked, but will always at least one
-//! name. It may possess subcommands to arrange functionality together. It may have
+//! It may have many names by which it can be invoked, but will always have at least
+//! one name. It may possess subcommands to arrange functionality together. It may have
 //! information that relays to the user what it does, what it is for, and how it
 //! is used. It may have [`check`]s to allow/deny a user's access to the command.
 //!
