@@ -156,8 +156,6 @@ impl<'a, 'b, 'c, D, E> Iterator for CommandIterator<'a, 'b, 'c, D, E> {
             // After the first command, we do not care if the "name" is invalid,
             // as it may be the argument to the command at that point.
             None if self.beginning => {
-                self.beginning = false;
-
                 return Some(Err(DispatchError::InvalidCommandName(name.into_owned())));
             },
             None => return None,
@@ -170,6 +168,7 @@ impl<'a, 'b, 'c, D, E> Iterator for CommandIterator<'a, 'b, 'c, D, E> {
         }
 
         self.command = Some(cmd);
+        self.beginning = false;
 
         Some(Ok(cmd))
     }
