@@ -14,8 +14,10 @@ use serenity::prelude::RwLock;
 
 use std::sync::Arc;
 
-/// Parses a mention from the message. A mention is defined as text starting with `<@`,
-/// which may be followed by `!`, proceeded by a user id, and ended by a `>`.
+/// Parses a mention from the message.
+///
+/// A mention is defined as text starting with `<@`, which may be followed by `!`,
+/// proceeded by a user id, and ended by a `>`.
 ///
 /// This can be expressed in a regular expression as `<@!?\d+>`.
 ///
@@ -76,19 +78,21 @@ pub fn static_prefix<'a>(msg: &'a str, prefixes: &[String]) -> Option<(&'a str, 
         .map(|p| msg.split_at(p.len()))
 }
 
-/// Returns the content of the message after parsing a prefix. The content is defined
-/// as the substring of the message after the prefix. If the [`Configuration::no_dm_prefix`]
-/// option is enabled, the content is the whole message.
+/// Returns the content of the message after parsing a prefix.
+///
+/// The content is defined as the substring of the message after the prefix.
+/// If the [`Configuration::no_dm_prefix`] option is enabled, the content is
+/// the whole message.
 ///
 /// The prefix is defined as:
-/// 1: a [mention]
-/// 3: a [statically defined prefix from a list][prefixes]
-/// 2: or a [dynamically chosen prefix][dyn_prefix]
+/// 1. a [mention]
+/// 2. a [statically defined prefix from a list][prefixes]
+/// 3. or a [dynamically chosen prefix][dyn_prefix]
 ///
 /// It is parsed in that order.
 ///
-/// If [`Configuration::no_dm_prefix`] is `false` and no prefix is found, `None` is returned.
-/// Otherwise, the prefix and the content are returned.
+/// If [`Configuration::no_dm_prefix`] is `false` and no prefix is found,
+/// `None` is returned. Otherwise, the prefix and the content are returned.
 ///
 /// [`Configuration::no_dm_prefix`]: crate::configuration::Configuration::no_dm_prefix
 /// [prefixes]: static_prefix
@@ -181,10 +185,9 @@ impl<'a, 'b, 'c, D, E> Iterator for CommandIterator<'a, 'b, 'c, D, E> {
 /// The iterator will return items of the type `Result<&`[`Command`]`,`[`DispatchError`]`>`.
 ///
 /// The `Result` signifies whether a given name for the first command exists or the command
-/// belongs to the previous parsed command.
-///
-/// If the former case is not satisfied, the [`InvalidCommandName`] error is returned. On the
-/// latter case, the [`InvalidSubcommand`] error is returned.
+/// belongs to the previous parsed command. If the former case is not satisfied,
+/// the [`InvalidCommandName`] error is returned. On the latter case, the [`InvalidSubcommand`]
+/// error is returned.
 ///
 /// The `Option` returned from calling [`Iterator::next`] will signify whether the content had a
 /// command, did not have a command, or was empty.

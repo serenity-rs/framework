@@ -27,20 +27,10 @@
 //! not processed by the framework, as it is the responsibility of each command
 //! to decide the correct format of its arguments, and how they should be parsed.
 //!
-//! All commands have be assigned to *groups*. Groups are a collection of commands,
-//! which most likely share a theme, such as moderation. Groups may
-//! participate in the invocation on one of its commands if they have *prefixes*
-//! (not to confuse with invocation prefixes). If a group has prefixes, they must be
-//! present in the command invocation. Assumming `mod` is a prefix, and `kick` is a
-//! command of the group:
-//!
-//! ```text
-//! !mod kick @clyde
-//! ```
-//!
-//! Groups without prefixes are called Top Level Groups, as they can only appear once
-//! at the beginning of the message implicitly. They are transparent, or "invisible"
-//! to the user on Discord.
+//! Commands may be *categorized*. A category is a list of individual commands
+//! with a common theme, such as moderation. They do not participate in command
+//! invocation. They are used to register commands in bulk and display related
+//! commands in the help command.
 //!
 //! [Serenity]: https://github.com/serenity-rs/serenity
 

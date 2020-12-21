@@ -23,7 +23,7 @@ pub struct Configuration<D = DefaultData, E = DefaultError> {
     /// A function to dynamically parse the prefix.
     pub dynamic_prefix: Option<DynamicPrefix<D, E>>,
     /// A boolean indicating whether casing of the letters in static prefixes,
-    /// group prefixes, or command names does not matter.
+    /// or command names does not matter.
     pub case_insensitive: bool,
     /// A boolean indicating whether the prefix is not necessary in direct messages.
     pub no_dm_prefix: bool,
@@ -96,7 +96,7 @@ impl<D, E> Configuration<D, E> {
     }
 
     /// Assigns a boolean indicating whether the casing of letters in static prefixes,
-    /// group prefixes or command names does not matter.
+    /// or command names does not matter.
     pub fn case_insensitive(&mut self, b: bool) -> &mut Self {
         self.case_insensitive = b;
 
