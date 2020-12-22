@@ -1,6 +1,6 @@
 <!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `framework/src/configuration.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>configuration.rs - source</title><link rel="stylesheet" type="text/css" href="../../normalize.css"><link rel="stylesheet" type="text/css" href="../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../light.css"  id="themeStyle"><link rel="stylesheet" type="text/css" href="../../dark.css" disabled ><link rel="stylesheet" type="text/css" href="../../ayu.css" disabled ><script id="default-settings"></script><script src="../../storage.js"></script><noscript><link rel="stylesheet" href="../../noscript.css"></noscript><link rel="icon" type="image/svg+xml" href="../../favicon.svg">
 <link rel="alternate icon" type="image/png" href="../../favicon-16x16.png">
-<link rel="alternate icon" type="image/png" href="../../favicon-32x32.png"><style type="text/css">#crate-search{background-image:url("../../down-arrow.svg");}</style></head><body class="rustdoc source"><!--[if lte IE 8]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="sidebar-menu">&#9776;</div><a href='../../serenity_framework/index.html'><div class='logo-container rust-logo'><img src='../../rust-logo.png' alt='logo'></div></a></nav><div class="theme-picker"><button id="theme-picker" aria-label="Pick another theme!" aria-haspopup="menu"><img src="../../brush.svg" width="18" alt="Pick another theme!"></button><div id="theme-choices" role="menu"></div></div><script src="../../theme.js"></script><nav class="sub"><form class="search-form"><div class="search-container"><div><select id="crate-search"><option value="All crates">All crates</option></select><input class="search-input" name="search" disabled autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"></div><span class="help-button">?</span>
+<link rel="alternate icon" type="image/png" href="../../favicon-32x32.png"><style type="text/css">#crate-search{background-image:url("../../down-arrow.svg");}</style></head><body class="rustdoc source"><!--[if lte IE 8]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="sidebar-menu">&#9776;</div><a href='../../serenity_framework/index.html'><div class='logo-container rust-logo'><img src='../../rust-logo.png' alt='logo'></div></a></nav><div class="theme-picker"><button id="theme-picker" aria-label="Pick another theme!" aria-haspopup="menu"><img src="../../brush.svg" width="18" alt="Pick another theme!"></button><div id="theme-choices" role="menu"></div></div><script src="../../theme.js"></script><nav class="sub"><form class="search-form"><div class="search-container"><div><select id="crate-search"><option value="All crates">All crates</option></select><input class="search-input" name="search" disabled autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"></div><button type="button" class="help-button">?</button>
                 <a id="settings-menu" href="../../settings.html"><img src="../../wheel.svg" width="18" alt="Change settings"></a></div></form></nav><section id="main" class="content"><pre class="line-numbers"><span id="1">  1</span>
 <span id="2">  2</span>
 <span id="3">  3</span>
@@ -199,48 +199,12 @@
 <span id="196">196</span>
 <span id="197">197</span>
 <span id="198">198</span>
-<span id="199">199</span>
-<span id="200">200</span>
-<span id="201">201</span>
-<span id="202">202</span>
-<span id="203">203</span>
-<span id="204">204</span>
-<span id="205">205</span>
-<span id="206">206</span>
-<span id="207">207</span>
-<span id="208">208</span>
-<span id="209">209</span>
-<span id="210">210</span>
-<span id="211">211</span>
-<span id="212">212</span>
-<span id="213">213</span>
-<span id="214">214</span>
-<span id="215">215</span>
-<span id="216">216</span>
-<span id="217">217</span>
-<span id="218">218</span>
-<span id="219">219</span>
-<span id="220">220</span>
-<span id="221">221</span>
-<span id="222">222</span>
-<span id="223">223</span>
-<span id="224">224</span>
-<span id="225">225</span>
-<span id="226">226</span>
-<span id="227">227</span>
-<span id="228">228</span>
-<span id="229">229</span>
-<span id="230">230</span>
-<span id="231">231</span>
-<span id="232">232</span>
-<span id="233">233</span>
-<span id="234">234</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="doccomment">//! Configuration of the framework.</span>
 
+<span class="kw">use</span> <span class="kw">crate</span>::<span class="ident">category</span>::<span class="ident">Category</span>;
 <span class="kw">use</span> <span class="kw">crate</span>::<span class="ident">command</span>::{<span class="ident">CommandConstructor</span>, <span class="ident">CommandId</span>, <span class="ident">CommandMap</span>};
 <span class="kw">use</span> <span class="kw">crate</span>::<span class="ident">context</span>::<span class="ident">PrefixContext</span>;
-<span class="kw">use</span> <span class="kw">crate</span>::<span class="ident">group</span>::{<span class="ident">Group</span>, <span class="ident">GroupConstructor</span>, <span class="ident">GroupId</span>, <span class="ident">GroupMap</span>};
 <span class="kw">use</span> <span class="kw">crate</span>::{<span class="ident">DefaultData</span>, <span class="ident">DefaultError</span>};
 
 <span class="kw">use</span> <span class="ident">serenity</span>::<span class="ident">futures</span>::<span class="ident">future</span>::<span class="ident">BoxFuture</span>;
@@ -261,7 +225,7 @@
     <span class="doccomment">/// A function to dynamically parse the prefix.</span>
     <span class="kw">pub</span> <span class="ident">dynamic_prefix</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">DynamicPrefix</span><span class="op">&lt;</span><span class="ident">D</span>, <span class="ident">E</span><span class="op">&gt;</span><span class="op">&gt;</span>,
     <span class="doccomment">/// A boolean indicating whether casing of the letters in static prefixes,</span>
-    <span class="doccomment">/// group prefixes, or command names does not matter.</span>
+    <span class="doccomment">/// or command names does not matter.</span>
     <span class="kw">pub</span> <span class="ident">case_insensitive</span>: <span class="ident">bool</span>,
     <span class="doccomment">/// A boolean indicating whether the prefix is not necessary in direct messages.</span>
     <span class="kw">pub</span> <span class="ident">no_dm_prefix</span>: <span class="ident">bool</span>,
@@ -269,17 +233,10 @@
     <span class="doccomment">///</span>
     <span class="doccomment">/// If filled, this allows for invoking commands by mentioning the bot.</span>
     <span class="kw">pub</span> <span class="ident">on_mention</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span>,
-    <span class="doccomment">/// An [`IdMap`] containing all [`Group`]s.</span>
+    <span class="doccomment">/// A list of [`Category`]s.</span>
     <span class="doccomment">///</span>
-    <span class="doccomment">/// [`IdMap`]: crate::utils::IdMap</span>
-    <span class="doccomment">/// [`Group`]: crate::group::Group</span>
-    <span class="kw">pub</span> <span class="ident">groups</span>: <span class="ident">GroupMap</span><span class="op">&lt;</span><span class="ident">D</span>, <span class="ident">E</span><span class="op">&gt;</span>,
-    <span class="doccomment">/// A list of prefixless [`Group`]s.</span>
-    <span class="doccomment">///</span>
-    <span class="doccomment">/// These are invisible to the user on Discord.</span>
-    <span class="doccomment">///</span>
-    <span class="doccomment">/// [`Group`]: crate::group::Group</span>
-    <span class="kw">pub</span> <span class="ident">top_level_groups</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Group</span><span class="op">&lt;</span><span class="ident">D</span>, <span class="ident">E</span><span class="op">&gt;</span><span class="op">&gt;</span>,
+    <span class="doccomment">/// [`Category`]: crate::category::Category</span>
+    <span class="kw">pub</span> <span class="ident">categories</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Category</span><span class="op">&gt;</span>,
     <span class="doccomment">/// An [`IdMap`] containing all [`Command`]s.</span>
     <span class="doccomment">///</span>
     <span class="doccomment">/// [`IdMap`]: crate::utils::IdMap</span>
@@ -295,8 +252,7 @@
             <span class="ident">case_insensitive</span>: <span class="self">self</span>.<span class="ident">case_insensitive</span>,
             <span class="ident">no_dm_prefix</span>: <span class="self">self</span>.<span class="ident">no_dm_prefix</span>,
             <span class="ident">on_mention</span>: <span class="self">self</span>.<span class="ident">on_mention</span>.<span class="ident">clone</span>(),
-            <span class="ident">groups</span>: <span class="self">self</span>.<span class="ident">groups</span>.<span class="ident">clone</span>(),
-            <span class="ident">top_level_groups</span>: <span class="self">self</span>.<span class="ident">top_level_groups</span>.<span class="ident">clone</span>(),
+            <span class="ident">categories</span>: <span class="self">self</span>.<span class="ident">categories</span>.<span class="ident">clone</span>(),
             <span class="ident">commands</span>: <span class="self">self</span>.<span class="ident">commands</span>.<span class="ident">clone</span>(),
         }
     }
@@ -310,8 +266,7 @@
             <span class="ident">case_insensitive</span>: <span class="bool-val">false</span>,
             <span class="ident">no_dm_prefix</span>: <span class="bool-val">false</span>,
             <span class="ident">on_mention</span>: <span class="prelude-val">None</span>,
-            <span class="ident">groups</span>: <span class="ident">GroupMap</span>::<span class="ident">default</span>(),
-            <span class="ident">top_level_groups</span>: <span class="ident">Vec</span>::<span class="ident">default</span>(),
+            <span class="ident">categories</span>: <span class="ident">Vec</span>::<span class="ident">default</span>(),
             <span class="ident">commands</span>: <span class="ident">CommandMap</span>::<span class="ident">default</span>(),
         }
     }
@@ -343,7 +298,7 @@
     }
 
     <span class="doccomment">/// Assigns a boolean indicating whether the casing of letters in static prefixes,</span>
-    <span class="doccomment">/// group prefixes or command names does not matter.</span>
+    <span class="doccomment">/// or command names does not matter.</span>
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">case_insensitive</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">b</span>: <span class="ident">bool</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">Self</span> {
         <span class="self">self</span>.<span class="ident">case_insensitive</span> <span class="op">=</span> <span class="ident">b</span>;
 
@@ -366,75 +321,48 @@
         <span class="self">self</span>
     }
 
-    <span class="kw">fn</span> <span class="ident">_group</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">group</span>: <span class="ident">Group</span><span class="op">&lt;</span><span class="ident">D</span>, <span class="ident">E</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">Self</span> {
-        <span class="kw">for</span> <span class="ident">prefix</span> <span class="kw">in</span> <span class="kw-2">&amp;</span><span class="ident">group</span>.<span class="ident">prefixes</span> {
-            <span class="kw">let</span> <span class="ident">prefix</span> <span class="op">=</span> <span class="kw">if</span> <span class="self">self</span>.<span class="ident">case_insensitive</span> {
-                <span class="ident">prefix</span>.<span class="ident">to_lowercase</span>()
-            } <span class="kw">else</span> {
-                <span class="ident">prefix</span>.<span class="ident">clone</span>()
-            };
+    <span class="doccomment">/// Assigns a category to this configuration.</span>
+    <span class="doccomment">///</span>
+    <span class="doccomment">/// The category is added to the [`categories`] list. Additionally,</span>
+    <span class="doccomment">/// all of its commands [are added][cmd] to the [`commands`] map</span>
+    <span class="doccomment">///</span>
+    <span class="doccomment">/// [`categories`]: Self::categories</span>
+    <span class="doccomment">/// [`commands`]: Self::commands</span>
+    <span class="doccomment">/// [cmd]: Self::command</span>
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">category</span><span class="op">&lt;</span><span class="ident">I</span><span class="op">&gt;</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">name</span>: <span class="ident">I</span>, <span class="ident">cmds</span>: <span class="kw-2">&amp;</span>[<span class="ident">CommandConstructor</span><span class="op">&lt;</span><span class="ident">D</span>, <span class="ident">E</span><span class="op">&gt;</span>]) <span class="op">-</span><span class="op">&gt;</span> <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">Self</span>
+    <span class="kw">where</span>
+        <span class="ident">I</span>: <span class="ident">Into</span><span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span>,
+    {
+        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">commands</span> <span class="op">=</span> <span class="ident">Vec</span>::<span class="ident">with_capacity</span>(<span class="ident">cmds</span>.<span class="ident">len</span>());
 
-            <span class="self">self</span>.<span class="ident">groups</span>.<span class="ident">insert_name</span>(<span class="ident">prefix</span>, <span class="ident">group</span>.<span class="ident">id</span>);
+        <span class="kw">for</span> <span class="ident">cmd</span> <span class="kw">in</span> <span class="ident">cmds</span> {
+            <span class="self">self</span>.<span class="ident">command</span>(<span class="kw-2">*</span><span class="ident">cmd</span>);
+            <span class="ident">commands</span>.<span class="ident">push</span>(<span class="ident">CommandId</span>::<span class="ident">from</span>(<span class="kw-2">*</span><span class="ident">cmd</span>));
         }
 
-        <span class="kw">for</span> <span class="ident">id</span> <span class="kw">in</span> <span class="kw-2">&amp;</span><span class="ident">group</span>.<span class="ident">subgroups</span> {
-            <span class="kw">let</span> <span class="ident">ctor</span>: <span class="ident">GroupConstructor</span><span class="op">&lt;</span><span class="ident">D</span>, <span class="ident">E</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">id</span>.<span class="ident">into_constructor</span>();
-
-            <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">subgroup</span> <span class="op">=</span> <span class="ident">ctor</span>();
-            <span class="ident">subgroup</span>.<span class="ident">id</span> <span class="op">=</span> <span class="kw-2">*</span><span class="ident">id</span>;
-            <span class="self">self</span>.<span class="ident">_group</span>(<span class="ident">subgroup</span>);
-        }
-
-        <span class="kw">for</span> <span class="ident">id</span> <span class="kw">in</span> <span class="kw-2">&amp;</span><span class="ident">group</span>.<span class="ident">commands</span> {
-            <span class="kw">let</span> <span class="ident">ctor</span>: <span class="ident">CommandConstructor</span><span class="op">&lt;</span><span class="ident">D</span>, <span class="ident">E</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">id</span>.<span class="ident">into_constructor</span>();
-            <span class="self">self</span>.<span class="ident">command</span>(<span class="ident">ctor</span>);
-        }
-
-        <span class="self">self</span>.<span class="ident">groups</span>.<span class="ident">insert</span>(<span class="ident">group</span>.<span class="ident">id</span>, <span class="ident">group</span>);
+        <span class="self">self</span>.<span class="ident">categories</span>.<span class="ident">push</span>(<span class="ident">Category</span> {
+            <span class="ident">name</span>: <span class="ident">name</span>.<span class="ident">into</span>(),
+            <span class="ident">commands</span>,
+        });
 
         <span class="self">self</span>
     }
 
-    <span class="doccomment">/// Assigns a group to this configuration.</span>
-    <span class="doccomment">///</span>
-    <span class="doccomment">/// The group is added to the [`groups`] list.</span>
-    <span class="doccomment">///</span>
-    <span class="doccomment">/// A group without prefixes is automatically added to the [`top_level_groups`]</span>
-    <span class="doccomment">/// list instead of the [`groups`] list.</span>
-    <span class="doccomment">///</span>
-    <span class="doccomment">/// [`groups`]: Self::groups</span>
-    <span class="doccomment">/// [`top_level_groups`]: Self::top_level_groups</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">group</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">group</span>: <span class="ident">GroupConstructor</span><span class="op">&lt;</span><span class="ident">D</span>, <span class="ident">E</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">Self</span> {
-        <span class="kw">let</span> <span class="ident">id</span> <span class="op">=</span> <span class="ident">GroupId</span>::<span class="ident">from</span>(<span class="ident">group</span>);
-
-        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">group</span> <span class="op">=</span> <span class="ident">group</span>();
-        <span class="ident">group</span>.<span class="ident">id</span> <span class="op">=</span> <span class="ident">id</span>;
-
-        <span class="kw">if</span> <span class="ident">group</span>.<span class="ident">prefixes</span>.<span class="ident">is_empty</span>() {
-            <span class="macro">assert</span><span class="macro">!</span>(
-                <span class="ident">group</span>.<span class="ident">subgroups</span>.<span class="ident">is_empty</span>(),
-                <span class="string">&quot;top level groups must not have prefixes nor subgroups&quot;</span>
-            );
-
-            <span class="self">self</span>.<span class="ident">top_level_groups</span>.<span class="ident">push</span>(<span class="ident">group</span>);
-            <span class="kw">return</span> <span class="self">self</span>;
-        }
-
-        <span class="self">self</span>.<span class="ident">_group</span>(<span class="ident">group</span>)
-    }
-
     <span class="doccomment">/// Assigns a command to this configuration.</span>
     <span class="doccomment">///</span>
-    <span class="doccomment">/// The command is added to the [`commands`] list.</span>
+    <span class="doccomment">/// The command is added to the [`commands`] map.</span>
     <span class="doccomment">///</span>
     <span class="doccomment">/// [`commands`]: Self::commands</span>
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">command</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">command</span>: <span class="ident">CommandConstructor</span><span class="op">&lt;</span><span class="ident">D</span>, <span class="ident">E</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">Self</span> {
         <span class="kw">let</span> <span class="ident">id</span> <span class="op">=</span> <span class="ident">CommandId</span>::<span class="ident">from</span>(<span class="ident">command</span>);
 
+        <span class="comment">// Avoid instantiating the command if the map already contains it.</span>
+        <span class="kw">if</span> <span class="self">self</span>.<span class="ident">commands</span>.<span class="ident">contains_id</span>(<span class="ident">id</span>) {
+            <span class="kw">return</span> <span class="self">self</span>;
+        }
+
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">command</span> <span class="op">=</span> <span class="ident">command</span>();
         <span class="ident">command</span>.<span class="ident">id</span> <span class="op">=</span> <span class="ident">id</span>;
-
-        <span class="macro">assert</span><span class="macro">!</span>(<span class="op">!</span><span class="ident">command</span>.<span class="ident">names</span>.<span class="ident">is_empty</span>(), <span class="string">&quot;command cannot have no names&quot;</span>);
 
         <span class="kw">for</span> <span class="ident">name</span> <span class="kw">in</span> <span class="kw-2">&amp;</span><span class="ident">command</span>.<span class="ident">names</span> {
             <span class="kw">let</span> <span class="ident">name</span> <span class="op">=</span> <span class="kw">if</span> <span class="self">self</span>.<span class="ident">case_insensitive</span> {
@@ -443,7 +371,7 @@
                 <span class="ident">name</span>.<span class="ident">clone</span>()
             };
 
-            <span class="self">self</span>.<span class="ident">commands</span>.<span class="ident">insert_name</span>(<span class="ident">name</span>, <span class="ident">id</span>);
+            <span class="self">self</span>.<span class="ident">commands</span>.<span class="ident">insert_name</span>(<span class="ident">name</span>, <span class="ident">command</span>.<span class="ident">id</span>);
         }
 
         <span class="kw">for</span> <span class="ident">id</span> <span class="kw">in</span> <span class="kw-2">&amp;</span><span class="ident">command</span>.<span class="ident">subcommands</span> {
@@ -451,7 +379,8 @@
             <span class="self">self</span>.<span class="ident">command</span>(<span class="ident">ctor</span>);
         }
 
-        <span class="self">self</span>.<span class="ident">commands</span>.<span class="ident">insert</span>(<span class="ident">id</span>, <span class="ident">command</span>);
+        <span class="self">self</span>.<span class="ident">commands</span>.<span class="ident">insert</span>(<span class="ident">command</span>.<span class="ident">id</span>, <span class="ident">command</span>);
+
         <span class="self">self</span>
     }
 }
@@ -464,8 +393,7 @@
             .<span class="ident">field</span>(<span class="string">&quot;case_insensitive&quot;</span>, <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">case_insensitive</span>)
             .<span class="ident">field</span>(<span class="string">&quot;no_dm_prefix&quot;</span>, <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">no_dm_prefix</span>)
             .<span class="ident">field</span>(<span class="string">&quot;on_mention&quot;</span>, <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">on_mention</span>)
-            .<span class="ident">field</span>(<span class="string">&quot;groups&quot;</span>, <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">groups</span>)
-            .<span class="ident">field</span>(<span class="string">&quot;top_level_groups&quot;</span>, <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">top_level_groups</span>)
+            .<span class="ident">field</span>(<span class="string">&quot;categories&quot;</span>, <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">categories</span>)
             .<span class="ident">field</span>(<span class="string">&quot;commands&quot;</span>, <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">commands</span>)
             .<span class="ident">finish</span>()
     }

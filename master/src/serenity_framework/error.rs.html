@@ -1,6 +1,6 @@
 <!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `framework/src/error.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>error.rs - source</title><link rel="stylesheet" type="text/css" href="../../normalize.css"><link rel="stylesheet" type="text/css" href="../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../light.css"  id="themeStyle"><link rel="stylesheet" type="text/css" href="../../dark.css" disabled ><link rel="stylesheet" type="text/css" href="../../ayu.css" disabled ><script id="default-settings"></script><script src="../../storage.js"></script><noscript><link rel="stylesheet" href="../../noscript.css"></noscript><link rel="icon" type="image/svg+xml" href="../../favicon.svg">
 <link rel="alternate icon" type="image/png" href="../../favicon-16x16.png">
-<link rel="alternate icon" type="image/png" href="../../favicon-32x32.png"><style type="text/css">#crate-search{background-image:url("../../down-arrow.svg");}</style></head><body class="rustdoc source"><!--[if lte IE 8]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="sidebar-menu">&#9776;</div><a href='../../serenity_framework/index.html'><div class='logo-container rust-logo'><img src='../../rust-logo.png' alt='logo'></div></a></nav><div class="theme-picker"><button id="theme-picker" aria-label="Pick another theme!" aria-haspopup="menu"><img src="../../brush.svg" width="18" alt="Pick another theme!"></button><div id="theme-choices" role="menu"></div></div><script src="../../theme.js"></script><nav class="sub"><form class="search-form"><div class="search-container"><div><select id="crate-search"><option value="All crates">All crates</option></select><input class="search-input" name="search" disabled autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"></div><span class="help-button">?</span>
+<link rel="alternate icon" type="image/png" href="../../favicon-32x32.png"><style type="text/css">#crate-search{background-image:url("../../down-arrow.svg");}</style></head><body class="rustdoc source"><!--[if lte IE 8]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="sidebar-menu">&#9776;</div><a href='../../serenity_framework/index.html'><div class='logo-container rust-logo'><img src='../../rust-logo.png' alt='logo'></div></a></nav><div class="theme-picker"><button id="theme-picker" aria-label="Pick another theme!" aria-haspopup="menu"><img src="../../brush.svg" width="18" alt="Pick another theme!"></button><div id="theme-choices" role="menu"></div></div><script src="../../theme.js"></script><nav class="sub"><form class="search-form"><div class="search-container"><div><select id="crate-search"><option value="All crates">All crates</option></select><input class="search-input" name="search" disabled autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"></div><button type="button" class="help-button">?</button>
                 <a id="settings-menu" href="../../settings.html"><img src="../../wheel.svg" width="18" alt="Change settings"></a></div></form></nav><section id="main" class="content"><pre class="line-numbers"><span id="1"> 1</span>
 <span id="2"> 2</span>
 <span id="3"> 3</span>
@@ -89,17 +89,11 @@
 <span id="86">86</span>
 <span id="87">87</span>
 <span id="88">88</span>
-<span id="89">89</span>
-<span id="90">90</span>
-<span id="91">91</span>
-<span id="92">92</span>
-<span id="93">93</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="doccomment">//! Defines error types used by the framework.</span>
 
 <span class="kw">use</span> <span class="kw">crate</span>::<span class="ident">check</span>::<span class="ident">Reason</span>;
 <span class="kw">use</span> <span class="kw">crate</span>::<span class="ident">command</span>::<span class="ident">CommandId</span>;
-<span class="kw">use</span> <span class="kw">crate</span>::<span class="ident">group</span>::<span class="ident">GroupId</span>;
 <span class="kw">use</span> <span class="kw">crate</span>::<span class="ident">DefaultError</span>;
 
 <span class="kw">use</span> <span class="ident">std</span>::<span class="ident">error</span>::<span class="ident">Error</span> <span class="kw">as</span> <span class="ident">StdError</span>;
@@ -114,13 +108,13 @@
     <span class="ident">NormalMessage</span>,
     <span class="doccomment">/// The message only contains a prefix. Contains the prefix.</span>
     <span class="ident">PrefixOnly</span>(<span class="ident">String</span>),
-    <span class="doccomment">/// The message is missing information needed to complete its command invocation.</span>
+    <span class="doccomment">/// The message is missing information needed for a proper command invocation.</span>
     <span class="ident">MissingContent</span>,
-    <span class="doccomment">/// An invalid name for a command was passed.</span>
+    <span class="doccomment">/// The message contains two commands that are not parent and child.</span>
+    <span class="doccomment">/// Contains the ID of the &quot;parent&quot; command and the ID of the &quot;child&quot; command.</span>
+    <span class="ident">InvalidSubcommand</span>(<span class="ident">CommandId</span>, <span class="ident">CommandId</span>),
+    <span class="doccomment">/// The message contains a name not belonging to any command.</span>
     <span class="ident">InvalidCommandName</span>(<span class="ident">String</span>),
-    <span class="doccomment">/// An invalid command was passed. Contains the ID to the group (if it was present),</span>
-    <span class="doccomment">/// which the command, whose ID is also contained, does not belong to.</span>
-    <span class="ident">InvalidCommand</span>(<span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">GroupId</span><span class="op">&gt;</span>, <span class="ident">CommandId</span>),
     <span class="doccomment">/// A check failed. Contains its name and the reasoning why it failed.</span>
     <span class="ident">CheckFailed</span>(<span class="ident">String</span>, <span class="ident">Reason</span>),
 }
@@ -131,22 +125,18 @@
             <span class="ident">DispatchError</span>::<span class="ident">NormalMessage</span> <span class="op">=</span><span class="op">&gt;</span> {
                 <span class="macro">write</span><span class="macro">!</span>(<span class="ident">f</span>, <span class="string">&quot;message is normal&quot;</span>)
             },
-            <span class="ident">DispatchError</span>::<span class="ident">PrefixOnly</span>(<span class="ident">prefix</span>) <span class="op">=</span><span class="op">&gt;</span>
-                <span class="macro">write</span><span class="macro">!</span>(<span class="ident">f</span>, <span class="string">&quot;only the prefix (`{}`) is present&quot;</span>, <span class="ident">prefix</span>),
+            <span class="ident">DispatchError</span>::<span class="ident">PrefixOnly</span>(<span class="ident">prefix</span>) <span class="op">=</span><span class="op">&gt;</span> {
+                <span class="macro">write</span><span class="macro">!</span>(<span class="ident">f</span>, <span class="string">&quot;only the prefix (`{}`) is present&quot;</span>, <span class="ident">prefix</span>)
+            },
             <span class="ident">DispatchError</span>::<span class="ident">MissingContent</span> <span class="op">=</span><span class="op">&gt;</span> <span class="macro">write</span><span class="macro">!</span>(<span class="ident">f</span>, <span class="string">&quot;message content is missing information&quot;</span>),
+            <span class="ident">DispatchError</span>::<span class="ident">InvalidSubcommand</span>(<span class="ident">par</span>, <span class="ident">chi</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="macro">write</span><span class="macro">!</span>(
+                <span class="ident">f</span>,
+                <span class="string">&quot;command {} is not a subcommand of {}&quot;</span>,
+                <span class="ident">chi</span>.<span class="ident">into_usize</span>(),
+                <span class="ident">par</span>.<span class="ident">into_usize</span>()
+            ),
             <span class="ident">DispatchError</span>::<span class="ident">InvalidCommandName</span>(<span class="ident">name</span>) <span class="op">=</span><span class="op">&gt;</span>
-                <span class="macro">write</span><span class="macro">!</span>(<span class="ident">f</span>, <span class="string">&quot;\&quot;{}\&quot; is not a valid command&quot;</span>, <span class="ident">name</span>),
-            <span class="ident">DispatchError</span>::<span class="ident">InvalidCommand</span>(<span class="prelude-val">Some</span>(<span class="ident">group</span>), <span class="ident">command</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="macro">write</span><span class="macro">!</span>(
-                <span class="ident">f</span>,
-                <span class="string">&quot;command {} does not belong to group {}&quot;</span>,
-                <span class="ident">group</span>.<span class="ident">into_usize</span>(),
-                <span class="ident">command</span>.<span class="ident">into_usize</span>()
-            ),
-            <span class="ident">DispatchError</span>::<span class="ident">InvalidCommand</span>(<span class="prelude-val">None</span>, <span class="ident">command</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="macro">write</span><span class="macro">!</span>(
-                <span class="ident">f</span>,
-                <span class="string">&quot;command {} does not belong to any top-level group&quot;</span>,
-                <span class="ident">command</span>.<span class="ident">into_usize</span>()
-            ),
+                <span class="macro">write</span><span class="macro">!</span>(<span class="ident">f</span>, <span class="string">&quot;name \&quot;{}\&quot; does not refer to any command&quot;</span>, <span class="ident">name</span>),
             <span class="ident">DispatchError</span>::<span class="ident">CheckFailed</span>(<span class="ident">name</span>, <span class="kw">_</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="macro">write</span><span class="macro">!</span>(<span class="ident">f</span>, <span class="string">&quot;\&quot;{}\&quot; check failed&quot;</span>, <span class="ident">name</span>),
         }
     }
