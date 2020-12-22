@@ -75,6 +75,21 @@
 <span id="72">72</span>
 <span id="73">73</span>
 <span id="74">74</span>
+<span id="75">75</span>
+<span id="76">76</span>
+<span id="77">77</span>
+<span id="78">78</span>
+<span id="79">79</span>
+<span id="80">80</span>
+<span id="81">81</span>
+<span id="82">82</span>
+<span id="83">83</span>
+<span id="84">84</span>
+<span id="85">85</span>
+<span id="86">86</span>
+<span id="87">87</span>
+<span id="88">88</span>
+<span id="89">89</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="kw">use</span> <span class="ident">proc_macro</span>::<span class="ident">TokenStream</span>;
 
@@ -83,7 +98,8 @@
 <span class="kw">use</span> <span class="ident">syn</span>::<span class="ident">parse</span>;
 <span class="kw">use</span> <span class="ident">syn</span>::<span class="ident">punctuated</span>::<span class="ident">Punctuated</span>;
 <span class="kw">use</span> <span class="ident">syn</span>::<span class="ident">spanned</span>::<span class="ident">Spanned</span>;
-<span class="kw">use</span> <span class="ident">syn</span>::{<span class="ident">Error</span>, <span class="ident">FnArg</span>, <span class="ident">ItemFn</span>, <span class="ident">Lifetime</span>, <span class="prelude-ty">Result</span>, <span class="ident">ReturnType</span>, <span class="ident">Signature</span>, <span class="ident">Token</span>, <span class="ident">Type</span>};
+<span class="kw">use</span> <span class="ident">syn</span>::{<span class="ident">Error</span>, <span class="ident">FnArg</span>, <span class="ident">GenericParam</span>, <span class="ident">Generics</span>, <span class="ident">ItemFn</span>, <span class="ident">Lifetime</span>};
+<span class="kw">use</span> <span class="ident">syn</span>::{<span class="ident">LifetimeDef</span>, <span class="prelude-ty">Result</span>, <span class="ident">ReturnType</span>, <span class="ident">Signature</span>, <span class="ident">Token</span>, <span class="ident">Type</span>};
 
 <span class="kw">use</span> <span class="ident">quote</span>::<span class="ident">quote</span>;
 
@@ -111,6 +127,7 @@
         <span class="ident">ident</span>,
         <span class="kw-2">mut</span> <span class="ident">inputs</span>,
         <span class="ident">output</span>,
+        <span class="kw-2">mut</span> <span class="ident">generics</span>,
         ..
     } <span class="op">=</span> <span class="ident">sig</span>;
 
@@ -123,11 +140,12 @@
         <span class="ident">ReturnType</span>::<span class="ident">Type</span>(<span class="kw">_</span>, <span class="ident">t</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="macro">quote</span><span class="macro">!</span>(#<span class="ident">t</span>),
     };
 
+    <span class="ident">add_fut_lifetime</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">generics</span>);
     <span class="ident">populate_lifetime</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">inputs</span>);
 
     <span class="kw">let</span> <span class="ident">result</span> <span class="op">=</span> <span class="macro">quote</span><span class="macro">!</span> {
         #(#<span class="ident">attrs</span>)<span class="op">*</span>
-        #<span class="ident">vis</span> <span class="kw">fn</span> #<span class="ident">ident</span><span class="op">&lt;</span><span class="lifetime">&#39;fut</span><span class="op">&gt;</span>(#<span class="ident">inputs</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">std</span>::<span class="ident">pin</span>::<span class="ident">Pin</span><span class="op">&lt;</span><span class="ident">Box</span><span class="op">&lt;</span><span class="ident">dyn</span> <span class="ident">std</span>::<span class="ident">future</span>::<span class="ident">Future</span><span class="op">&lt;</span><span class="ident">Output</span> <span class="op">=</span> #<span class="ident">output</span><span class="op">&gt;</span> <span class="op">+</span> <span class="lifetime">&#39;fut</span> <span class="op">+</span> <span class="ident">Send</span><span class="op">&gt;</span><span class="op">&gt;</span> {
+        #<span class="ident">vis</span> <span class="kw">fn</span> #<span class="ident">ident</span> #<span class="ident">generics</span> (#<span class="ident">inputs</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">std</span>::<span class="ident">pin</span>::<span class="ident">Pin</span><span class="op">&lt;</span><span class="ident">Box</span><span class="op">&lt;</span><span class="ident">dyn</span> <span class="ident">std</span>::<span class="ident">future</span>::<span class="ident">Future</span><span class="op">&lt;</span><span class="ident">Output</span> <span class="op">=</span> #<span class="ident">output</span><span class="op">&gt;</span> <span class="op">+</span> <span class="lifetime">&#39;fut</span> <span class="op">+</span> <span class="ident">Send</span><span class="op">&gt;</span><span class="op">&gt;</span> {
             <span class="ident">Box</span>::<span class="ident">pin</span>(<span class="ident">async</span> <span class="kw">move</span> {
                 <span class="comment">// Nudge the compiler into providing us with a good error message</span>
                 <span class="comment">// when the return type of the body does not match with the return</span>
@@ -139,6 +157,18 @@
     };
 
     <span class="prelude-val">Ok</span>(<span class="ident">result</span>.<span class="ident">into</span>())
+}
+
+<span class="kw">fn</span> <span class="ident">add_fut_lifetime</span>(<span class="ident">generics</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">Generics</span>) {
+    <span class="ident">generics</span>.<span class="ident">params</span>.<span class="ident">insert</span>(
+        <span class="number">0</span>,
+        <span class="ident">GenericParam</span>::<span class="ident">Lifetime</span>(<span class="ident">LifetimeDef</span> {
+            <span class="ident">attrs</span>: <span class="ident">Vec</span>::<span class="ident">default</span>(),
+            <span class="ident">lifetime</span>: <span class="ident">Lifetime</span>::<span class="ident">new</span>(<span class="string">&quot;&#39;fut&quot;</span>, <span class="ident">Span</span>::<span class="ident">call_site</span>()),
+            <span class="ident">colon_token</span>: <span class="prelude-val">None</span>,
+            <span class="ident">bounds</span>: <span class="ident">Punctuated</span>::<span class="ident">default</span>(),
+        }),
+    );
 }
 
 <span class="kw">fn</span> <span class="ident">populate_lifetime</span>(<span class="ident">inputs</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">Punctuated</span><span class="op">&lt;</span><span class="ident">FnArg</span>, <span class="macro">Token</span><span class="macro">!</span>[,]<span class="op">&gt;</span>) {
