@@ -5,7 +5,8 @@ use proc_macro2::{Span, TokenStream as TokenStream2};
 use syn::parse;
 use syn::punctuated::Punctuated;
 use syn::spanned::Spanned;
-use syn::{Error, FnArg, ItemFn, Lifetime, Result, ReturnType, Signature, Token, Type};
+use syn::{Error, FnArg, GenericParam, Generics, ItemFn, Lifetime};
+use syn::{LifetimeDef, Result, ReturnType, Signature, Token, Type};
 
 use quote::quote;
 
@@ -33,6 +34,7 @@ pub fn impl_hook(attr: TokenStream, input: TokenStream) -> Result<TokenStream> {
         ident,
         mut inputs,
         output,
+        mut generics,
         ..
     } = sig;
 
@@ -45,11 +47,12 @@ pub fn impl_hook(attr: TokenStream, input: TokenStream) -> Result<TokenStream> {
         ReturnType::Type(_, t) => quote!(#t),
     };
 
+    add_fut_lifetime(&mut generics);
     populate_lifetime(&mut inputs);
 
     let result = quote! {
         #(#attrs)*
-        #vis fn #ident<'fut>(#inputs) -> std::pin::Pin<Box<dyn std::future::Future<Output = #output> + 'fut + Send>> {
+        #vis fn #ident #generics (#inputs) -> std::pin::Pin<Box<dyn std::future::Future<Output = #output> + 'fut + Send>> {
             Box::pin(async move {
                 // Nudge the compiler into providing us with a good error message
                 // when the return type of the body does not match with the return
@@ -61,6 +64,18 @@ pub fn impl_hook(attr: TokenStream, input: TokenStream) -> Result<TokenStream> {
     };
 
     Ok(result.into())
+}
+
+fn add_fut_lifetime(generics: &mut Generics) {
+    generics.params.insert(
+        0,
+        GenericParam::Lifetime(LifetimeDef {
+            attrs: Vec::default(),
+            lifetime: Lifetime::new("'fut", Span::call_site()),
+            colon_token: None,
+            bounds: Punctuated::default(),
+        }),
+    );
 }
 
 fn populate_lifetime(inputs: &mut Punctuated<FnArg, Token![,]>) {
