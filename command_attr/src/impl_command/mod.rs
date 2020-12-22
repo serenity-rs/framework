@@ -7,7 +7,6 @@ use syn::parse;
 use syn::{Attribute, ItemFn, Result, Type};
 
 mod options;
-
 pub fn impl_command(attr: TokenStream, input: TokenStream) -> Result<TokenStream> {
     let mut fun = parse::<ItemFn>(input)?;
 

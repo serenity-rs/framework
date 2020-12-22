@@ -1,8 +1,8 @@
 //! Configuration of the framework.
 
+use crate::category::Category;
 use crate::command::{CommandConstructor, CommandId, CommandMap};
 use crate::context::PrefixContext;
-use crate::group::{Group, GroupConstructor, GroupId, GroupMap};
 use crate::{DefaultData, DefaultError};
 
 use serenity::futures::future::BoxFuture;
@@ -23,7 +23,7 @@ pub struct Configuration<D = DefaultData, E = DefaultError> {
     /// A function to dynamically parse the prefix.
     pub dynamic_prefix: Option<DynamicPrefix<D, E>>,
     /// A boolean indicating whether casing of the letters in static prefixes,
-    /// group prefixes, or command names does not matter.
+    /// or command names does not matter.
     pub case_insensitive: bool,
     /// A boolean indicating whether the prefix is not necessary in direct messages.
     pub no_dm_prefix: bool,
@@ -31,17 +31,10 @@ pub struct Configuration<D = DefaultData, E = DefaultError> {
     ///
     /// If filled, this allows for invoking commands by mentioning the bot.
     pub on_mention: Option<String>,
-    /// An [`IdMap`] containing all [`Group`]s.
+    /// A list of [`Category`]s.
     ///
-    /// [`IdMap`]: crate::utils::IdMap
-    /// [`Group`]: crate::group::Group
-    pub groups: GroupMap<D, E>,
-    /// A list of prefixless [`Group`]s.
-    ///
-    /// These are invisible to the user on Discord.
-    ///
-    /// [`Group`]: crate::group::Group
-    pub top_level_groups: Vec<Group<D, E>>,
+    /// [`Category`]: crate::category::Category
+    pub categories: Vec<Category>,
     /// An [`IdMap`] containing all [`Command`]s.
     ///
     /// [`IdMap`]: crate::utils::IdMap
@@ -57,8 +50,7 @@ impl<D, E> Clone for Configuration<D, E> {
             case_insensitive: self.case_insensitive,
             no_dm_prefix: self.no_dm_prefix,
             on_mention: self.on_mention.clone(),
-            groups: self.groups.clone(),
-            top_level_groups: self.top_level_groups.clone(),
+            categories: self.categories.clone(),
             commands: self.commands.clone(),
         }
     }
@@ -72,8 +64,7 @@ impl<D, E> Default for Configuration<D, E> {
             case_insensitive: false,
             no_dm_prefix: false,
             on_mention: None,
-            groups: GroupMap::default(),
-            top_level_groups: Vec::default(),
+            categories: Vec::default(),
             commands: CommandMap::default(),
         }
     }
@@ -105,7 +96,7 @@ impl<D, E> Configuration<D, E> {
     }
 
     /// Assigns a boolean indicating whether the casing of letters in static prefixes,
-    /// group prefixes or command names does not matter.
+    /// or command names does not matter.
     pub fn case_insensitive(&mut self, b: bool) -> &mut Self {
         self.case_insensitive = b;
 
@@ -128,75 +119,48 @@ impl<D, E> Configuration<D, E> {
         self
     }
 
-    fn _group(&mut self, group: Group<D, E>) -> &mut Self {
-        for prefix in &group.prefixes {
-            let prefix = if self.case_insensitive {
-                prefix.to_lowercase()
-            } else {
-                prefix.clone()
-            };
+    /// Assigns a category to this configuration.
+    ///
+    /// The category is added to the [`categories`] list. Additionally,
+    /// all of its commands [are added][cmd] to the [`commands`] map
+    ///
+    /// [`categories`]: Self::categories
+    /// [`commands`]: Self::commands
+    /// [cmd]: Self::command
+    pub fn category<I>(&mut self, name: I, cmds: &[CommandConstructor<D, E>]) -> &mut Self
+    where
+        I: Into<String>,
+    {
+        let mut commands = Vec::with_capacity(cmds.len());
 
-            self.groups.insert_name(prefix, group.id);
+        for cmd in cmds {
+            self.command(*cmd);
+            commands.push(CommandId::from(*cmd));
         }
 
-        for id in &group.subgroups {
-            let ctor: GroupConstructor<D, E> = id.into_constructor();
-
-            let mut subgroup = ctor();
-            subgroup.id = *id;
-            self._group(subgroup);
-        }
-
-        for id in &group.commands {
-            let ctor: CommandConstructor<D, E> = id.into_constructor();
-            self.command(ctor);
-        }
-
-        self.groups.insert(group.id, group);
+        self.categories.push(Category {
+            name: name.into(),
+            commands,
+        });
 
         self
     }
 
-    /// Assigns a group to this configuration.
-    ///
-    /// The group is added to the [`groups`] list.
-    ///
-    /// A group without prefixes is automatically added to the [`top_level_groups`]
-    /// list instead of the [`groups`] list.
-    ///
-    /// [`groups`]: Self::groups
-    /// [`top_level_groups`]: Self::top_level_groups
-    pub fn group(&mut self, group: GroupConstructor<D, E>) -> &mut Self {
-        let id = GroupId::from(group);
-
-        let mut group = group();
-        group.id = id;
-
-        if group.prefixes.is_empty() {
-            assert!(
-                group.subgroups.is_empty(),
-                "top level groups must not have prefixes nor subgroups"
-            );
-
-            self.top_level_groups.push(group);
-            return self;
-        }
-
-        self._group(group)
-    }
-
     /// Assigns a command to this configuration.
     ///
-    /// The command is added to the [`commands`] list.
+    /// The command is added to the [`commands`] map.
     ///
     /// [`commands`]: Self::commands
     pub fn command(&mut self, command: CommandConstructor<D, E>) -> &mut Self {
         let id = CommandId::from(command);
 
+        // Avoid instantiating the command if the map already contains it.
+        if self.commands.contains_id(id) {
+            return self;
+        }
+
         let mut command = command();
         command.id = id;
-
-        assert!(!command.names.is_empty(), "command cannot have no names");
 
         for name in &command.names {
             let name = if self.case_insensitive {
@@ -205,7 +169,7 @@ impl<D, E> Configuration<D, E> {
                 name.clone()
             };
 
-            self.commands.insert_name(name, id);
+            self.commands.insert_name(name, command.id);
         }
 
         for id in &command.subcommands {
@@ -213,7 +177,8 @@ impl<D, E> Configuration<D, E> {
             self.command(ctor);
         }
 
-        self.commands.insert(id, command);
+        self.commands.insert(command.id, command);
+
         self
     }
 }
@@ -226,8 +191,7 @@ impl<D, E> fmt::Debug for Configuration<D, E> {
             .field("case_insensitive", &self.case_insensitive)
             .field("no_dm_prefix", &self.no_dm_prefix)
             .field("on_mention", &self.on_mention)
-            .field("groups", &self.groups)
-            .field("top_level_groups", &self.top_level_groups)
+            .field("categories", &self.categories)
             .field("commands", &self.commands)
             .finish()
     }

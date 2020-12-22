@@ -1,12 +1,11 @@
 //! Functions and types relating to checks.
 //!
-//! A check is a function that can be plugged into a [command] or [group]
-//! to allow/deny a user's access. The check returns a [`CheckResult`] that
-//! indicates whether it succeeded or failed. In the case of failure, additional
-//! information can be given, a reason, that describes the failure.
+//! A check is a function that can be plugged into a [command] to allow/deny
+//! a user's access. The check returns a [`Result`] that indicates whether
+//! it succeeded or failed. In the case of failure, additional information
+//! can be given, a reason, that describes the failure.
 //!
 //! [command]: crate::command
-//! [group]: crate::group
 
 use crate::context::CheckContext;
 use crate::{DefaultData, DefaultError};
@@ -14,7 +13,8 @@ use crate::{DefaultData, DefaultError};
 use serenity::futures::future::BoxFuture;
 use serenity::model::channel::Message;
 
-use std::fmt;
+use std::error::Error as StdError;
+use std::fmt::{self, Display};
 
 /// The reason describing why a check failed.
 ///
@@ -39,6 +39,19 @@ pub enum Reason {
         log: String,
     },
 }
+
+impl Display for Reason {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::Unknown => f.write_str("Unknown"),
+            Self::User(msg) => write!(f, "User: {}", msg),
+            Self::Log(msg) => write!(f, "Log: {}", msg),
+            Self::UserAndLog { user, log } => write!(f, "User: {}; Log: {}", user, log),
+        }
+    }
+}
+
+impl StdError for Reason {}
 
 /// The result type of a [check function][fn]
 ///

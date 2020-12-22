@@ -27,20 +27,10 @@
 //! not processed by the framework, as it is the responsibility of each command
 //! to decide the correct format of its arguments, and how they should be parsed.
 //!
-//! All commands have be assigned to *groups*. Groups are a collection of commands,
-//! which most likely share a theme, such as moderation. Groups may
-//! participate in the invocation on one of its commands if they have *prefixes*
-//! (not to confuse with invocation prefixes). If a group has prefixes, they must be
-//! present in the command invocation. Assumming `mod` is a prefix, and `kick` is a
-//! command of the group:
-//!
-//! ```text
-//! !mod kick @clyde
-//! ```
-//!
-//! Groups without prefixes are called Top Level Groups, as they can only appear once
-//! at the beginning of the message implicitly. They are transparent, or "invisible"
-//! to the user on Discord.
+//! Commands may be *categorized*. A category is a list of individual commands
+//! with a common theme, such as moderation. They do not participate in command
+//! invocation. They are used to register commands in bulk and display related
+//! commands in the help command.
 //!
 //! [Serenity]: https://github.com/serenity-rs/serenity
 
@@ -53,12 +43,12 @@ use std::error::Error as StdError;
 use std::future::Future;
 use std::sync::Arc;
 
+pub mod category;
 pub mod check;
 pub mod command;
 pub mod configuration;
 pub mod context;
 pub mod error;
-pub mod group;
 pub mod parse;
 pub mod prelude;
 pub mod utils;
@@ -68,7 +58,6 @@ use command::{CommandFn, CommandResult};
 use configuration::Configuration;
 use context::{CheckContext, Context};
 use error::{DispatchError, Error};
-use group::Group;
 use utils::Segments;
 
 /// The default type for [user data][data] when it is unspecified.
@@ -148,7 +137,7 @@ impl<D, E> Framework<D, E> {
         F: FnOnce(Context<D, E>, Message, CommandFn<D, E>) -> Fut,
         Fut: Future<Output = CommandResult<(), E>>,
     {
-        let (func, group_id, command_id, prefix, args) = {
+        let (func, command_id, prefix, args) = {
             let conf = self.conf.lock().await;
 
             let (prefix, content) = match parse::content(&self.data, &conf, &ctx, &msg).await {
@@ -164,21 +153,25 @@ impl<D, E> Framework<D, E> {
 
             let mut segments = Segments::new(&content, ' ', conf.case_insensitive);
 
-            let group = parse::group(&conf, &mut segments, |group| {
-                group_check(&self.data, &conf, &ctx, &msg, group)
-            })
-            .await?;
+            let mut command = None;
 
-            let (group, command) = parse::command(&conf, &mut segments, group, |group, command| {
-                command_check(&self.data, &conf, &ctx, &msg, group, command)
-            })
-            .await?;
+            for cmd in parse::commands(&conf, &mut segments) {
+                let cmd = cmd?;
+
+                command_check(&self.data, &conf, &ctx, &msg, cmd).await?;
+
+                command = Some(cmd);
+            }
+
+            let command = match command {
+                Some(cmd) => cmd,
+                None => return Err(Error::Dispatch(DispatchError::MissingContent)),
+            };
 
             let args = segments.source();
 
             (
                 command.function,
-                group.id,
                 command.id,
                 prefix.to_string(),
                 args.to_string(),
@@ -189,7 +182,6 @@ impl<D, E> Framework<D, E> {
             data: Arc::clone(&self.data),
             conf: Arc::clone(&self.conf),
             serenity_ctx: ctx,
-            group_id,
             command_id,
             prefix,
             args,
@@ -199,47 +191,18 @@ impl<D, E> Framework<D, E> {
     }
 }
 
-async fn group_check<D, E>(
-    data: &Arc<RwLock<D>>,
-    conf: &Configuration<D, E>,
-    serenity_ctx: &SerenityContext,
-    msg: &Message,
-    group: &Group<D, E>,
-) -> Result<(), Error<E>> {
-    let ctx = CheckContext {
-        data,
-        conf,
-        serenity_ctx,
-        group_id: group.id,
-        command_id: None,
-    };
-
-    if let Some(check) = &group.check {
-        if let Err(reason) = (check.function)(&ctx, msg).await {
-            return Err(Error::Dispatch(DispatchError::CheckFailed(
-                check.name.clone(),
-                reason,
-            )));
-        }
-    }
-
-    Ok(())
-}
-
 async fn command_check<D, E>(
     data: &Arc<RwLock<D>>,
     conf: &Configuration<D, E>,
     serenity_ctx: &SerenityContext,
     msg: &Message,
-    group: &Group<D, E>,
     command: &Command<D, E>,
 ) -> Result<(), Error<E>> {
     let ctx = CheckContext {
         data,
         conf,
         serenity_ctx,
-        group_id: group.id,
-        command_id: Some(command.id),
+        command_id: command.id,
     };
 
     if let Some(check) = &command.check {
