@@ -1,8 +1,6 @@
-use proc_macro::TokenStream;
+use proc_macro2::{Span, TokenStream};
 
-use proc_macro2::{Span, TokenStream as TokenStream2};
-
-use syn::parse;
+use syn::parse2;
 use syn::punctuated::Punctuated;
 use syn::spanned::Spanned;
 use syn::{Error, FnArg, GenericParam, Generics, ItemFn, Lifetime};
@@ -12,14 +10,13 @@ use quote::quote;
 
 pub fn impl_hook(attr: TokenStream, input: TokenStream) -> Result<TokenStream> {
     if !attr.is_empty() {
-        let attr = TokenStream2::from(attr);
         return Err(Error::new(
             attr.span(),
             "parameters to the `#[hook]` macro are ignored",
         ));
     }
 
-    let fun = parse::<ItemFn>(input)?;
+    let fun = parse2::<ItemFn>(input)?;
 
     let ItemFn {
         attrs,
@@ -63,7 +60,7 @@ pub fn impl_hook(attr: TokenStream, input: TokenStream) -> Result<TokenStream> {
         }
     };
 
-    Ok(result.into())
+    Ok(result)
 }
 
 fn add_fut_lifetime(generics: &mut Generics) {

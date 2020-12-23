@@ -1,27 +1,25 @@
-use crate::utils::{self, Attr, AttributeArgs};
+use crate::utils::{self, AttributeArgs};
 
-use proc_macro::TokenStream;
-use proc_macro2::{Ident, TokenStream as TokenStream2};
+use proc_macro2::{Ident, TokenStream};
 use quote::{format_ident, quote};
-use syn::parse;
-use syn::{Attribute, ItemFn, Result, Type};
+use syn::parse2;
+use syn::{ItemFn, Result, Type};
 
 mod options;
+
 pub fn impl_command(attr: TokenStream, input: TokenStream) -> Result<TokenStream> {
-    let mut fun = parse::<ItemFn>(input)?;
+    let mut fun = parse2::<ItemFn>(input)?;
 
     let names = if attr.is_empty() {
         vec![fun.sig.ident.to_string()]
     } else {
-        parse::<AttributeArgs>(attr)?.0
+        parse2::<AttributeArgs>(attr)?.0
     };
 
-    let (builtin, docs) = parse_attributes(&mut fun)?;
+    let ctx = Context::new(&fun)?;
 
-    let common = Common::new(&fun)?;
-
-    let builder_fn = common.builder_fn(&mut fun, names, builtin, docs)?;
-    let command_fn = common.command_fn(&fun);
+    let builder_fn = builder_fn(&ctx, &mut fun, names)?;
+    let command_fn = command_fn(&ctx, &fun);
 
     let result = quote! {
         #builder_fn
@@ -29,39 +27,16 @@ pub fn impl_command(attr: TokenStream, input: TokenStream) -> Result<TokenStream
         #command_fn
     };
 
-    Ok(result.into())
+    Ok(result)
 }
 
-fn parse_attributes(function: &mut ItemFn) -> Result<(Vec<Attr>, Vec<Attribute>)> {
-    const COMMAND_ATTRIBUTES: &[&str] = &[
-        "subcommand",
-        "subcommands",
-        "description",
-        "dynamic_description",
-        "usage",
-        "dynamic_usage",
-        "example",
-        "dynamic_examples",
-        "help_available",
-        "check",
-    ];
-
-    let (docs, rest) = utils::filter_attributes(&function.attrs, &["doc"]);
-    let (builtin, external) = utils::filter_attributes(&rest, COMMAND_ATTRIBUTES);
-    let attributes = utils::parse_attributes(&builtin)?;
-
-    function.attrs = external;
-
-    Ok((attributes, docs))
-}
-
-struct Common {
+struct Context {
     crate_name: Ident,
     data: Box<Type>,
     error: Box<Type>,
 }
 
-impl Common {
+impl Context {
     fn new(function: &ItemFn) -> Result<Self> {
         let crate_name = utils::crate_name();
         let default_data = utils::default_data(&crate_name);
@@ -75,71 +50,64 @@ impl Common {
             error,
         })
     }
+}
 
-    fn command_type(&self) -> TokenStream2 {
-        let Common {
-            crate_name,
-            data,
-            error,
-        } = self;
+fn command_type(ctx: &Context) -> TokenStream {
+    let Context {
+        crate_name,
+        data,
+        error,
+    } = ctx;
 
-        quote! {
-            #crate_name::command::Command<#data, #error>
+    quote! {
+        #crate_name::command::Command<#data, #error>
+    }
+}
+
+fn command_builder_type(ctx: &Context) -> TokenStream {
+    let crate_name = &ctx.crate_name;
+
+    quote! {
+        #crate_name::command::CommandBuilder
+    }
+}
+
+fn command_fn(ctx: &Context, function: &ItemFn) -> TokenStream {
+    let crate_name = &ctx.crate_name;
+
+    quote! {
+        #[#crate_name::prelude::hook]
+        #[doc(hidden)]
+        #function
+    }
+}
+
+fn builder_fn(ctx: &Context, function: &mut ItemFn, mut names: Vec<String>) -> Result<TokenStream> {
+    let name = names.remove(0);
+    let aliases = names;
+
+    // Derive the name of the builder from the command function.
+    // Prepend the command function's name with an underscore to avoid name
+    // collisions.
+    let builder_name = function.sig.ident.clone();
+    let function_name = format_ident!("_{}", builder_name);
+    function.sig.ident = function_name.clone();
+
+    let command_builder = command_builder_type(ctx);
+    let command = command_type(ctx);
+
+    let vis = function.vis.clone();
+    let (builtin, external) = options::parse_options(&function.attrs)?;
+    function.attrs = external.clone();
+
+    Ok(quote! {
+        #(#external)*
+        #vis fn #builder_name() -> #command {
+            #command_builder::new(#name)
+                #(.name(#aliases))*
+                .function(#function_name)
+                #builtin
+                .build()
         }
-    }
-
-    fn command_builder_type(&self) -> TokenStream2 {
-        let crate_name = &self.crate_name;
-
-        quote! {
-            #crate_name::command::CommandBuilder
-        }
-    }
-
-    fn command_fn(&self, function: &ItemFn) -> TokenStream2 {
-        let crate_name = &self.crate_name;
-
-        quote! {
-            #[#crate_name::prelude::hook]
-            #[doc(hidden)]
-            #function
-        }
-    }
-
-    fn builder_fn(
-        &self,
-        function: &mut ItemFn,
-        mut names: Vec<String>,
-        builtin: Vec<Attr>,
-        docs: Vec<Attribute>,
-    ) -> Result<TokenStream2> {
-        let name = names.remove(0);
-        let aliases = names;
-
-        // Derive the name of the builder from the command function.
-        // Prepend the command function's name with an underscore to avoid name
-        // collisions.
-        let builder_name = function.sig.ident.clone();
-        let function_name = format_ident!("_{}", builder_name);
-        function.sig.ident = function_name.clone();
-
-        let command_builder = self.command_builder_type();
-        let command = self.command_type();
-
-        let vis = function.vis.clone();
-        let external = function.attrs.clone();
-        let builtin = options::parse_options(&builtin)?;
-
-        Ok(quote! {
-            #(#docs)*
-            #(#external)*
-            #vis fn #builder_name() -> #command {
-                #command_builder::new(#name)
-                    #(.name(#aliases))*
-                    .function(#function_name)
-                    #builtin
-                    .build()
-            }
-        })
-    }
+    })
 }
