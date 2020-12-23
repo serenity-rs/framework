@@ -151,7 +151,7 @@ impl<D, E> Framework<D, E> {
                 )));
             }
 
-            let mut segments = Segments::new(&content, ' ', conf.case_insensitive);
+            let mut segments = Segments::new(&content, " ", conf.case_insensitive);
 
             let mut command = None;
 

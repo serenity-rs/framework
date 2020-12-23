@@ -1,7 +1,6 @@
 //! Defines error types used by the framework.
 
 use crate::check::Reason;
-use crate::command::CommandId;
 use crate::DefaultError;
 
 use std::error::Error as StdError;
@@ -18,9 +17,6 @@ pub enum DispatchError {
     PrefixOnly(String),
     /// The message is missing information needed for a proper command invocation.
     MissingContent,
-    /// The message contains two commands that are not parent and child.
-    /// Contains the ID of the "parent" command and the ID of the "child" command.
-    InvalidSubcommand(CommandId, CommandId),
     /// The message contains a name not belonging to any command.
     InvalidCommandName(String),
     /// A check failed. Contains its name and the reasoning why it failed.
@@ -37,12 +33,6 @@ impl fmt::Display for DispatchError {
                 write!(f, "only the prefix (`{}`) is present", prefix)
             },
             DispatchError::MissingContent => write!(f, "message content is missing information"),
-            DispatchError::InvalidSubcommand(par, chi) => write!(
-                f,
-                "command {} is not a subcommand of {}",
-                chi.into_usize(),
-                par.into_usize()
-            ),
             DispatchError::InvalidCommandName(name) =>
                 write!(f, "name \"{}\" does not refer to any command", name),
             DispatchError::CheckFailed(name, _) => write!(f, "\"{}\" check failed", name),

@@ -145,25 +145,33 @@ impl<'a, 'b, 'c, D, E> Iterator for CommandIterator<'a, 'b, 'c, D, E> {
     type Item = Result<&'a Command<D, E>, DispatchError>;
 
     fn next(&mut self) -> Option<Self::Item> {
-        let name = self.segments.current()?;
+        let checkpoint = self.segments.source();
+        let name = self.segments.next()?;
 
         let cmd = match self.conf.commands.get_by_name(&*name) {
-            Some(cmd) => {
-                self.segments.next();
-                cmd
+            Some(cmd) => cmd,
+            None => {
+                self.segments.set_source(checkpoint);
+
+                // At least one valid command must be present in the message.
+                // After the first command, we do not care if the "name" is invalid,
+                // as it may be the argument to the command at that point.
+                if self.beginning {
+                    return Some(Err(DispatchError::InvalidCommandName(name.into_owned())));
+                }
+
+                return None;
             },
-            // At least one valid command must be present in the message.
-            // After the first command, we do not care if the "name" is invalid,
-            // as it may be the argument to the command at that point.
-            None if self.beginning => {
-                return Some(Err(DispatchError::InvalidCommandName(name.into_owned())));
-            },
-            None => return None,
         };
 
         if let Some(command) = self.command {
             if !command.subcommands.contains(&cmd.id) {
-                return Some(Err(DispatchError::InvalidSubcommand(command.id, cmd.id)));
+                // We received a command, but it's not a subcommand of the previously
+                // parsed command. Interpret it as an argument instead.
+                //
+                // This enables user-defined `help` commands.
+                self.segments.set_source(checkpoint);
+                return None;
             }
         }
 
@@ -183,10 +191,8 @@ impl<'a, 'b, 'c, D, E> Iterator for CommandIterator<'a, 'b, 'c, D, E> {
 ///
 /// The iterator will return items of the type `Result<&`[`Command`]`,`[`DispatchError`]`>`.
 ///
-/// The `Result` signifies whether a given name for the first command exists or the command
-/// belongs to the previous parsed command. If the former case is not satisfied,
-/// the [`InvalidCommandName`] error is returned. On the latter case, the [`InvalidSubcommand`]
-/// error is returned.
+/// The `Result` signifies whether a given name for the first command exists.
+/// If it is not the case, the [`InvalidCommandName`] error is returned.
 ///
 /// The `Option` returned from calling [`Iterator::next`] will signify whether the content had a
 /// command, did not have a command, or was empty.
@@ -195,7 +201,6 @@ impl<'a, 'b, 'c, D, E> Iterator for CommandIterator<'a, 'b, 'c, D, E> {
 /// [`Command`]: crate::command::Command
 /// [`DispatchError`]: crate::error::DispatchError
 /// [`InvalidCommandName`]: crate::error::DispatchError::InvalidCommandName
-/// [`InvalidSubcommand`]: crate::error::DispatchError::InvalidSubcommand
 pub fn commands<'a, 'b, 'c, D, E>(
     conf: &'a Configuration<D, E>,
     segments: &'b mut Segments<'c>,
