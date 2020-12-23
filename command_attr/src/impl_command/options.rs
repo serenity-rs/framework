@@ -1,108 +1,110 @@
 use crate::utils::{parse_bool, parse_identifier, parse_identifiers, parse_string, Attr};
 
-use proc_macro2::TokenStream as TokenStream2;
+use proc_macro2::TokenStream;
 use quote::quote;
-use syn::spanned::Spanned;
-use syn::{Error, Result};
+use syn::{Attribute, Result};
 
-pub fn parse_options(builtin: &[Attr]) -> Result<TokenStream2> {
-    let mut stream = TokenStream2::new();
+use std::convert::TryInto;
 
-    for attr in builtin {
+pub fn parse_options(attrs: &[Attribute]) -> Result<(TokenStream, Vec<Attribute>)> {
+    let mut stream = TokenStream::new();
+    let mut normal = Vec::new();
+
+    for attr in attrs {
         let name = attr.path.get_ident().unwrap().to_string();
 
-        match name.as_str() {
-            "subcommand" => stream.extend(subcommand(attr)?),
-            "subcommands" => stream.extend(subcommands(attr)?),
-            "description" => stream.extend(description(attr)?),
-            "dynamic_description" => stream.extend(dynamic_description(attr)?),
-            "usage" => stream.extend(usage(attr)?),
-            "dynamic_usage" => stream.extend(dynamic_usage(attr)?),
-            "example" => stream.extend(example(attr)?),
-            "dynamic_examples" => stream.extend(dynamic_examples(attr)?),
-            "help_available" => stream.extend(help_available(attr)?),
-            "check" => stream.extend(check(attr)?),
-            _ => return Err(Error::new(attr.path.span(), "invalid attribute")),
-        }
+        let tokens = match name.as_str() {
+            "subcommands" => subcommands(attr.try_into()?)?,
+            "doc" | "description" => description(attr.try_into()?)?,
+            "dynamic_description" => dynamic_description(attr.try_into()?)?,
+            "usage" => usage(attr.try_into()?)?,
+            "dynamic_usage" => dynamic_usage(attr.try_into()?)?,
+            "example" => example(attr.try_into()?)?,
+            "dynamic_examples" => dynamic_examples(attr.try_into()?)?,
+            "help_available" => help_available(attr.try_into()?)?,
+            "check" => check(attr.try_into()?)?,
+            _ => {
+                normal.push(attr.clone());
+                continue;
+            },
+        };
+
+        stream.extend(tokens);
     }
 
-    Ok(stream)
+    Ok((stream, normal))
 }
 
-fn subcommand(attr: &Attr) -> Result<TokenStream2> {
-    let subcommand = parse_identifier(attr)?;
-
-    Ok(quote! {
-        .subcommand(#subcommand)
-    })
-}
-
-fn subcommands(attr: &Attr) -> Result<TokenStream2> {
-    let subcommands = parse_identifiers(attr)?;
+fn subcommands(attr: Attr) -> Result<TokenStream> {
+    let subcommands = parse_identifiers(&attr)?;
 
     Ok(quote! {
         #(.subcommand(#subcommands))*
     })
 }
 
-fn description(attr: &Attr) -> Result<TokenStream2> {
-    let desc = parse_string(attr)?;
+fn description(attr: Attr) -> Result<TokenStream> {
+    let mut desc = parse_string(&attr)?;
+
+    if desc.starts_with(' ') {
+        desc.remove(0);
+    }
 
     Ok(quote! {
         .description(#desc)
     })
 }
 
-fn dynamic_description(attr: &Attr) -> Result<TokenStream2> {
-    let desc = parse_identifier(attr)?;
+fn dynamic_description(attr: Attr) -> Result<TokenStream> {
+    let desc = parse_identifier(&attr)?;
 
     Ok(quote! {
         .dynamic_description(#desc)
     })
 }
 
-fn usage(attr: &Attr) -> Result<TokenStream2> {
-    let usage = parse_string(attr)?;
+fn usage(attr: Attr) -> Result<TokenStream> {
+    let usage = parse_string(&attr)?;
 
     Ok(quote! {
         .usage(#usage)
     })
 }
 
-fn dynamic_usage(attr: &Attr) -> Result<TokenStream2> {
-    let usage = parse_identifier(attr)?;
+fn dynamic_usage(attr: Attr) -> Result<TokenStream> {
+    let usage = parse_identifier(&attr)?;
 
     Ok(quote! {
         .dynamic_usage(#usage)
     })
 }
 
-fn example(attr: &Attr) -> Result<TokenStream2> {
-    let example = parse_string(attr)?;
+fn example(attr: Attr) -> Result<TokenStream> {
+    let example = parse_string(&attr)?;
 
     Ok(quote! {
         .example(#example)
     })
 }
 
-fn dynamic_examples(attr: &Attr) -> Result<TokenStream2> {
-    let examples = parse_identifier(attr)?;
+fn dynamic_examples(attr: Attr) -> Result<TokenStream> {
+    let examples = parse_identifier(&attr)?;
 
     Ok(quote! {
         .dynamic_examples(#examples)
     })
 }
 
-fn help_available(attr: &Attr) -> Result<TokenStream2> {
-    let help = parse_bool(attr)?;
+fn help_available(attr: Attr) -> Result<TokenStream> {
+    let help = parse_bool(&attr)?;
 
     Ok(quote! {
         .help_available(#help)
     })
 }
 
-fn check(attr: &Attr) -> Result<TokenStream2> {
-    let check = parse_identifier(attr)?;
+fn check(attr: Attr) -> Result<TokenStream> {
+    let check = parse_identifier(&attr)?;
 
     Ok(quote! {
         .check(#check)

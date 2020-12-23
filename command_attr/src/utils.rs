@@ -1,24 +1,11 @@
-use proc_macro2::{Ident, Span, TokenStream as TokenStream2};
+use proc_macro2::{Ident, Span, TokenStream};
 use quote::{quote, ToTokens};
 use syn::parse::{Parse, ParseStream};
 use syn::spanned::Spanned;
-use syn::{
-    parse2,
-    Attribute,
-    Error,
-    FnArg,
-    GenericArgument,
-    Lit,
-    LitStr,
-    Meta,
-    NestedMeta,
-    Path,
-    PathArguments,
-    Result,
-    Signature,
-    Token,
-    Type,
-};
+use syn::{parse2, Attribute, Error, FnArg, GenericArgument, Lit, LitStr, Meta};
+use syn::{NestedMeta, Path, PathArguments, Result, Signature, Token, Type};
+
+use std::convert::TryFrom;
 
 pub fn crate_name() -> Ident {
     Ident::new("serenity_framework", Span::call_site())
@@ -56,14 +43,14 @@ impl Parse for AttributeArgs {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum Value {
     Ident(Ident),
     Lit(Lit),
 }
 
 impl ToTokens for Value {
-    fn to_tokens(&self, tokens: &mut TokenStream2) {
+    fn to_tokens(&self, tokens: &mut TokenStream) {
         match self {
             Value::Ident(ident) => ident.to_tokens(tokens),
             Value::Lit(lit) => lit.to_tokens(tokens),
@@ -71,7 +58,7 @@ impl ToTokens for Value {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Attr {
     pub path: Path,
     pub values: Vec<Value>,
@@ -84,7 +71,7 @@ impl Attr {
 }
 
 impl ToTokens for Attr {
-    fn to_tokens(&self, tokens: &mut TokenStream2) {
+    fn to_tokens(&self, tokens: &mut TokenStream) {
         let Attr { path, values } = self;
 
         tokens.extend(if values.is_empty() {
@@ -95,21 +82,15 @@ impl ToTokens for Attr {
     }
 }
 
-pub fn filter_attributes(
-    attrs: &[Attribute],
-    include: &[&str],
-) -> (Vec<Attribute>, Vec<Attribute>) {
-    attrs
-        .iter()
-        .cloned()
-        .partition(|attr| include.iter().any(|s| attr.path.is_ident(s)))
+impl TryFrom<&Attribute> for Attr {
+    type Error = Error;
+
+    fn try_from(attr: &Attribute) -> Result<Self> {
+        parse_attribute(attr)
+    }
 }
 
-pub fn parse_attributes(attrs: &[Attribute]) -> Result<Vec<Attr>> {
-    attrs.iter().map(parse_attribute).collect()
-}
-
-fn parse_attribute(attr: &Attribute) -> Result<Attr> {
+pub fn parse_attribute(attr: &Attribute) -> Result<Attr> {
     let meta = attr.parse_meta()?;
 
     match meta {
@@ -133,10 +114,7 @@ fn parse_attribute(attr: &Attribute) -> Result<Attr> {
 
             Ok(Attr::new(path, values))
         },
-        Meta::NameValue(_) => Err(Error::new(
-            meta.span(),
-            "`#[name = value]` syntax is not supported`",
-        )),
+        Meta::NameValue(nv) => Ok(Attr::new(nv.path, vec![Value::Lit(nv.lit)])),
     }
 }
 
