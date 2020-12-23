@@ -294,10 +294,7 @@ pub struct ArgumentSegments<'a> {
 impl<'a> ArgumentSegments<'a> {
     /// Creates a new `ArgumentSegments` instance.
     pub fn new(src: &'a str, delimiter: &'a str) -> Self {
-        Self {
-            src,
-            delimiter
-        }
+        Self { src, delimiter }
     }
 
     /// Returns the source string from which segments are constructed.
