@@ -60,7 +60,7 @@ pub fn impl_hook(attr: TokenStream, input: TokenStream) -> Result<TokenStream> {
         }
     };
 
-    Ok(result.into())
+    Ok(result)
 }
 
 fn add_fut_lifetime(generics: &mut Generics) {
