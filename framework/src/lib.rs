@@ -43,6 +43,7 @@ use std::error::Error as StdError;
 use std::future::Future;
 use std::sync::Arc;
 
+pub mod argument;
 pub mod category;
 pub mod check;
 pub mod command;
