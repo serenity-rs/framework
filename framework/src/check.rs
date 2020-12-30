@@ -119,8 +119,16 @@ impl<D, E> fmt::Debug for Check<D, E> {
 
 impl<D, E> Check<D, E> {
     /// Constructs a builder that will be used to create a check from scratch.
-    pub fn builder() -> CheckBuilder<D, E> {
-        CheckBuilder::default()
+    pub fn builder<I>(name: I) -> CheckBuilder<D, E>
+    where
+        I: Into<String>,
+    {
+        CheckBuilder {
+            inner: Check {
+                name: name.into(),
+                ..Default::default()
+            },
+        }
     }
 }
 

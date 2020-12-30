@@ -220,6 +220,7 @@ fn get_type(arg: &FnArg) -> Result<&Type> {
 fn get_path(t: &Type) -> Result<&Path> {
     match t {
         Type::Path(p) => Ok(&p.path),
+        Type::Reference(r) => get_path(&r.elem),
         _ => Err(Error::new(
             t.span(),
             "first parameter must be a path to a context type",
