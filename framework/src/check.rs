@@ -119,8 +119,13 @@ impl<D, E> fmt::Debug for Check<D, E> {
 
 impl<D, E> Check<D, E> {
     /// Constructs a builder that will be used to create a check from scratch.
-    pub fn builder() -> CheckBuilder<D, E> {
-        CheckBuilder::default()
+    ///
+    /// Argument is the main name of the check.
+    pub fn builder<I>(name: I) -> CheckBuilder<D, E>
+    where
+        I: Into<String>,
+    {
+        CheckBuilder::new(name)
     }
 }
 
@@ -130,15 +135,20 @@ pub struct CheckBuilder<D, E> {
 }
 
 impl<D, E> CheckBuilder<D, E> {
-    /// Assigns the name to this check.
-    pub fn name<I>(mut self, name: I) -> Self
+    /// Constructs a new instance of the builder.
+    ///
+    /// Argument is the main name of the check.
+    pub fn new<I>(name: I) -> Self
     where
         I: Into<String>,
     {
-        self.inner.name = name.into();
-        self
+        CheckBuilder {
+            inner: Check {
+                name: name.into(),
+                ..Default::default()
+            },
+        }
     }
-
     /// Assigns the function to this function.
     pub fn function(mut self, function: CheckFn<D, E>) -> Self {
         self.inner.function = function;

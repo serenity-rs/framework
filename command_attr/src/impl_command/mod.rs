@@ -1,9 +1,10 @@
-use crate::utils::{self, AttributeArgs};
+use crate::context::{command_builder_type, command_fn, command_type, Context};
+use crate::utils::AttributeArgs;
 
-use proc_macro2::{Ident, TokenStream};
+use proc_macro2::TokenStream;
 use quote::{format_ident, quote};
 use syn::parse2;
-use syn::{ItemFn, Result, Type};
+use syn::{ItemFn, Result};
 
 mod options;
 
@@ -28,58 +29,6 @@ pub fn impl_command(attr: TokenStream, input: TokenStream) -> Result<TokenStream
     };
 
     Ok(result)
-}
-
-struct Context {
-    crate_name: Ident,
-    data: Box<Type>,
-    error: Box<Type>,
-}
-
-impl Context {
-    fn new(function: &ItemFn) -> Result<Self> {
-        let crate_name = utils::crate_name();
-        let default_data = utils::default_data(&crate_name);
-        let default_error = utils::default_error(&crate_name);
-
-        let (data, error) = utils::parse_generics(&function.sig, default_data, default_error)?;
-
-        Ok(Self {
-            crate_name,
-            data,
-            error,
-        })
-    }
-}
-
-fn command_type(ctx: &Context) -> TokenStream {
-    let Context {
-        crate_name,
-        data,
-        error,
-    } = ctx;
-
-    quote! {
-        #crate_name::command::Command<#data, #error>
-    }
-}
-
-fn command_builder_type(ctx: &Context) -> TokenStream {
-    let crate_name = &ctx.crate_name;
-
-    quote! {
-        #crate_name::command::CommandBuilder
-    }
-}
-
-fn command_fn(ctx: &Context, function: &ItemFn) -> TokenStream {
-    let crate_name = &ctx.crate_name;
-
-    quote! {
-        #[#crate_name::prelude::hook]
-        #[doc(hidden)]
-        #function
-    }
 }
 
 fn builder_fn(ctx: &Context, function: &mut ItemFn, mut names: Vec<String>) -> Result<TokenStream> {

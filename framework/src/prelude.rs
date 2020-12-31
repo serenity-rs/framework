@@ -15,4 +15,4 @@ pub use crate::error::{DispatchError, Error as FrameworkError};
 pub use crate::Framework;
 
 #[cfg(feature = "macros")]
-pub use command_attr::{command, hook};
+pub use command_attr::{check, command, hook};
