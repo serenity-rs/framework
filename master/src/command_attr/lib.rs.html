@@ -26,20 +26,42 @@
 <span id="23">23</span>
 <span id="24">24</span>
 <span id="25">25</span>
+<span id="26">26</span>
+<span id="27">27</span>
+<span id="28">28</span>
+<span id="29">29</span>
+<span id="30">30</span>
+<span id="31">31</span>
+<span id="32">32</span>
+<span id="33">33</span>
+<span id="34">34</span>
+<span id="35">35</span>
+<span id="36">36</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="kw">use</span> <span class="ident">proc_macro</span>::<span class="ident">TokenStream</span>;
 
+<span class="kw">mod</span> <span class="ident">context</span>;
 <span class="kw">mod</span> <span class="ident">utils</span>;
 
+<span class="kw">mod</span> <span class="ident">impl_check</span>;
 <span class="kw">mod</span> <span class="ident">impl_command</span>;
 <span class="kw">mod</span> <span class="ident">impl_hook</span>;
 
+<span class="kw">use</span> <span class="ident">impl_check</span>::<span class="ident">impl_check</span>;
 <span class="kw">use</span> <span class="ident">impl_command</span>::<span class="ident">impl_command</span>;
 <span class="kw">use</span> <span class="ident">impl_hook</span>::<span class="ident">impl_hook</span>;
 
 <span class="attribute">#[<span class="ident">proc_macro_attribute</span>]</span>
 <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">command</span>(<span class="ident">attr</span>: <span class="ident">TokenStream</span>, <span class="ident">input</span>: <span class="ident">TokenStream</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">TokenStream</span> {
     <span class="kw">match</span> <span class="ident">impl_command</span>(<span class="ident">attr</span>.<span class="ident">into</span>(), <span class="ident">input</span>.<span class="ident">into</span>()) {
+        <span class="prelude-val">Ok</span>(<span class="ident">stream</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">stream</span>.<span class="ident">into</span>(),
+        <span class="prelude-val">Err</span>(<span class="ident">err</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">err</span>.<span class="ident">to_compile_error</span>().<span class="ident">into</span>(),
+    }
+}
+
+<span class="attribute">#[<span class="ident">proc_macro_attribute</span>]</span>
+<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">check</span>(<span class="ident">attr</span>: <span class="ident">TokenStream</span>, <span class="ident">input</span>: <span class="ident">TokenStream</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">TokenStream</span> {
+    <span class="kw">match</span> <span class="ident">impl_check</span>(<span class="ident">attr</span>.<span class="ident">into</span>(), <span class="ident">input</span>.<span class="ident">into</span>()) {
         <span class="prelude-val">Ok</span>(<span class="ident">stream</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">stream</span>.<span class="ident">into</span>(),
         <span class="prelude-val">Err</span>(<span class="ident">err</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">err</span>.<span class="ident">to_compile_error</span>().<span class="ident">into</span>(),
     }

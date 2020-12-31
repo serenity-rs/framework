@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `command_attr/src/impl_command/mod.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>mod.rs - source</title><link rel="stylesheet" type="text/css" href="../../../normalize.css"><link rel="stylesheet" type="text/css" href="../../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../../light.css"  id="themeStyle"><link rel="stylesheet" type="text/css" href="../../../dark.css" disabled ><link rel="stylesheet" type="text/css" href="../../../ayu.css" disabled ><script id="default-settings"></script><script src="../../../storage.js"></script><noscript><link rel="stylesheet" href="../../../noscript.css"></noscript><link rel="icon" type="image/svg+xml" href="../../../favicon.svg">
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `command_attr/src/impl_check/mod.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>mod.rs - source</title><link rel="stylesheet" type="text/css" href="../../../normalize.css"><link rel="stylesheet" type="text/css" href="../../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../../light.css"  id="themeStyle"><link rel="stylesheet" type="text/css" href="../../../dark.css" disabled ><link rel="stylesheet" type="text/css" href="../../../ayu.css" disabled ><script id="default-settings"></script><script src="../../../storage.js"></script><noscript><link rel="stylesheet" href="../../../noscript.css"></noscript><link rel="icon" type="image/svg+xml" href="../../../favicon.svg">
 <link rel="alternate icon" type="image/png" href="../../../favicon-16x16.png">
 <link rel="alternate icon" type="image/png" href="../../../favicon-32x32.png"><style type="text/css">#crate-search{background-image:url("../../../down-arrow.svg");}</style></head><body class="rustdoc source"><!--[if lte IE 8]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="sidebar-menu">&#9776;</div><a href='../../../command_attr/index.html'><div class='logo-container rust-logo'><img src='../../../rust-logo.png' alt='logo'></div></a></nav><div class="theme-picker"><button id="theme-picker" aria-label="Pick another theme!" aria-haspopup="menu"><img src="../../../brush.svg" width="18" alt="Pick another theme!"></button><div id="theme-choices" role="menu"></div></div><script src="../../../theme.js"></script><nav class="sub"><form class="search-form"><div class="search-container"><div><select id="crate-search"><option value="All crates">All crates</option></select><input class="search-input" name="search" disabled autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"></div><button type="button" class="help-button">?</button>
                 <a id="settings-menu" href="../../../settings.html"><img src="../../../wheel.svg" width="18" alt="Change settings"></a></div></form></nav><section id="main" class="content"><pre class="line-numbers"><span id="1"> 1</span>
@@ -58,14 +58,8 @@
 <span id="55">55</span>
 <span id="56">56</span>
 <span id="57">57</span>
-<span id="58">58</span>
-<span id="59">59</span>
-<span id="60">60</span>
-<span id="61">61</span>
-<span id="62">62</span>
 </pre><div class="example-wrap"><pre class="rust ">
-<span class="kw">use</span> <span class="kw">crate</span>::<span class="ident">context</span>::{<span class="ident">command_builder_type</span>, <span class="ident">command_fn</span>, <span class="ident">command_type</span>, <span class="ident">Context</span>};
-<span class="kw">use</span> <span class="kw">crate</span>::<span class="ident">utils</span>::<span class="ident">AttributeArgs</span>;
+<span class="kw">use</span> <span class="kw">crate</span>::<span class="ident">context</span>::{<span class="ident">check_builder_type</span>, <span class="ident">check_fn</span>, <span class="ident">check_type</span>, <span class="ident">Context</span>};
 
 <span class="kw">use</span> <span class="ident">proc_macro2</span>::<span class="ident">TokenStream</span>;
 <span class="kw">use</span> <span class="ident">quote</span>::{<span class="ident">format_ident</span>, <span class="ident">quote</span>};
@@ -74,42 +68,39 @@
 
 <span class="kw">mod</span> <span class="ident">options</span>;
 
-<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">impl_command</span>(<span class="ident">attr</span>: <span class="ident">TokenStream</span>, <span class="ident">input</span>: <span class="ident">TokenStream</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">TokenStream</span><span class="op">&gt;</span> {
+<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">impl_check</span>(<span class="ident">attr</span>: <span class="ident">TokenStream</span>, <span class="ident">input</span>: <span class="ident">TokenStream</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">TokenStream</span><span class="op">&gt;</span> {
     <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">fun</span> <span class="op">=</span> <span class="ident">parse2</span>::<span class="op">&lt;</span><span class="ident">ItemFn</span><span class="op">&gt;</span>(<span class="ident">input</span>)<span class="question-mark">?</span>;
 
-    <span class="kw">let</span> <span class="ident">names</span> <span class="op">=</span> <span class="kw">if</span> <span class="ident">attr</span>.<span class="ident">is_empty</span>() {
-        <span class="macro">vec</span><span class="macro">!</span>[<span class="ident">fun</span>.<span class="ident">sig</span>.<span class="ident">ident</span>.<span class="ident">to_string</span>()]
+    <span class="kw">let</span> <span class="ident">name</span> <span class="op">=</span> <span class="kw">if</span> <span class="ident">attr</span>.<span class="ident">is_empty</span>() {
+        <span class="ident">fun</span>.<span class="ident">sig</span>.<span class="ident">ident</span>.<span class="ident">to_string</span>()
     } <span class="kw">else</span> {
-        <span class="ident">parse2</span>::<span class="op">&lt;</span><span class="ident">AttributeArgs</span><span class="op">&gt;</span>(<span class="ident">attr</span>)<span class="question-mark">?</span>.<span class="number">0</span>
+        <span class="ident">parse2</span>::<span class="op">&lt;</span><span class="ident">syn</span>::<span class="ident">LitStr</span><span class="op">&gt;</span>(<span class="ident">attr</span>)<span class="question-mark">?</span>.<span class="ident">value</span>()
     };
 
     <span class="kw">let</span> <span class="ident">ctx</span> <span class="op">=</span> <span class="ident">Context</span>::<span class="ident">new</span>(<span class="kw-2">&amp;</span><span class="ident">fun</span>)<span class="question-mark">?</span>;
 
-    <span class="kw">let</span> <span class="ident">builder_fn</span> <span class="op">=</span> <span class="ident">builder_fn</span>(<span class="kw-2">&amp;</span><span class="ident">ctx</span>, <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">fun</span>, <span class="ident">names</span>)<span class="question-mark">?</span>;
-    <span class="kw">let</span> <span class="ident">command_fn</span> <span class="op">=</span> <span class="ident">command_fn</span>(<span class="kw-2">&amp;</span><span class="ident">ctx</span>, <span class="kw-2">&amp;</span><span class="ident">fun</span>);
+    <span class="kw">let</span> <span class="ident">builder_fn</span> <span class="op">=</span> <span class="ident">builder_fn</span>(<span class="kw-2">&amp;</span><span class="ident">ctx</span>, <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">fun</span>, <span class="kw-2">&amp;</span><span class="ident">name</span>)<span class="question-mark">?</span>;
+    <span class="kw">let</span> <span class="ident">check_fn</span> <span class="op">=</span> <span class="ident">check_fn</span>(<span class="kw-2">&amp;</span><span class="ident">ctx</span>, <span class="kw-2">&amp;</span><span class="ident">fun</span>);
 
     <span class="kw">let</span> <span class="ident">result</span> <span class="op">=</span> <span class="macro">quote</span><span class="macro">!</span> {
         #<span class="ident">builder_fn</span>
 
-        #<span class="ident">command_fn</span>
+        #<span class="ident">check_fn</span>
     };
 
     <span class="prelude-val">Ok</span>(<span class="ident">result</span>)
 }
 
-<span class="kw">fn</span> <span class="ident">builder_fn</span>(<span class="ident">ctx</span>: <span class="kw-2">&amp;</span><span class="ident">Context</span>, <span class="ident">function</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">ItemFn</span>, <span class="kw-2">mut</span> <span class="ident">names</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">TokenStream</span><span class="op">&gt;</span> {
-    <span class="kw">let</span> <span class="ident">name</span> <span class="op">=</span> <span class="ident">names</span>.<span class="ident">remove</span>(<span class="number">0</span>);
-    <span class="kw">let</span> <span class="ident">aliases</span> <span class="op">=</span> <span class="ident">names</span>;
-
-    <span class="comment">// Derive the name of the builder from the command function.</span>
-    <span class="comment">// Prepend the command function&#39;s name with an underscore to avoid name</span>
+<span class="kw">fn</span> <span class="ident">builder_fn</span>(<span class="ident">ctx</span>: <span class="kw-2">&amp;</span><span class="ident">Context</span>, <span class="ident">function</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">ItemFn</span>, <span class="ident">name</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">TokenStream</span><span class="op">&gt;</span> {
+    <span class="comment">// Derive the name of the builder from the check function.</span>
+    <span class="comment">// Prepend the check function&#39;s name with an underscore to avoid name</span>
     <span class="comment">// collisions.</span>
     <span class="kw">let</span> <span class="ident">builder_name</span> <span class="op">=</span> <span class="ident">function</span>.<span class="ident">sig</span>.<span class="ident">ident</span>.<span class="ident">clone</span>();
     <span class="kw">let</span> <span class="ident">function_name</span> <span class="op">=</span> <span class="macro">format_ident</span><span class="macro">!</span>(<span class="string">&quot;_{}&quot;</span>, <span class="ident">builder_name</span>);
     <span class="ident">function</span>.<span class="ident">sig</span>.<span class="ident">ident</span> <span class="op">=</span> <span class="ident">function_name</span>.<span class="ident">clone</span>();
 
-    <span class="kw">let</span> <span class="ident">command_builder</span> <span class="op">=</span> <span class="ident">command_builder_type</span>(<span class="ident">ctx</span>);
-    <span class="kw">let</span> <span class="ident">command</span> <span class="op">=</span> <span class="ident">command_type</span>(<span class="ident">ctx</span>);
+    <span class="kw">let</span> <span class="ident">check_builder</span> <span class="op">=</span> <span class="ident">check_builder_type</span>(<span class="ident">ctx</span>);
+    <span class="kw">let</span> <span class="ident">check</span> <span class="op">=</span> <span class="ident">check_type</span>(<span class="ident">ctx</span>);
 
     <span class="kw">let</span> <span class="ident">vis</span> <span class="op">=</span> <span class="ident">function</span>.<span class="ident">vis</span>.<span class="ident">clone</span>();
     <span class="kw">let</span> (<span class="ident">builtin</span>, <span class="ident">external</span>) <span class="op">=</span> <span class="ident">options</span>::<span class="ident">parse_options</span>(<span class="kw-2">&amp;</span><span class="ident">function</span>.<span class="ident">attrs</span>)<span class="question-mark">?</span>;
@@ -117,9 +108,8 @@
 
     <span class="prelude-val">Ok</span>(<span class="macro">quote</span><span class="macro">!</span> {
         #(#<span class="ident">external</span>)<span class="op">*</span>
-        #<span class="ident">vis</span> <span class="kw">fn</span> #<span class="ident">builder_name</span>() <span class="op">-</span><span class="op">&gt;</span> #<span class="ident">command</span> {
-            #<span class="ident">command_builder</span>::<span class="ident">new</span>(#<span class="ident">name</span>)
-                #(.<span class="ident">name</span>(#<span class="ident">aliases</span>))<span class="op">*</span>
+        #<span class="ident">vis</span> <span class="kw">fn</span> #<span class="ident">builder_name</span>() <span class="op">-</span><span class="op">&gt;</span> #<span class="ident">check</span> {
+            #<span class="ident">check_builder</span>::<span class="ident">new</span>(#<span class="ident">name</span>)
                 .<span class="ident">function</span>(#<span class="ident">function_name</span>)
                 #<span class="ident">builtin</span>
                 .<span class="ident">build</span>()
