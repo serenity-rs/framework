@@ -19,8 +19,9 @@ pub fn impl_check(attr: TokenStream, input: TokenStream) -> Result<TokenStream> 
     };
 
     let ctx = Context::new(&fun)?;
+    let options = Options::parse(&mut fun.attrs)?;
 
-    let builder_fn = builder_fn(&ctx, &mut fun, &name)?;
+    let builder_fn = builder_fn(&ctx, &mut fun, &name, &options)?;
     let check_fn = check_fn(&ctx, &fun);
 
     let result = quote! {
@@ -32,7 +33,12 @@ pub fn impl_check(attr: TokenStream, input: TokenStream) -> Result<TokenStream> 
     Ok(result)
 }
 
-fn builder_fn(ctx: &Context, function: &mut ItemFn, name: &str) -> Result<TokenStream> {
+fn builder_fn(
+    ctx: &Context,
+    function: &mut ItemFn,
+    name: &str,
+    options: &Options,
+) -> Result<TokenStream> {
     // Derive the name of the builder from the check function.
     // Prepend the check function's name with an underscore to avoid name
     // collisions.
@@ -43,9 +49,8 @@ fn builder_fn(ctx: &Context, function: &mut ItemFn, name: &str) -> Result<TokenS
     let check_builder = check_builder_type(ctx);
     let check = check_type(ctx);
 
-    let vis = function.vis.clone();
-    let options = Options::parse(&mut function.attrs)?;
-    let external = function.attrs.clone();
+    let vis = &function.vis;
+    let external = &function.attrs;
 
     Ok(quote! {
         #(#external)*

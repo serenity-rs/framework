@@ -21,10 +21,11 @@ pub fn impl_command(attr: TokenStream, input: TokenStream) -> Result<TokenStream
     };
 
     let ctx = Context::new(&fun)?;
+    let options = Options::parse(&mut fun.attrs)?;
 
     parse_arguments(&ctx, &mut fun)?;
 
-    let builder_fn = builder_fn(&ctx, &mut fun, names)?;
+    let builder_fn = builder_fn(&ctx, &mut fun, names, &options)?;
     let command_fn = command_fn(&ctx, &fun);
 
     let result = quote! {
@@ -36,7 +37,12 @@ pub fn impl_command(attr: TokenStream, input: TokenStream) -> Result<TokenStream
     Ok(result)
 }
 
-fn builder_fn(ctx: &Context, function: &mut ItemFn, mut names: Vec<String>) -> Result<TokenStream> {
+fn builder_fn(
+    ctx: &Context,
+    function: &mut ItemFn,
+    mut names: Vec<String>,
+    options: &Options,
+) -> Result<TokenStream> {
     let name = names.remove(0);
     let aliases = names;
 
@@ -50,9 +56,8 @@ fn builder_fn(ctx: &Context, function: &mut ItemFn, mut names: Vec<String>) -> R
     let command_builder = command_builder_type(ctx);
     let command = command_type(ctx);
 
-    let vis = function.vis.clone();
-    let options = Options::parse(&mut function.attrs)?;
-    let external = function.attrs.clone();
+    let vis = &function.vis;
+    let external = &function.attrs;
 
     Ok(quote! {
         #(#external)*
