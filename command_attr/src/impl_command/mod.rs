@@ -1,10 +1,6 @@
-use crate::context::{
-    argument_segments_type,
-    opt_argument_func,
-    req_argument_func,
-    var_arguments_func,
-};
+use crate::context::argument_segments_type;
 use crate::context::{command_builder_type, command_fn, command_type, Context};
+use crate::context::{opt_argument_func, req_argument_func, var_arguments_func};
 use crate::utils::{self, AttributeArgs};
 
 use proc_macro2::{Ident, Span, TokenStream};
@@ -87,16 +83,20 @@ fn parse_arguments(ctx: &Context, function: &mut ItemFn) -> Result<()> {
         let asegsty = argument_segments_type(ctx);
         let ctx_name = &ctx.ctx_name;
 
-        for code in arguments.into_iter() {
-            function.block.stmts.insert(0, code);
-        }
-
-        function.block.stmts.insert(
+        arguments.insert(
             0,
             parse2(quote! {
                 let mut #argument_segments = #asegsty::new(&#ctx_name.args, " ");
             })?,
         );
+
+        let b = &function.block;
+
+        function.block = parse2(quote! {{
+            #(#arguments)*
+
+            #b
+        }})?;
     }
 
     Ok(())
