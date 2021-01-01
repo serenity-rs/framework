@@ -5,9 +5,10 @@ use quote::quote;
 use syn::{ItemFn, Result, Type};
 
 pub struct Context {
-    crate_name: Ident,
-    data: Box<Type>,
-    error: Box<Type>,
+    pub crate_name: Ident,
+    pub ctx_name: Ident,
+    pub data: Box<Type>,
+    pub error: Box<Type>,
 }
 
 impl Context {
@@ -16,10 +17,12 @@ impl Context {
         let default_data = utils::default_data(&crate_name);
         let default_error = utils::default_error(&crate_name);
 
-        let (data, error) = utils::parse_generics(&function.sig, default_data, default_error)?;
+        let (ctx_name, data, error) =
+            utils::parse_generics(&function.sig, default_data, default_error)?;
 
         Ok(Self {
             crate_name,
+            ctx_name,
             data,
             error,
         })
@@ -31,6 +34,7 @@ pub fn command_type(ctx: &Context) -> TokenStream {
         crate_name,
         data,
         error,
+        ..
     } = ctx;
 
     quote! {
@@ -56,11 +60,44 @@ pub fn command_fn(ctx: &Context, function: &ItemFn) -> TokenStream {
     }
 }
 
+pub fn req_argument_func(ctx: &Context) -> TokenStream {
+    let crate_name = &ctx.crate_name;
+
+    quote! {
+        #crate_name::argument::req_argument
+    }
+}
+
+pub fn opt_argument_func(ctx: &Context) -> TokenStream {
+    let crate_name = &ctx.crate_name;
+
+    quote! {
+        #crate_name::argument::opt_argument
+    }
+}
+
+pub fn var_arguments_func(ctx: &Context) -> TokenStream {
+    let crate_name = &ctx.crate_name;
+
+    quote! {
+        #crate_name::argument::var_arguments
+    }
+}
+
+pub fn argument_segments_type(ctx: &Context) -> TokenStream {
+    let crate_name = &ctx.crate_name;
+
+    quote! {
+        #crate_name::utils::ArgumentSegments
+    }
+}
+
 pub fn check_type(ctx: &Context) -> TokenStream {
     let Context {
         crate_name,
         data,
         error,
+        ..
     } = ctx;
 
     quote! {
