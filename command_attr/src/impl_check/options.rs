@@ -1,45 +1,56 @@
-use crate::utils::{parse_bool, Attr};
-
+use crate::utils::parse_bool;
 use proc_macro2::TokenStream;
-use quote::quote;
+use quote::{quote, ToTokens};
 use syn::{Attribute, Result};
 
 use std::convert::TryInto;
 
-pub fn parse_options(attrs: &[Attribute]) -> Result<(TokenStream, Vec<Attribute>)> {
-    let mut stream = TokenStream::new();
-    let mut normal = Vec::new();
+#[derive(Default)]
+pub struct Options {
+    check_in_help: Option<bool>,
+    display_in_help: Option<bool>,
+}
 
-    for attr in attrs {
-        let name = attr.path.get_ident().unwrap().to_string();
+impl Options {
+    pub fn parse(attrs: &mut Vec<Attribute>) -> Result<Self> {
+        let mut options = Self::default();
 
-        let tokens = match name.as_str() {
-            "check_in_help" => check_in_help(attr.try_into()?)?,
-            "display_in_help" => display_in_help(attr.try_into()?)?,
-            _ => {
-                normal.push(attr.clone());
-                continue;
-            },
-        };
+        let mut i = 0;
 
-        stream.extend(tokens);
+        while i < attrs.len() {
+            let attr = &attrs[i];
+            let name = attr.path.get_ident().unwrap().to_string();
+
+            match name.as_str() {
+                "check_in_help" => options.check_in_help = Some(parse_bool(&attr.try_into()?)?),
+                "display_in_help" => options.display_in_help = Some(parse_bool(&attr.try_into()?)?),
+                _ => {
+                    i += 1;
+
+                    continue;
+                },
+            }
+
+            attrs.remove(i);
+        }
+
+        Ok(options)
     }
-
-    Ok((stream, normal))
 }
 
-fn check_in_help(attr: Attr) -> Result<TokenStream> {
-    let check = parse_bool(&attr)?;
+impl ToTokens for Options {
+    fn to_tokens(&self, tokens: &mut TokenStream) {
+        let Options {
+            check_in_help,
+            display_in_help,
+        } = self;
 
-    Ok(quote! {
-        .check_in_help(#check)
-    })
-}
+        if let Some(check) = check_in_help {
+            tokens.extend(quote!(.check_in_help(#check)));
+        }
 
-fn display_in_help(attr: Attr) -> Result<TokenStream> {
-    let display = parse_bool(&attr)?;
-
-    Ok(quote! {
-        .display_in_help(#display)
-    })
+        if let Some(display) = display_in_help {
+            tokens.extend(quote!(.display_in_help(#display)));
+        }
+    }
 }

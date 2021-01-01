@@ -9,6 +9,8 @@ use syn::{parse2, FnArg, ItemFn, Path, Result, Stmt};
 
 mod options;
 
+use options::Options;
+
 pub fn impl_command(attr: TokenStream, input: TokenStream) -> Result<TokenStream> {
     let mut fun = parse2::<ItemFn>(input)?;
 
@@ -49,8 +51,8 @@ fn builder_fn(ctx: &Context, function: &mut ItemFn, mut names: Vec<String>) -> R
     let command = command_type(ctx);
 
     let vis = function.vis.clone();
-    let (builtin, external) = options::parse_options(&function.attrs)?;
-    function.attrs = external.clone();
+    let options = Options::parse(&mut function.attrs)?;
+    let external = function.attrs.clone();
 
     Ok(quote! {
         #(#external)*
@@ -58,7 +60,7 @@ fn builder_fn(ctx: &Context, function: &mut ItemFn, mut names: Vec<String>) -> R
             #command_builder::new(#name)
                 #(.name(#aliases))*
                 .function(#function_name)
-                #builtin
+                #options
                 .build()
         }
     })

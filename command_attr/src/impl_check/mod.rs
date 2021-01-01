@@ -7,6 +7,8 @@ use syn::{ItemFn, Result};
 
 mod options;
 
+use options::Options;
+
 pub fn impl_check(attr: TokenStream, input: TokenStream) -> Result<TokenStream> {
     let mut fun = parse2::<ItemFn>(input)?;
 
@@ -42,15 +44,15 @@ fn builder_fn(ctx: &Context, function: &mut ItemFn, name: &str) -> Result<TokenS
     let check = check_type(ctx);
 
     let vis = function.vis.clone();
-    let (builtin, external) = options::parse_options(&function.attrs)?;
-    function.attrs = external.clone();
+    let options = Options::parse(&mut function.attrs)?;
+    let external = function.attrs.clone();
 
     Ok(quote! {
         #(#external)*
         #vis fn #builder_name() -> #check {
             #check_builder::new(#name)
                 .function(#function_name)
-                #builtin
+                #options
                 .build()
         }
     })
