@@ -23,7 +23,7 @@ pub fn impl_command(attr: TokenStream, input: TokenStream) -> Result<TokenStream
     let ctx = Context::new(&fun)?;
     let options = Options::parse(&mut fun.attrs)?;
 
-    parse_arguments(&ctx, &mut fun)?;
+    parse_arguments(&ctx, &mut fun, &options)?;
 
     let builder_fn = builder_fn(&ctx, &mut fun, names, &options)?;
     let command_fn = command_fn(&ctx, &fun);
@@ -71,7 +71,7 @@ fn builder_fn(
     })
 }
 
-fn parse_arguments(ctx: &Context, function: &mut ItemFn) -> Result<()> {
+fn parse_arguments(ctx: &Context, function: &mut ItemFn, options: &Options) -> Result<()> {
     let mut len = function.sig.inputs.len();
 
     let mut arguments = Vec::new();
@@ -89,13 +89,13 @@ fn parse_arguments(ctx: &Context, function: &mut ItemFn) -> Result<()> {
     if !arguments.is_empty() {
         let asegsty = argument_segments_type(ctx);
         let ctx_name = &ctx.ctx_name;
+        let delimiter = options.delimiter.as_ref().map_or(" ", String::as_str);
 
-        arguments.insert(
-            0,
-            parse2(quote! {
-                let mut #argument_segments = #asegsty::new(&#ctx_name.args, " ");
-            })?,
-        );
+        arguments.push(parse2(quote! {
+            let mut #argument_segments = #asegsty::new(&#ctx_name.args, #delimiter);
+        })?);
+
+        arguments.reverse();
 
         let b = &function.block;
 
