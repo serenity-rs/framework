@@ -31,12 +31,12 @@ where
     }
 }
 
-/// Error that might have occured when trying to parse [a required argument][rarg].
-///
-/// [rarg]: req_argument
+/// Error that might have occured when trying to parse an argument.
 #[derive(Debug)]
-pub enum RequiredArgumentError<E> {
+pub enum ArgumentError<E> {
     /// Required argument is missing.
+    ///
+    /// This is only returned by the [`req_argument`] function.
     Missing,
     /// Parsing the argument failed.
     ///
@@ -44,19 +44,19 @@ pub enum RequiredArgumentError<E> {
     Argument(E),
 }
 
-impl<E: fmt::Display> fmt::Display for RequiredArgumentError<E> {
+impl<E: fmt::Display> fmt::Display for ArgumentError<E> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            RequiredArgumentError::Missing => f.write_str("missing required argument"),
-            RequiredArgumentError::Argument(err) => fmt::Display::fmt(err, f),
+            ArgumentError::Missing => f.write_str("missing required argument"),
+            ArgumentError::Argument(err) => fmt::Display::fmt(err, f),
         }
     }
 }
 
-impl<E: StdError + 'static> StdError for RequiredArgumentError<E> {
+impl<E: StdError + 'static> StdError for ArgumentError<E> {
     fn source(&self) -> Option<&(dyn StdError + 'static)> {
         match self {
-            RequiredArgumentError::Argument(err) => Some(err),
+            ArgumentError::Argument(err) => Some(err),
             _ => None,
         }
     }
@@ -66,21 +66,21 @@ impl<E: StdError + 'static> StdError for RequiredArgumentError<E> {
 ///
 /// # Errors
 ///
-/// - If the list of segments is empty, [`RequiredArgumentError::Missing`] is returned.
-/// - If the segment cannot be parsed into an argument, [`RequiredArgumentError::Argument`] is
+/// - If the list of segments is empty, [`ArgumentError::Missing`] is returned.
+/// - If the segment cannot be parsed into an argument, [`ArgumentError::Argument`] is
 /// returned.
 ///
 /// [arg]: Argument
 pub fn required_argument<T, D, E>(
     ctx: &Context<D, E>,
     segments: &mut ArgumentSegments<'_>,
-) -> Result<T, RequiredArgumentError<T::Error>>
+) -> Result<T, ArgumentError<T::Error>>
 where
     T: Argument<D, E>,
 {
     match segments.next() {
-        Some(seg) => T::parse(ctx, seg).map_err(RequiredArgumentError::Argument),
-        None => Err(RequiredArgumentError::Missing),
+        Some(seg) => T::parse(ctx, seg).map_err(ArgumentError::Argument),
+        None => Err(ArgumentError::Missing),
     }
 }
 
@@ -89,32 +89,38 @@ where
 ///
 /// If the list of segments is empty, `Ok(None)` is returned. Otherwise,
 /// the first segment is taken and parsed into an argument. If parsing succeeds,
-/// `Ok(Some(...))` is returned, otherwise `Err`.
+/// `Ok(Some(...))` is returned, otherwise `Err(...)`. The error is wrapped in
+/// [`ArgumentError::Argument`].
 ///
 /// [arg]: Argument
 pub fn optional_argument<T, D, E>(
     ctx: &Context<D, E>,
     segments: &mut ArgumentSegments<'_>,
-) -> Result<Option<T>, T::Error>
+) -> Result<Option<T>, ArgumentError<T::Error>>
 where
     T: Argument<D, E>,
 {
-    segments.next().map(|seg| T::parse(ctx, seg)).transpose()
+    segments
+        .next()
+        .map(|seg| T::parse(ctx, seg).map_err(ArgumentError::Argument))
+        .transpose()
 }
 
 /// Tries to parse many [arguments][arg] from a list of segments.
 ///
 /// Each segment in the list is parsed into a vector of arguments. If parsing
 /// all segments succeeds, the vector is returned. Otherwise, the first error
-/// is returned.
+/// is returned. The error is wrapped in [`ArgumentError::Argument`].
 ///
 /// [arg]: Argument
 pub fn variadic_arguments<T, D, E>(
     ctx: &Context<D, E>,
     segments: &mut ArgumentSegments<'_>,
-) -> Result<Vec<T>, T::Error>
+) -> Result<Vec<T>, ArgumentError<T::Error>>
 where
     T: Argument<D, E>,
 {
-    segments.map(|seg| T::parse(ctx, seg)).collect()
+    segments
+        .map(|seg| T::parse(ctx, seg).map_err(ArgumentError::Argument))
+        .collect()
 }
