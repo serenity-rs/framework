@@ -8,7 +8,7 @@
 //! [command]: crate::command
 
 use crate::context::CheckContext;
-use crate::{DefaultData, DefaultError};
+use crate::DefaultData;
 
 use serenity::futures::future::BoxFuture;
 use serenity::model::channel::Message;
@@ -59,11 +59,11 @@ impl StdError for Reason {}
 pub type CheckResult<T = ()> = std::result::Result<T, Reason>;
 
 /// The definition of a check function.
-pub type CheckFn<D = DefaultData, E = DefaultError> =
-    for<'fut> fn(&'fut CheckContext<'_, D, E>, &'fut Message) -> BoxFuture<'fut, CheckResult<()>>;
+pub type CheckFn<D = DefaultData> =
+    for<'fut> fn(&'fut CheckContext<'_, D>, &'fut Message) -> BoxFuture<'fut, CheckResult<()>>;
 
 /// A constructor of the [`Check`] type provided by the consumer of the framework.
-pub type CheckConstructor<D = DefaultData, E = DefaultError> = fn() -> Check<D, E>;
+pub type CheckConstructor<D = DefaultData> = fn() -> Check<D>;
 
 /// Data relating to a check.
 ///
@@ -71,20 +71,20 @@ pub type CheckConstructor<D = DefaultData, E = DefaultError> = fn() -> Check<D, 
 ///
 /// [docs]: crate::check
 #[non_exhaustive]
-pub struct Check<D = DefaultData, E = DefaultError> {
+pub struct Check<D = DefaultData> {
     /// Name of the check.
     ///
     /// Used in help commands.
     pub name: String,
     /// The function of this check.
-    pub function: CheckFn<D, E>,
+    pub function: CheckFn<D>,
     /// A boolean indicating whether the check can apply in help commands.
     pub check_in_help: bool,
     /// A boolean indicating whether the check can be displayed in help commands.
     pub display_in_help: bool,
 }
 
-impl<D, E> Clone for Check<D, E> {
+impl<D> Clone for Check<D> {
     fn clone(&self) -> Self {
         Self {
             name: self.name.clone(),
@@ -95,7 +95,7 @@ impl<D, E> Clone for Check<D, E> {
     }
 }
 
-impl<D, E> Default for Check<D, E> {
+impl<D> Default for Check<D> {
     fn default() -> Self {
         Self {
             name: String::default(),
@@ -106,7 +106,7 @@ impl<D, E> Default for Check<D, E> {
     }
 }
 
-impl<D, E> fmt::Debug for Check<D, E> {
+impl<D> fmt::Debug for Check<D> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("Check")
             .field("name", &self.name)
@@ -117,11 +117,11 @@ impl<D, E> fmt::Debug for Check<D, E> {
     }
 }
 
-impl<D, E> Check<D, E> {
+impl<D> Check<D> {
     /// Constructs a builder that will be used to create a check from scratch.
     ///
     /// Argument is the main name of the check.
-    pub fn builder<I>(name: I) -> CheckBuilder<D, E>
+    pub fn builder<I>(name: I) -> CheckBuilder<D>
     where
         I: Into<String>,
     {
@@ -130,11 +130,11 @@ impl<D, E> Check<D, E> {
 }
 
 /// A builder type for creating a [`Check`] from scratch.
-pub struct CheckBuilder<D, E> {
-    inner: Check<D, E>,
+pub struct CheckBuilder<D> {
+    inner: Check<D>,
 }
 
-impl<D, E> CheckBuilder<D, E> {
+impl<D> CheckBuilder<D> {
     /// Constructs a new instance of the builder.
     ///
     /// Argument is the main name of the check.
@@ -150,7 +150,7 @@ impl<D, E> CheckBuilder<D, E> {
         }
     }
     /// Assigns the function to this function.
-    pub fn function(mut self, function: CheckFn<D, E>) -> Self {
+    pub fn function(mut self, function: CheckFn<D>) -> Self {
         self.inner.function = function;
         self
     }
@@ -168,12 +168,12 @@ impl<D, E> CheckBuilder<D, E> {
     }
 
     /// Complete building a check.
-    pub fn build(self) -> Check<D, E> {
+    pub fn build(self) -> Check<D> {
         self.inner
     }
 }
 
-impl<D, E> Clone for CheckBuilder<D, E> {
+impl<D> Clone for CheckBuilder<D> {
     fn clone(&self) -> Self {
         Self {
             inner: self.inner.clone(),
@@ -181,7 +181,7 @@ impl<D, E> Clone for CheckBuilder<D, E> {
     }
 }
 
-impl<D, E> Default for CheckBuilder<D, E> {
+impl<D> Default for CheckBuilder<D> {
     fn default() -> Self {
         Self {
             inner: Check::default(),
@@ -189,7 +189,7 @@ impl<D, E> Default for CheckBuilder<D, E> {
     }
 }
 
-impl<D, E> fmt::Debug for CheckBuilder<D, E> {
+impl<D> fmt::Debug for CheckBuilder<D> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("CheckBuilder")
             .field("inner", &self.inner)
