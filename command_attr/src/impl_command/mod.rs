@@ -23,7 +23,7 @@ pub fn impl_command(attr: TokenStream, input: TokenStream) -> Result<TokenStream
 
     parse_arguments(ctx_name, &mut fun, &options)?;
 
-    let builder_fn = builder_fn(&data, &error, &mut fun, names, &options)?;
+    let builder_fn = builder_fn(&data, &error, &mut fun, names, &options);
 
     let hook_macro = paths::hook_macro();
 
@@ -44,7 +44,7 @@ fn builder_fn(
     function: &mut ItemFn,
     mut names: Vec<String>,
     options: &Options,
-) -> Result<TokenStream> {
+) -> TokenStream {
     let name = names.remove(0);
     let aliases = names;
 
@@ -61,7 +61,7 @@ fn builder_fn(
     let vis = &function.vis;
     let external = &function.attrs;
 
-    Ok(quote! {
+    quote! {
         #(#external)*
         #vis fn #builder_name() -> #command {
             #command_builder::new(#name)
@@ -70,7 +70,7 @@ fn builder_fn(
                 #options
                 .build()
         }
-    })
+    }
 }
 
 fn parse_arguments(ctx_name: Ident, function: &mut ItemFn, options: &Options) -> Result<()> {

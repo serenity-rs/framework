@@ -22,7 +22,7 @@ pub fn impl_check(attr: TokenStream, input: TokenStream) -> Result<TokenStream> 
     let (_, data, error) = utils::parse_generics(&fun.sig)?;
     let options = Options::parse(&mut fun.attrs)?;
 
-    let builder_fn = builder_fn(&data, &error, &mut fun, &name, &options)?;
+    let builder_fn = builder_fn(&data, &error, &mut fun, &name, &options);
 
     let hook_macro = paths::hook_macro();
 
@@ -43,7 +43,7 @@ fn builder_fn(
     function: &mut ItemFn,
     name: &str,
     options: &Options,
-) -> Result<TokenStream> {
+) -> TokenStream {
     // Derive the name of the builder from the check function.
     // Prepend the check function's name with an underscore to avoid name
     // collisions.
@@ -57,7 +57,7 @@ fn builder_fn(
     let vis = &function.vis;
     let external = &function.attrs;
 
-    Ok(quote! {
+    quote! {
         #(#external)*
         #vis fn #builder_name() -> #check {
             #check_builder::new(#name)
@@ -65,5 +65,5 @@ fn builder_fn(
                 #options
                 .build()
         }
-    })
+    }
 }
