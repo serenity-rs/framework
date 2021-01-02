@@ -1,112 +1,126 @@
-use crate::utils::{parse_bool, parse_identifier, parse_identifiers, parse_string, Attr};
+use crate::utils::{parse_bool, parse_identifier, parse_identifiers, parse_string};
 
-use proc_macro2::TokenStream;
-use quote::quote;
+use proc_macro2::{Ident, TokenStream};
+use quote::{quote, ToTokens};
 use syn::{Attribute, Result};
 
 use std::convert::TryInto;
 
-pub fn parse_options(attrs: &[Attribute]) -> Result<(TokenStream, Vec<Attribute>)> {
-    let mut stream = TokenStream::new();
-    let mut normal = Vec::new();
+#[derive(Default)]
+pub struct Options {
+    subcommands: Vec<Ident>,
+    description: Option<String>,
+    dynamic_description: Option<Ident>,
+    usage: Option<String>,
+    dynamic_usage: Option<Ident>,
+    examples: Vec<String>,
+    dynamic_examples: Option<Ident>,
+    help_available: Option<bool>,
+    check: Option<Ident>,
+    pub delimiter: Option<String>,
+}
 
-    for attr in attrs {
-        let name = attr.path.get_ident().unwrap().to_string();
+impl Options {
+    pub fn parse(attrs: &mut Vec<Attribute>) -> Result<Self> {
+        let mut options = Self::default();
 
-        let tokens = match name.as_str() {
-            "subcommands" => subcommands(attr.try_into()?)?,
-            "doc" | "description" => description(attr.try_into()?)?,
-            "dynamic_description" => dynamic_description(attr.try_into()?)?,
-            "usage" => usage(attr.try_into()?)?,
-            "dynamic_usage" => dynamic_usage(attr.try_into()?)?,
-            "example" => example(attr.try_into()?)?,
-            "dynamic_examples" => dynamic_examples(attr.try_into()?)?,
-            "help_available" => help_available(attr.try_into()?)?,
-            "check" => check(attr.try_into()?)?,
-            _ => {
-                normal.push(attr.clone());
-                continue;
-            },
-        };
+        let mut i = 0;
 
-        stream.extend(tokens);
+        while i < attrs.len() {
+            let attr = &attrs[i];
+            let name = attr.path.get_ident().unwrap().to_string();
+
+            match name.as_str() {
+                "doc" | "description" => {
+                    let desc = options.description.get_or_insert_with(String::new);
+
+                    if !desc.is_empty() {
+                        desc.push('\n');
+                    }
+
+                    let mut s = parse_string(&attr.try_into()?)?;
+
+                    if s.starts_with(' ') {
+                        s.remove(0);
+                    }
+
+                    desc.push_str(&s);
+                },
+                "subcommands" => options.subcommands = parse_identifiers(&attr.try_into()?)?,
+                "dynamic_description" =>
+                    options.dynamic_description = Some(parse_identifier(&attr.try_into()?)?),
+                "usage" => options.usage = Some(parse_string(&attr.try_into()?)?),
+                "dynamic_usage" =>
+                    options.dynamic_usage = Some(parse_identifier(&attr.try_into()?)?),
+                "example" => options.examples.push(parse_string(&attr.try_into()?)?),
+                "dynamic_examples" =>
+                    options.dynamic_examples = Some(parse_identifier(&attr.try_into()?)?),
+                "help_available" => options.help_available = Some(parse_bool(&attr.try_into()?)?),
+                "check" => options.check = Some(parse_identifier(&attr.try_into()?)?),
+                "delimiter" => options.delimiter = Some(parse_string(&attr.try_into()?)?),
+                _ => {
+                    i += 1;
+
+                    continue;
+                },
+            }
+
+            attrs.remove(i);
+        }
+
+        Ok(options)
     }
-
-    Ok((stream, normal))
 }
 
-fn subcommands(attr: Attr) -> Result<TokenStream> {
-    let subcommands = parse_identifiers(&attr)?;
+impl ToTokens for Options {
+    fn to_tokens(&self, tokens: &mut TokenStream) {
+        let Options {
+            subcommands,
+            description,
+            dynamic_description,
+            usage,
+            dynamic_usage,
+            examples,
+            dynamic_examples,
+            help_available,
+            check,
+            ..
+        } = self;
 
-    Ok(quote! {
-        #(.subcommand(#subcommands))*
-    })
-}
+        tokens.extend(quote! {
+            #(.subcommand(#subcommands))*
+        });
 
-fn description(attr: Attr) -> Result<TokenStream> {
-    let mut desc = parse_string(&attr)?;
+        if let Some(desc) = description {
+            tokens.extend(quote!(.description(#desc)));
+        }
 
-    if desc.starts_with(' ') {
-        desc.remove(0);
+        if let Some(dyn_desc) = dynamic_description {
+            tokens.extend(quote!(.dynamic_description(#dyn_desc)));
+        }
+
+        if let Some(usage) = usage {
+            tokens.extend(quote!(.usage(#usage)));
+        }
+
+        if let Some(dyn_usage) = dynamic_usage {
+            tokens.extend(quote!(.dynamic_usage(#dyn_usage)));
+        }
+
+        tokens.extend(quote! {
+            #(.example(#examples))*
+        });
+
+        if let Some(dyn_examples) = dynamic_examples {
+            tokens.extend(quote!(.dynamic_examples(#dyn_examples)));
+        }
+
+        if let Some(help_available) = help_available {
+            tokens.extend(quote!(.help_available(#help_available)));
+        }
+
+        if let Some(check) = check {
+            tokens.extend(quote!(.check(#check)));
+        }
     }
-
-    Ok(quote! {
-        .description(#desc)
-    })
-}
-
-fn dynamic_description(attr: Attr) -> Result<TokenStream> {
-    let desc = parse_identifier(&attr)?;
-
-    Ok(quote! {
-        .dynamic_description(#desc)
-    })
-}
-
-fn usage(attr: Attr) -> Result<TokenStream> {
-    let usage = parse_string(&attr)?;
-
-    Ok(quote! {
-        .usage(#usage)
-    })
-}
-
-fn dynamic_usage(attr: Attr) -> Result<TokenStream> {
-    let usage = parse_identifier(&attr)?;
-
-    Ok(quote! {
-        .dynamic_usage(#usage)
-    })
-}
-
-fn example(attr: Attr) -> Result<TokenStream> {
-    let example = parse_string(&attr)?;
-
-    Ok(quote! {
-        .example(#example)
-    })
-}
-
-fn dynamic_examples(attr: Attr) -> Result<TokenStream> {
-    let examples = parse_identifier(&attr)?;
-
-    Ok(quote! {
-        .dynamic_examples(#examples)
-    })
-}
-
-fn help_available(attr: Attr) -> Result<TokenStream> {
-    let help = parse_bool(&attr)?;
-
-    Ok(quote! {
-        .help_available(#help)
-    })
-}
-
-fn check(attr: Attr) -> Result<TokenStream> {
-    let check = parse_identifier(&attr)?;
-
-    Ok(quote! {
-        .check(#check)
-    })
 }

@@ -43,6 +43,7 @@ use std::error::Error as StdError;
 use std::future::Future;
 use std::sync::Arc;
 
+pub mod argument;
 pub mod category;
 pub mod check;
 pub mod command;
@@ -151,7 +152,7 @@ impl<D, E> Framework<D, E> {
                 )));
             }
 
-            let mut segments = Segments::new(&content, ' ', conf.case_insensitive);
+            let mut segments = Segments::new(&content, " ", conf.case_insensitive);
 
             let mut command = None;
 

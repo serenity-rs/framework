@@ -1,6 +1,6 @@
 use proc_macro::TokenStream;
 
-mod context;
+mod paths;
 mod utils;
 
 mod impl_check;

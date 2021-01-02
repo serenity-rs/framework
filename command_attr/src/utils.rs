@@ -1,23 +1,13 @@
-use proc_macro2::{Ident, Span, TokenStream};
+use crate::paths::{default_data_type, default_error_type};
+
+use proc_macro2::{Ident, TokenStream};
 use quote::{quote, ToTokens};
 use syn::parse::{Parse, ParseStream};
 use syn::spanned::Spanned;
-use syn::{parse2, Attribute, Error, FnArg, GenericArgument, Lit, LitStr, Meta};
-use syn::{NestedMeta, Path, PathArguments, Result, Signature, Token, Type};
+use syn::{Attribute, Error, FnArg, GenericArgument, Lit, LitStr, Meta};
+use syn::{NestedMeta, Pat, Path, PathArguments, Result, Signature, Token, Type};
 
 use std::convert::TryFrom;
-
-pub fn crate_name() -> Ident {
-    Ident::new("serenity_framework", Span::call_site())
-}
-
-pub fn default_data(crate_name: &Ident) -> Box<Type> {
-    parse2(quote!(#crate_name::DefaultData)).unwrap()
-}
-
-pub fn default_error(crate_name: &Ident) -> Box<Type> {
-    parse2(quote!(#crate_name::DefaultError)).unwrap()
-}
 
 pub struct AttributeArgs(pub Vec<String>);
 
@@ -170,15 +160,14 @@ pub fn parse_bool(attr: &Attr) -> Result<bool> {
     })
 }
 
-pub fn parse_generics(
-    sig: &Signature,
-    default_data: Box<Type>,
-    default_error: Box<Type>,
-) -> Result<(Box<Type>, Box<Type>)> {
+pub fn parse_generics(sig: &Signature) -> Result<(Ident, Box<Type>, Box<Type>)> {
     let ctx = get_first_parameter(sig)?;
-    let ty = get_type(ctx)?;
-    let path = get_path(ty)?;
+    let (ident, ty) = get_ident_and_type(ctx)?;
+    let path = get_path(&ty)?;
     let mut arguments = get_generic_arguments(path)?;
+
+    let default_data = default_data_type();
+    let default_error = default_error_type();
 
     let data = match arguments.next() {
         Some(GenericArgument::Lifetime(_)) => match arguments.next() {
@@ -194,7 +183,7 @@ pub fn parse_generics(
         None => default_error,
     };
 
-    Ok((data, error))
+    Ok((ident, data, error))
 }
 
 fn get_first_parameter(sig: &Signature) -> Result<&FnArg> {
@@ -207,9 +196,9 @@ fn get_first_parameter(sig: &Signature) -> Result<&FnArg> {
     }
 }
 
-fn get_type(arg: &FnArg) -> Result<&Type> {
+pub fn get_ident_and_type(arg: &FnArg) -> Result<(Ident, Box<Type>)> {
     match arg {
-        FnArg::Typed(t) => Ok(&*t.ty),
+        FnArg::Typed(t) => Ok((get_ident(&t.pat)?, t.ty.clone())),
         _ => Err(Error::new(
             arg.span(),
             "`self` cannot be used as the context type",
@@ -217,7 +206,17 @@ fn get_type(arg: &FnArg) -> Result<&Type> {
     }
 }
 
-fn get_path(t: &Type) -> Result<&Path> {
+fn get_ident(p: &Pat) -> Result<Ident> {
+    match p {
+        Pat::Ident(pi) => Ok(pi.ident.clone()),
+        _ => Err(Error::new(
+            p.span(),
+            "first parameter must have an identifier",
+        )),
+    }
+}
+
+pub fn get_path(t: &Type) -> Result<&Path> {
     match t {
         Type::Path(p) => Ok(&p.path),
         Type::Reference(r) => get_path(&r.elem),

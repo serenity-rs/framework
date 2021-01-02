@@ -227,13 +227,7 @@ impl<D, E> CommandBuilder<D, E> {
     where
         I: Into<String>,
     {
-        let desc = self.inner.description.get_or_insert_with(String::new);
-
-        if !desc.is_empty() {
-            desc.push('\n');
-        }
-
-        desc.push_str(&description.into());
+        self.inner.description = Some(description.into());
 
         self
     }

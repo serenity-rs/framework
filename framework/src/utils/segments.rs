@@ -1,7 +1,7 @@
 //! Functions and types for handling *segments*.
 //!
 //! A segment is a substring of a source string. The boundaries of the substring
-//! are determined by a delimiter, which is a [`char`] value.
+//! are determined by a delimiter, which is a &[`str`] value.
 
 use std::borrow::Cow;
 
@@ -15,10 +15,10 @@ use std::borrow::Cow;
 /// ```rust
 /// use serenity_framework::utils::segment_index;
 ///
-/// assert_eq!(segment_index("hello world", ' '), 5);
-/// assert_eq!(segment_index("world", ' '), "world".len());
+/// assert_eq!(segment_index("hello world", " "), 5);
+/// assert_eq!(segment_index("world", " "), "world".len());
 /// ```
-pub fn segment_index(src: &str, delimiter: char) -> usize {
+pub fn segment_index(src: &str, delimiter: &str) -> usize {
     src.find(delimiter).unwrap_or_else(|| src.len())
 }
 
@@ -31,11 +31,11 @@ pub fn segment_index(src: &str, delimiter: char) -> usize {
 /// ```rust
 /// use serenity_framework::utils::segment;
 ///
-/// assert_eq!(segment("hello world", ' '), Some("hello"));
-/// assert_eq!(segment("world", ' '), Some("world"));
-/// assert_eq!(segment("", ' '), None);
+/// assert_eq!(segment("", " "), None);
+/// assert_eq!(segment("hello world", " "), Some("hello"));
+/// assert_eq!(segment("world", " "), Some("world"));
 /// ```
-pub fn segment(src: &str, delimiter: char) -> Option<&str> {
+pub fn segment<'a>(src: &'a str, delimiter: &str) -> Option<&'a str> {
     if src.is_empty() {
         None
     } else {
@@ -55,11 +55,11 @@ pub fn segment(src: &str, delimiter: char) -> Option<&str> {
 /// ```rust
 /// use serenity_framework::utils::segment_split;
 ///
-/// assert_eq!(segment_split("hello   world", ' '), Some(("hello", "world")));
-/// assert_eq!(segment_split("world", ' '), Some(("world", "")));
-/// assert_eq!(segment_split("", ' '), None);
+/// assert_eq!(segment_split("hello   world", " "), Some(("hello", "world")));
+/// assert_eq!(segment_split("world", " "), Some(("world", "")));
+/// assert_eq!(segment_split("", " "), None);
 /// ```
-pub fn segment_split(src: &str, delimiter: char) -> Option<(&'_ str, &'_ str)> {
+pub fn segment_split<'a>(src: &'a str, delimiter: &str) -> Option<(&'a str, &'a str)> {
     if src.is_empty() {
         None
     } else {
@@ -85,13 +85,13 @@ pub fn segment_split(src: &str, delimiter: char) -> Option<(&'_ str, &'_ str)> {
 ///
 /// use std::borrow::Cow;
 ///
-/// let mut iter = Segments::new("hello world", ' ', false);
+/// let mut iter = Segments::new("hello world", " ", false);
 ///
 /// assert_eq!(iter.next(), Some(Cow::Borrowed("hello")));
 /// assert_eq!(iter.next(), Some(Cow::Borrowed("world")));
 /// assert_eq!(iter.next(), None);
 ///
-/// let mut iter = Segments::new("hElLo WOrLd", ' ', true);
+/// let mut iter = Segments::new("hElLo WOrLd", " ", true);
 ///
 /// assert_eq!(iter.next(), Some(Cow::Owned("hello".to_string())));
 /// assert_eq!(iter.next(), Some(Cow::Owned("world".to_string())));
@@ -103,13 +103,13 @@ pub fn segment_split(src: &str, delimiter: char) -> Option<(&'_ str, &'_ str)> {
 #[derive(Debug, Clone)]
 pub struct Segments<'a> {
     src: &'a str,
-    delimiter: char,
+    delimiter: &'a str,
     case_insensitive: bool,
 }
 
 impl<'a> Segments<'a> {
     /// Creates a `Segments` instance.
-    pub fn new(src: &'a str, delimiter: char, case_insensitive: bool) -> Self {
+    pub fn new(src: &'a str, delimiter: &'a str, case_insensitive: bool) -> Self {
         Self {
             src,
             delimiter,
@@ -122,9 +122,14 @@ impl<'a> Segments<'a> {
         self.src
     }
 
-    /// Returns the delimiter character that is used to determine the boundaries
+    /// Sets the new source string from which segments are constructed.
+    pub fn set_source(&mut self, src: &'a str) {
+        self.src = src;
+    }
+
+    /// Returns the delimiter string that is used to determine the boundaries
     /// of a segment.
-    pub fn delimiter(&self) -> char {
+    pub fn delimiter(&self) -> &'a str {
         self.delimiter
     }
 
@@ -136,19 +141,6 @@ impl<'a> Segments<'a> {
     /// Returns a boolean indicating that the source string is empty.
     pub fn is_empty(&self) -> bool {
         self.src.is_empty()
-    }
-
-    /// Returns the current segment.
-    ///
-    /// If the source string is empty, `None` is returned.
-    pub fn current(&self) -> Option<Cow<'a, str>> {
-        let segment = segment(self.src, self.delimiter)?;
-
-        if self.case_insensitive {
-            Some(Cow::Owned(segment.to_lowercase()))
-        } else {
-            Some(Cow::Borrowed(segment))
-        }
     }
 }
 
@@ -165,5 +157,176 @@ impl<'a> Iterator for Segments<'a> {
         } else {
             Cow::Borrowed(segment)
         })
+    }
+}
+
+/// Returns a quoted segment and the rest of the source.
+///
+/// A quoted segment is a part of the source that is encompassed by quotation marks.
+/// Or, if a leading quotation mark exists, but the trailing mark is missing,
+/// the quoted segment is the rest of the source excluding the leading mark.
+///
+/// If the source is empty or the source does not start with a leading quotation mark,
+/// `None` is returned.
+///
+/// # Examples
+///
+/// ```
+/// // Used example strings are from the YouTube video https://www.youtube.com/watch?v=1edPxKqiptw
+/// use serenity_framework::utils::quoted_segment_split;
+///
+/// assert_eq!(quoted_segment_split(""), None);
+/// assert_eq!(quoted_segment_split("Doll and roll"), None);
+/// assert_eq!(quoted_segment_split("\"and some\" and home."), Some(("and some", " and home.")));
+/// assert_eq!(quoted_segment_split("\"Stranger does not rhyme with anger"), Some(("Stranger does not rhyme with anger", "")));
+/// ```
+pub fn quoted_segment_split(src: &str) -> Option<(&str, &str)> {
+    if src.is_empty() || !src.starts_with('"') {
+        return None;
+    }
+
+    let src = &src[1..];
+
+    match src.find('"') {
+        Some(index) => Some((&src[..index], &src[(index + 1)..])),
+        None => Some((src, "")),
+    }
+}
+
+/// Returns a quoted segment of the source.
+///
+/// Refer to [`quoted_segment_split`] for the definition of a quoted segment.
+///
+/// If the source is empty or the source does not start with a leading quotation mark,
+/// `None` is returned.
+///
+/// # Examples
+///
+/// ```
+/// // Used example strings are from the YouTube video https://www.youtube.com/watch?v=1edPxKqiptw
+/// use serenity_framework::utils::quoted_segment;
+///
+/// assert_eq!(quoted_segment(""), None);
+/// assert_eq!(quoted_segment("Neither does devour with clangour"), None);
+/// assert_eq!(quoted_segment("\"Souls but\" foul"), Some("Souls but"));
+/// assert_eq!(quoted_segment("\"haunt but aunt"), Some("haunt but aunt"));
+/// ```
+pub fn quoted_segment(src: &str) -> Option<&str> {
+    quoted_segment_split(src).map(|(seg, _)| seg)
+}
+
+/// Returns an argument segment and the rest of the source.
+///
+/// An argument segment is either [a quoted segment][qseg]
+/// or [a normal segment][seg].
+///
+/// When the segment is quoted, the rest of the source is trimmed off of
+/// the specified `delimiter`.
+///
+/// If the source is empty, `None` is returned.
+///
+/// # Examples
+///
+/// ```
+/// // Used example strings are from the YouTube video https://www.youtube.com/watch?v=1edPxKqiptw
+/// use serenity_framework::utils::argument_segment_split;
+///
+/// assert_eq!(argument_segment_split("", ", "), None);
+/// assert_eq!(argument_segment_split("Font, front, wont", ", "), Some(("Font", "front, wont")));
+/// assert_eq!(argument_segment_split("\"want, grand\", and grant", ", "), Some(("want, grand", "and grant")));
+/// assert_eq!(argument_segment_split("\"Shoes, goes, does.", ", "), Some(("Shoes, goes, does.", "")));
+/// ```
+///
+/// [qseg]: quoted_segment_split
+/// [seg]: segment
+pub fn argument_segment_split<'a>(src: &'a str, delimiter: &str) -> Option<(&'a str, &'a str)> {
+    match quoted_segment_split(src) {
+        Some((segment, rest)) => Some((segment, rest.trim_start_matches(delimiter))),
+        None => segment_split(src, delimiter),
+    }
+}
+
+/// Returns an argument segment of the source.
+///
+/// Refer to [`argument_segment_split`] for the definition of an argument segment.
+///
+/// If the source is empty, `None` is returned.
+///
+/// # Examples
+///
+/// ```
+/// // Used example strings are from the YouTube video https://www.youtube.com/watch?v=1edPxKqiptw
+/// use serenity_framework::utils::argument_segment;
+///
+/// assert_eq!(argument_segment("", ", "), None);
+/// assert_eq!(argument_segment("Now first say finger, ", ", "), Some("Now first say finger"));
+/// assert_eq!(argument_segment("\"And then singer, ginger\", linger, ", ", "), Some("And then singer, ginger"));
+/// assert_eq!(argument_segment("\"Real, zeal, mauve", ", "), Some("Real, zeal, mauve"));
+/// ```
+
+pub fn argument_segment<'a>(src: &'a str, delimiter: &str) -> Option<&'a str> {
+    argument_segment_split(src, delimiter).map(|(seg, _)| seg)
+}
+
+/// An iterator type that splits a string into [argument segments][aseg] using a delimiter and quotes.
+///
+/// # Examples
+///
+/// ```rust
+/// // Used example strings are from the YouTube video https://www.youtube.com/watch?v=1edPxKqiptw
+/// use serenity_framework::utils::ArgumentSegments;
+///
+/// let mut iter = ArgumentSegments::new("Marriage, \"foliage, mirage\", \"and age.", ", ");
+///
+/// assert_eq!(iter.next(), Some("Marriage"));
+/// assert_eq!(iter.next(), Some("foliage, mirage"));
+/// assert_eq!(iter.next(), Some("and age."));
+/// assert_eq!(iter.next(), None);
+/// ```
+///
+/// [aseg]: argument_segment_split
+#[derive(Debug, Clone)]
+pub struct ArgumentSegments<'a> {
+    src: &'a str,
+    delimiter: &'a str,
+}
+
+impl<'a> ArgumentSegments<'a> {
+    /// Creates a new `ArgumentSegments` instance.
+    pub fn new(src: &'a str, delimiter: &'a str) -> Self {
+        Self { src, delimiter }
+    }
+
+    /// Returns the source string from which segments are constructed.
+    pub fn source(&self) -> &'a str {
+        self.src
+    }
+
+    /// Sets the new source string from which segments are constructed.
+    pub fn set_source(&mut self, src: &'a str) {
+        self.src = src;
+    }
+
+    /// Returns the delimiter string that is used to determine the boundaries
+    /// of a segment.
+    pub fn delimiter(&self) -> &'a str {
+        self.delimiter
+    }
+
+    /// Returns a boolean indicating that the source string is empty.
+    pub fn is_empty(&self) -> bool {
+        self.src.is_empty()
+    }
+}
+
+impl<'a> Iterator for ArgumentSegments<'a> {
+    type Item = &'a str;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        let (segment, rest) = argument_segment_split(self.src, self.delimiter)?;
+
+        self.src = rest;
+
+        Some(segment)
     }
 }
