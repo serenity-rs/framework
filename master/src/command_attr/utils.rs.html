@@ -248,28 +248,17 @@
 <span id="245">245</span>
 <span id="246">246</span>
 <span id="247">247</span>
-<span id="248">248</span>
 </pre><div class="example-wrap"><pre class="rust ">
-<span class="kw">use</span> <span class="ident">proc_macro2</span>::{<span class="ident">Ident</span>, <span class="ident">Span</span>, <span class="ident">TokenStream</span>};
+<span class="kw">use</span> <span class="kw">crate</span>::<span class="ident">paths</span>::{<span class="ident">default_data_type</span>, <span class="ident">default_error_type</span>};
+
+<span class="kw">use</span> <span class="ident">proc_macro2</span>::{<span class="ident">Ident</span>, <span class="ident">TokenStream</span>};
 <span class="kw">use</span> <span class="ident">quote</span>::{<span class="ident">quote</span>, <span class="ident">ToTokens</span>};
 <span class="kw">use</span> <span class="ident">syn</span>::<span class="ident">parse</span>::{<span class="ident">Parse</span>, <span class="ident">ParseStream</span>};
 <span class="kw">use</span> <span class="ident">syn</span>::<span class="ident">spanned</span>::<span class="ident">Spanned</span>;
-<span class="kw">use</span> <span class="ident">syn</span>::{<span class="ident">parse2</span>, <span class="ident">Attribute</span>, <span class="ident">Error</span>, <span class="ident">FnArg</span>, <span class="ident">GenericArgument</span>, <span class="ident">Lit</span>, <span class="ident">LitStr</span>, <span class="ident">Meta</span>};
-<span class="kw">use</span> <span class="ident">syn</span>::{<span class="ident">NestedMeta</span>, <span class="ident">Path</span>, <span class="ident">PathArguments</span>, <span class="prelude-ty">Result</span>, <span class="ident">Signature</span>, <span class="ident">Token</span>, <span class="ident">Type</span>};
+<span class="kw">use</span> <span class="ident">syn</span>::{<span class="ident">Attribute</span>, <span class="ident">Error</span>, <span class="ident">FnArg</span>, <span class="ident">GenericArgument</span>, <span class="ident">Lit</span>, <span class="ident">LitStr</span>, <span class="ident">Meta</span>};
+<span class="kw">use</span> <span class="ident">syn</span>::{<span class="ident">NestedMeta</span>, <span class="ident">Pat</span>, <span class="ident">Path</span>, <span class="ident">PathArguments</span>, <span class="prelude-ty">Result</span>, <span class="ident">Signature</span>, <span class="ident">Token</span>, <span class="ident">Type</span>};
 
 <span class="kw">use</span> <span class="ident">std</span>::<span class="ident">convert</span>::<span class="ident">TryFrom</span>;
-
-<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">crate_name</span>() <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Ident</span> {
-    <span class="ident">Ident</span>::<span class="ident">new</span>(<span class="string">&quot;serenity_framework&quot;</span>, <span class="ident">Span</span>::<span class="ident">call_site</span>())
-}
-
-<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">default_data</span>(<span class="ident">crate_name</span>: <span class="kw-2">&amp;</span><span class="ident">Ident</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Box</span><span class="op">&lt;</span><span class="ident">Type</span><span class="op">&gt;</span> {
-    <span class="ident">parse2</span>(<span class="macro">quote</span><span class="macro">!</span>(#<span class="ident">crate_name</span>::<span class="ident">DefaultData</span>)).<span class="ident">unwrap</span>()
-}
-
-<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">default_error</span>(<span class="ident">crate_name</span>: <span class="kw-2">&amp;</span><span class="ident">Ident</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Box</span><span class="op">&lt;</span><span class="ident">Type</span><span class="op">&gt;</span> {
-    <span class="ident">parse2</span>(<span class="macro">quote</span><span class="macro">!</span>(#<span class="ident">crate_name</span>::<span class="ident">DefaultError</span>)).<span class="ident">unwrap</span>()
-}
 
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">AttributeArgs</span>(<span class="kw">pub</span> <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span>);
 
@@ -422,15 +411,14 @@
     })
 }
 
-<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">parse_generics</span>(
-    <span class="ident">sig</span>: <span class="kw-2">&amp;</span><span class="ident">Signature</span>,
-    <span class="ident">default_data</span>: <span class="ident">Box</span><span class="op">&lt;</span><span class="ident">Type</span><span class="op">&gt;</span>,
-    <span class="ident">default_error</span>: <span class="ident">Box</span><span class="op">&lt;</span><span class="ident">Type</span><span class="op">&gt;</span>,
-) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(<span class="ident">Box</span><span class="op">&lt;</span><span class="ident">Type</span><span class="op">&gt;</span>, <span class="ident">Box</span><span class="op">&lt;</span><span class="ident">Type</span><span class="op">&gt;</span>)<span class="op">&gt;</span> {
+<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">parse_generics</span>(<span class="ident">sig</span>: <span class="kw-2">&amp;</span><span class="ident">Signature</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(<span class="ident">Ident</span>, <span class="ident">Box</span><span class="op">&lt;</span><span class="ident">Type</span><span class="op">&gt;</span>, <span class="ident">Box</span><span class="op">&lt;</span><span class="ident">Type</span><span class="op">&gt;</span>)<span class="op">&gt;</span> {
     <span class="kw">let</span> <span class="ident">ctx</span> <span class="op">=</span> <span class="ident">get_first_parameter</span>(<span class="ident">sig</span>)<span class="question-mark">?</span>;
-    <span class="kw">let</span> <span class="ident">ty</span> <span class="op">=</span> <span class="ident">get_type</span>(<span class="ident">ctx</span>)<span class="question-mark">?</span>;
-    <span class="kw">let</span> <span class="ident">path</span> <span class="op">=</span> <span class="ident">get_path</span>(<span class="ident">ty</span>)<span class="question-mark">?</span>;
+    <span class="kw">let</span> (<span class="ident">ident</span>, <span class="ident">ty</span>) <span class="op">=</span> <span class="ident">get_ident_and_type</span>(<span class="ident">ctx</span>)<span class="question-mark">?</span>;
+    <span class="kw">let</span> <span class="ident">path</span> <span class="op">=</span> <span class="ident">get_path</span>(<span class="kw-2">&amp;</span><span class="ident">ty</span>)<span class="question-mark">?</span>;
     <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">arguments</span> <span class="op">=</span> <span class="ident">get_generic_arguments</span>(<span class="ident">path</span>)<span class="question-mark">?</span>;
+
+    <span class="kw">let</span> <span class="ident">default_data</span> <span class="op">=</span> <span class="ident">default_data_type</span>();
+    <span class="kw">let</span> <span class="ident">default_error</span> <span class="op">=</span> <span class="ident">default_error_type</span>();
 
     <span class="kw">let</span> <span class="ident">data</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">arguments</span>.<span class="ident">next</span>() {
         <span class="prelude-val">Some</span>(<span class="ident">GenericArgument</span>::<span class="ident">Lifetime</span>(<span class="kw">_</span>)) <span class="op">=</span><span class="op">&gt;</span> <span class="kw">match</span> <span class="ident">arguments</span>.<span class="ident">next</span>() {
@@ -446,7 +434,7 @@
         <span class="prelude-val">None</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">default_error</span>,
     };
 
-    <span class="prelude-val">Ok</span>((<span class="ident">data</span>, <span class="ident">error</span>))
+    <span class="prelude-val">Ok</span>((<span class="ident">ident</span>, <span class="ident">data</span>, <span class="ident">error</span>))
 }
 
 <span class="kw">fn</span> <span class="ident">get_first_parameter</span>(<span class="ident">sig</span>: <span class="kw-2">&amp;</span><span class="ident">Signature</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="kw-2">&amp;</span><span class="ident">FnArg</span><span class="op">&gt;</span> {
@@ -459,9 +447,9 @@
     }
 }
 
-<span class="kw">fn</span> <span class="ident">get_type</span>(<span class="ident">arg</span>: <span class="kw-2">&amp;</span><span class="ident">FnArg</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="kw-2">&amp;</span><span class="ident">Type</span><span class="op">&gt;</span> {
+<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">get_ident_and_type</span>(<span class="ident">arg</span>: <span class="kw-2">&amp;</span><span class="ident">FnArg</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(<span class="ident">Ident</span>, <span class="ident">Box</span><span class="op">&lt;</span><span class="ident">Type</span><span class="op">&gt;</span>)<span class="op">&gt;</span> {
     <span class="kw">match</span> <span class="ident">arg</span> {
-        <span class="ident">FnArg</span>::<span class="ident">Typed</span>(<span class="ident">t</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-val">Ok</span>(<span class="kw-2">&amp;</span><span class="kw-2">*</span><span class="ident">t</span>.<span class="ident">ty</span>),
+        <span class="ident">FnArg</span>::<span class="ident">Typed</span>(<span class="ident">t</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-val">Ok</span>((<span class="ident">get_ident</span>(<span class="kw-2">&amp;</span><span class="ident">t</span>.<span class="ident">pat</span>)<span class="question-mark">?</span>, <span class="ident">t</span>.<span class="ident">ty</span>.<span class="ident">clone</span>())),
         <span class="kw">_</span> <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-val">Err</span>(<span class="ident">Error</span>::<span class="ident">new</span>(
             <span class="ident">arg</span>.<span class="ident">span</span>(),
             <span class="string">&quot;`self` cannot be used as the context type&quot;</span>,
@@ -469,7 +457,17 @@
     }
 }
 
-<span class="kw">fn</span> <span class="ident">get_path</span>(<span class="ident">t</span>: <span class="kw-2">&amp;</span><span class="ident">Type</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="kw-2">&amp;</span><span class="ident">Path</span><span class="op">&gt;</span> {
+<span class="kw">fn</span> <span class="ident">get_ident</span>(<span class="ident">p</span>: <span class="kw-2">&amp;</span><span class="ident">Pat</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Ident</span><span class="op">&gt;</span> {
+    <span class="kw">match</span> <span class="ident">p</span> {
+        <span class="ident">Pat</span>::<span class="ident">Ident</span>(<span class="ident">pi</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-val">Ok</span>(<span class="ident">pi</span>.<span class="ident">ident</span>.<span class="ident">clone</span>()),
+        <span class="kw">_</span> <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-val">Err</span>(<span class="ident">Error</span>::<span class="ident">new</span>(
+            <span class="ident">p</span>.<span class="ident">span</span>(),
+            <span class="string">&quot;first parameter must have an identifier&quot;</span>,
+        )),
+    }
+}
+
+<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">get_path</span>(<span class="ident">t</span>: <span class="kw-2">&amp;</span><span class="ident">Type</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="kw-2">&amp;</span><span class="ident">Path</span><span class="op">&gt;</span> {
     <span class="kw">match</span> <span class="ident">t</span> {
         <span class="ident">Type</span>::<span class="ident">Path</span>(<span class="ident">p</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-val">Ok</span>(<span class="kw-2">&amp;</span><span class="ident">p</span>.<span class="ident">path</span>),
         <span class="ident">Type</span>::<span class="ident">Reference</span>(<span class="ident">r</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">get_path</span>(<span class="kw-2">&amp;</span><span class="ident">r</span>.<span class="ident">elem</span>),
