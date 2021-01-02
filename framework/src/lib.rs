@@ -140,12 +140,6 @@ impl<D> Framework<D> {
                 None => return Err(Error::Dispatch(DispatchError::NormalMessage)),
             };
 
-            if content.is_empty() {
-                return Err(Error::Dispatch(DispatchError::PrefixOnly(
-                    prefix.to_string(),
-                )));
-            }
-
             let mut segments = Segments::new(&content, " ", conf.case_insensitive);
 
             let mut command = None;
@@ -160,7 +154,10 @@ impl<D> Framework<D> {
 
             let command = match command {
                 Some(cmd) => cmd,
-                None => return Err(Error::Dispatch(DispatchError::MissingContent)),
+                None =>
+                    return Err(Error::Dispatch(DispatchError::PrefixOnly(
+                        prefix.to_string(),
+                    ))),
             };
 
             let args = segments.source();

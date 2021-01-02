@@ -15,8 +15,6 @@ pub enum DispatchError {
     NormalMessage,
     /// The message only contains a prefix. Contains the prefix.
     PrefixOnly(String),
-    /// The message is missing information needed for a proper command invocation.
-    MissingContent,
     /// The message contains a name not belonging to any command.
     InvalidCommandName(String),
     /// A check failed. Contains its name and the reasoning why it failed.
@@ -32,7 +30,6 @@ impl fmt::Display for DispatchError {
             DispatchError::PrefixOnly(prefix) => {
                 write!(f, "only the prefix (`{}`) is present", prefix)
             },
-            DispatchError::MissingContent => write!(f, "message content is missing information"),
             DispatchError::InvalidCommandName(name) =>
                 write!(f, "name \"{}\" does not refer to any command", name),
             DispatchError::CheckFailed(name, _) => write!(f, "\"{}\" check failed", name),
