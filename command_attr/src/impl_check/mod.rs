@@ -1,9 +1,10 @@
-use crate::context::{check_builder_type, check_fn, check_type, Context};
+use crate::paths;
+use crate::utils;
 
 use proc_macro2::TokenStream;
 use quote::{format_ident, quote};
 use syn::parse2;
-use syn::{ItemFn, Result};
+use syn::{ItemFn, Result, Type};
 
 mod options;
 
@@ -18,23 +19,27 @@ pub fn impl_check(attr: TokenStream, input: TokenStream) -> Result<TokenStream> 
         parse2::<syn::LitStr>(attr)?.value()
     };
 
-    let ctx = Context::new(&fun)?;
+    let (_, data, error) = utils::parse_generics(&fun.sig)?;
     let options = Options::parse(&mut fun.attrs)?;
 
-    let builder_fn = builder_fn(&ctx, &mut fun, &name, &options)?;
-    let check_fn = check_fn(&ctx, &fun);
+    let builder_fn = builder_fn(&data, &error, &mut fun, &name, &options)?;
+
+    let hook_macro = paths::hook_macro();
 
     let result = quote! {
         #builder_fn
 
-        #check_fn
+        #[#hook_macro]
+        #[doc(hidden)]
+        #fun
     };
 
     Ok(result)
 }
 
 fn builder_fn(
-    ctx: &Context,
+    data: &Type,
+    error: &Type,
     function: &mut ItemFn,
     name: &str,
     options: &Options,
@@ -46,8 +51,8 @@ fn builder_fn(
     let function_name = format_ident!("_{}", builder_name);
     function.sig.ident = function_name.clone();
 
-    let check_builder = check_builder_type(ctx);
-    let check = check_type(ctx);
+    let check_builder = paths::check_builder_type();
+    let check = paths::check_type(data, error);
 
     let vis = &function.vis;
     let external = &function.attrs;

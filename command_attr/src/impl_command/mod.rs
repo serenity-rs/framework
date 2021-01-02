@@ -1,11 +1,9 @@
-use crate::context::argument_segments_type;
-use crate::context::{command_builder_type, command_fn, command_type, Context};
-use crate::context::{opt_argument_func, req_argument_func, var_arguments_func};
+use crate::paths;
 use crate::utils::{self, AttributeArgs};
 
 use proc_macro2::{Ident, Span, TokenStream};
 use quote::{format_ident, quote};
-use syn::{parse2, FnArg, ItemFn, Path, Result, Stmt};
+use syn::{parse2, FnArg, ItemFn, Path, Result, Stmt, Type};
 
 mod options;
 
@@ -20,25 +18,29 @@ pub fn impl_command(attr: TokenStream, input: TokenStream) -> Result<TokenStream
         parse2::<AttributeArgs>(attr)?.0
     };
 
-    let ctx = Context::new(&fun)?;
+    let (ctx_name, data, error) = utils::parse_generics(&fun.sig)?;
     let options = Options::parse(&mut fun.attrs)?;
 
-    parse_arguments(&ctx, &mut fun, &options)?;
+    parse_arguments(ctx_name, &mut fun, &options)?;
 
-    let builder_fn = builder_fn(&ctx, &mut fun, names, &options)?;
-    let command_fn = command_fn(&ctx, &fun);
+    let builder_fn = builder_fn(&data, &error, &mut fun, names, &options)?;
+
+    let hook_macro = paths::hook_macro();
 
     let result = quote! {
         #builder_fn
 
-        #command_fn
+        #[#hook_macro]
+        #[doc(hidden)]
+        #fun
     };
 
     Ok(result)
 }
 
 fn builder_fn(
-    ctx: &Context,
+    data: &Type,
+    error: &Type,
     function: &mut ItemFn,
     mut names: Vec<String>,
     options: &Options,
@@ -53,8 +55,8 @@ fn builder_fn(
     let function_name = format_ident!("_{}", builder_name);
     function.sig.ident = function_name.clone();
 
-    let command_builder = command_builder_type(ctx);
-    let command = command_type(ctx);
+    let command_builder = paths::command_builder_type();
+    let command = paths::command_type(data, error);
 
     let vis = &function.vis;
     let external = &function.attrs;
@@ -71,7 +73,7 @@ fn builder_fn(
     })
 }
 
-fn parse_arguments(ctx: &Context, function: &mut ItemFn, options: &Options) -> Result<()> {
+fn parse_arguments(ctx_name: Ident, function: &mut ItemFn, options: &Options) -> Result<()> {
     let mut len = function.sig.inputs.len();
 
     let mut arguments = Vec::new();
@@ -81,14 +83,13 @@ fn parse_arguments(ctx: &Context, function: &mut ItemFn, options: &Options) -> R
     while len > 2 {
         let argument = function.sig.inputs.pop().unwrap().into_value();
 
-        arguments.push(parse_argument(ctx, &argument_segments, argument)?);
+        arguments.push(parse_argument(&ctx_name, &argument_segments, argument)?);
 
         len -= 1;
     }
 
     if !arguments.is_empty() {
-        let asegsty = argument_segments_type(ctx);
-        let ctx_name = &ctx.ctx_name;
+        let asegsty = paths::argument_segments_type();
         let delimiter = options.delimiter.as_ref().map_or(" ", String::as_str);
 
         arguments.push(parse2(quote! {
@@ -109,14 +110,13 @@ fn parse_arguments(ctx: &Context, function: &mut ItemFn, options: &Options) -> R
     Ok(())
 }
 
-fn parse_argument(ctx: &Context, asegs: &Ident, arg: FnArg) -> Result<Stmt> {
+fn parse_argument(ctx_name: &Ident, asegs: &Ident, arg: FnArg) -> Result<Stmt> {
     let (name, t) = utils::get_ident_and_type(&arg)?;
     let p = utils::get_path(&t)?;
 
     let aty = get_argument_type(&p);
 
-    let ctx_name = &ctx.ctx_name;
-    let func = aty.func(ctx);
+    let func = aty.func();
 
     let code = parse2(quote! {
         let #name: #t = #func(&#ctx_name, &mut #asegs)?;
@@ -141,11 +141,11 @@ enum ArgumentType {
 }
 
 impl ArgumentType {
-    fn func(self, ctx: &Context) -> TokenStream {
+    fn func(self) -> Path {
         match self {
-            ArgumentType::Required => req_argument_func(ctx),
-            ArgumentType::Optional => opt_argument_func(ctx),
-            ArgumentType::Variadic => var_arguments_func(ctx),
+            ArgumentType::Required => paths::req_argument_func(),
+            ArgumentType::Optional => paths::opt_argument_func(),
+            ArgumentType::Variadic => paths::var_arguments_func(),
         }
     }
 }

@@ -1,23 +1,13 @@
-use proc_macro2::{Ident, Span, TokenStream};
+use crate::paths::{default_data_type, default_error_type};
+
+use proc_macro2::{Ident, TokenStream};
 use quote::{quote, ToTokens};
 use syn::parse::{Parse, ParseStream};
 use syn::spanned::Spanned;
-use syn::{parse2, Attribute, Error, FnArg, GenericArgument, Lit, LitStr, Meta};
+use syn::{Attribute, Error, FnArg, GenericArgument, Lit, LitStr, Meta};
 use syn::{NestedMeta, Pat, Path, PathArguments, Result, Signature, Token, Type};
 
 use std::convert::TryFrom;
-
-pub fn crate_name() -> Ident {
-    Ident::new("serenity_framework", Span::call_site())
-}
-
-pub fn default_data(crate_name: &Ident) -> Box<Type> {
-    parse2(quote!(#crate_name::DefaultData)).unwrap()
-}
-
-pub fn default_error(crate_name: &Ident) -> Box<Type> {
-    parse2(quote!(#crate_name::DefaultError)).unwrap()
-}
 
 pub struct AttributeArgs(pub Vec<String>);
 
@@ -170,15 +160,14 @@ pub fn parse_bool(attr: &Attr) -> Result<bool> {
     })
 }
 
-pub fn parse_generics(
-    sig: &Signature,
-    default_data: Box<Type>,
-    default_error: Box<Type>,
-) -> Result<(Ident, Box<Type>, Box<Type>)> {
+pub fn parse_generics(sig: &Signature) -> Result<(Ident, Box<Type>, Box<Type>)> {
     let ctx = get_first_parameter(sig)?;
     let (ident, ty) = get_ident_and_type(ctx)?;
     let path = get_path(ty)?;
     let mut arguments = get_generic_arguments(path)?;
+
+    let default_data = default_data_type();
+    let default_error = default_error_type();
 
     let data = match arguments.next() {
         Some(GenericArgument::Lifetime(_)) => match arguments.next() {
