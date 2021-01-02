@@ -1,9 +1,9 @@
 use crate::paths;
 use crate::utils::{self, AttributeArgs};
 
-use proc_macro2::{Ident, Span, TokenStream};
-use quote::{format_ident, quote};
-use syn::{parse2, FnArg, ItemFn, Path, Result, Stmt, Type};
+use proc_macro2::{Ident, TokenStream};
+use quote::{format_ident, quote, ToTokens};
+use syn::{parse2, Error, FnArg, ItemFn, Path, Result, Type};
 
 mod options;
 
@@ -74,34 +74,41 @@ fn builder_fn(
 }
 
 fn parse_arguments(ctx_name: Ident, function: &mut ItemFn, options: &Options) -> Result<()> {
-    let mut len = function.sig.inputs.len();
-
     let mut arguments = Vec::new();
 
-    let argument_segments = Ident::new("__args", Span::call_site());
-
+    let mut len = function.sig.inputs.len();
     while len > 2 {
         let argument = function.sig.inputs.pop().unwrap().into_value();
 
-        arguments.push(parse_argument(&ctx_name, &argument_segments, argument)?);
+        arguments.push(Argument::new(argument)?);
 
         len -= 1;
     }
 
     if !arguments.is_empty() {
-        let asegsty = paths::argument_segments_type();
-        let delimiter = options.delimiter.as_ref().map_or(" ", String::as_str);
-
-        arguments.push(parse2(quote! {
-            let mut #argument_segments = #asegsty::new(&#ctx_name.args, #delimiter);
-        })?);
-
         arguments.reverse();
+
+        check_arguments(&arguments)?;
+
+        let delimiter = options.delimiter.as_ref().map_or(" ", String::as_str);
+        let asegsty = paths::argument_segments_type();
 
         let b = &function.block;
 
+        let argument_names = arguments.iter().map(|arg| &arg.name).collect::<Vec<_>>();
+        let argument_tys = arguments.iter().map(|arg| &arg.ty).collect::<Vec<_>>();
+        let argument_kinds = arguments.iter().map(|arg| &arg.kind).collect::<Vec<_>>();
+
         function.block = parse2(quote! {{
-            #(#arguments)*
+            let (#(#argument_names),*) = {
+                // Place the segments into its scope to allow mutation of `Context::args`
+                // afterwards, as `ArgumentSegments` holds a reference to the source string.
+                let mut __args = #asegsty::new(&#ctx_name.args, #delimiter);
+
+                #(let #argument_names: #argument_tys = #argument_kinds(&#ctx_name, &mut __args)?;)*
+
+                (#(#argument_names),*)
+            };
 
             #b
         }})?;
@@ -110,26 +117,71 @@ fn parse_arguments(ctx_name: Ident, function: &mut ItemFn, options: &Options) ->
     Ok(())
 }
 
-fn parse_argument(ctx_name: &Ident, asegs: &Ident, arg: FnArg) -> Result<Stmt> {
-    let (name, t) = utils::get_ident_and_type(&arg)?;
-    let p = utils::get_path(&t)?;
+/// Returns a result indicating whether the list of arguments is valid.
+///
+/// Valid is defined as:
+/// - a list of arguments that have required arguments first,
+/// optional arguments second, and variadic arguments third; one or two of these
+/// types of arguments can be missing.
+/// - a list of arguments that only has one variadic argument parameter, if present.
+fn check_arguments(args: &[Argument]) -> Result<()> {
+    let mut last_arg: Option<&Argument> = None;
 
-    let aty = get_argument_type(&p);
+    for arg in args {
+        if let Some(last_arg) = last_arg {
+            match (last_arg.kind, arg.kind) {
+                (ArgumentType::Optional, ArgumentType::Required) => {
+                    return Err(Error::new(
+                        last_arg.name.span(),
+                        "optional argument cannot precede a required argument",
+                    ));
+                },
+                (ArgumentType::Variadic, ArgumentType::Required) => {
+                    return Err(Error::new(
+                        last_arg.name.span(),
+                        "variadic argument cannot precede a required argument",
+                    ));
+                },
+                (ArgumentType::Variadic, ArgumentType::Optional) => {
+                    return Err(Error::new(
+                        last_arg.name.span(),
+                        "variadic argument cannot precede an optional argument",
+                    ));
+                },
+                (ArgumentType::Variadic, ArgumentType::Variadic) => {
+                    return Err(Error::new(
+                        last_arg.name.span(),
+                        "a command cannot have two variadic argument parameters",
+                    ));
+                },
+                (ArgumentType::Required, ArgumentType::Required)
+                | (ArgumentType::Optional, ArgumentType::Optional)
+                | (ArgumentType::Required, ArgumentType::Optional)
+                | (ArgumentType::Required, ArgumentType::Variadic)
+                | (ArgumentType::Optional, ArgumentType::Variadic) => {},
+            };
+        }
 
-    let func = aty.func();
+        last_arg = Some(arg);
+    }
 
-    let code = parse2(quote! {
-        let #name: #t = #func(&#ctx_name, &mut #asegs)?;
-    })?;
-
-    Ok(code)
+    Ok(())
 }
 
-fn get_argument_type(p: &Path) -> ArgumentType {
-    match p.segments.last().unwrap().ident.to_string().as_str() {
-        "Option" => ArgumentType::Optional,
-        "Vec" => ArgumentType::Variadic,
-        _ => ArgumentType::Required,
+struct Argument {
+    name: Ident,
+    ty: Box<Type>,
+    kind: ArgumentType,
+}
+
+impl Argument {
+    fn new(arg: FnArg) -> Result<Self> {
+        let (name, ty) = utils::get_ident_and_type(&arg)?;
+        let path = utils::get_path(&ty)?;
+
+        let kind = ArgumentType::new(path);
+
+        Ok(Self { name, ty, kind })
     }
 }
 
@@ -141,11 +193,23 @@ enum ArgumentType {
 }
 
 impl ArgumentType {
-    fn func(self) -> Path {
-        match self {
+    fn new(path: &Path) -> Self {
+        match path.segments.last().unwrap().ident.to_string().as_str() {
+            "Option" => ArgumentType::Optional,
+            "Vec" => ArgumentType::Variadic,
+            _ => ArgumentType::Required,
+        }
+    }
+}
+
+impl ToTokens for ArgumentType {
+    fn to_tokens(&self, tokens: &mut TokenStream) {
+        let path = match self {
             ArgumentType::Required => paths::req_argument_func(),
             ArgumentType::Optional => paths::opt_argument_func(),
             ArgumentType::Variadic => paths::var_arguments_func(),
-        }
+        };
+
+        tokens.extend(quote!(#path));
     }
 }

@@ -163,7 +163,7 @@ pub fn parse_bool(attr: &Attr) -> Result<bool> {
 pub fn parse_generics(sig: &Signature) -> Result<(Ident, Box<Type>, Box<Type>)> {
     let ctx = get_first_parameter(sig)?;
     let (ident, ty) = get_ident_and_type(ctx)?;
-    let path = get_path(ty)?;
+    let path = get_path(&ty)?;
     let mut arguments = get_generic_arguments(path)?;
 
     let default_data = default_data_type();
@@ -196,9 +196,9 @@ fn get_first_parameter(sig: &Signature) -> Result<&FnArg> {
     }
 }
 
-pub fn get_ident_and_type(arg: &FnArg) -> Result<(Ident, &Type)> {
+pub fn get_ident_and_type(arg: &FnArg) -> Result<(Ident, Box<Type>)> {
     match arg {
-        FnArg::Typed(t) => Ok((get_ident(&t.pat)?, &*t.ty)),
+        FnArg::Typed(t) => Ok((get_ident(&t.pat)?, t.ty.clone())),
         _ => Err(Error::new(
             arg.span(),
             "`self` cannot be used as the context type",
