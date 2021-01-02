@@ -18,12 +18,12 @@ pub fn impl_command(attr: TokenStream, input: TokenStream) -> Result<TokenStream
         parse2::<AttributeArgs>(attr)?.0
     };
 
-    let (ctx_name, data, error) = utils::parse_generics(&fun.sig)?;
+    let (ctx_name, data) = utils::parse_generics(&fun.sig)?;
     let options = Options::parse(&mut fun.attrs)?;
 
     parse_arguments(ctx_name, &mut fun, &options)?;
 
-    let builder_fn = builder_fn(&data, &error, &mut fun, names, &options);
+    let builder_fn = builder_fn(&data, &mut fun, names, &options);
 
     let hook_macro = paths::hook_macro();
 
@@ -40,7 +40,6 @@ pub fn impl_command(attr: TokenStream, input: TokenStream) -> Result<TokenStream
 
 fn builder_fn(
     data: &Type,
-    error: &Type,
     function: &mut ItemFn,
     mut names: Vec<String>,
     options: &Options,
@@ -56,7 +55,7 @@ fn builder_fn(
     function.sig.ident = function_name.clone();
 
     let command_builder = paths::command_builder_type();
-    let command = paths::command_type(data, error);
+    let command = paths::command_type(data);
 
     let vis = &function.vis;
     let external = &function.attrs;

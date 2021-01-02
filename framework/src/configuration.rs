@@ -3,7 +3,7 @@
 use crate::category::Category;
 use crate::command::{CommandConstructor, CommandId, CommandMap};
 use crate::context::PrefixContext;
-use crate::{DefaultData, DefaultError};
+use crate::DefaultData;
 
 use serenity::futures::future::BoxFuture;
 use serenity::model::channel::Message;
@@ -12,16 +12,16 @@ use serenity::model::id::UserId;
 use std::fmt;
 
 /// The definition of the dynamic prefix hook.
-pub type DynamicPrefix<D, E> =
-    for<'a> fn(ctx: PrefixContext<'_, D, E>, msg: &'a Message) -> BoxFuture<'a, Option<usize>>;
+pub type DynamicPrefix<D> =
+    for<'a> fn(ctx: PrefixContext<'_, D>, msg: &'a Message) -> BoxFuture<'a, Option<usize>>;
 
 /// The configuration of the framework.
 #[non_exhaustive]
-pub struct Configuration<D = DefaultData, E = DefaultError> {
+pub struct Configuration<D = DefaultData> {
     /// A list of static prefixes.
     pub prefixes: Vec<String>,
     /// A function to dynamically parse the prefix.
-    pub dynamic_prefix: Option<DynamicPrefix<D, E>>,
+    pub dynamic_prefix: Option<DynamicPrefix<D>>,
     /// A boolean indicating whether casing of the letters in static prefixes,
     /// or command names does not matter.
     pub case_insensitive: bool,
@@ -39,10 +39,10 @@ pub struct Configuration<D = DefaultData, E = DefaultError> {
     ///
     /// [`IdMap`]: crate::utils::IdMap
     /// [`Command`]: crate::command::Command
-    pub commands: CommandMap<D, E>,
+    pub commands: CommandMap<D>,
 }
 
-impl<D, E> Clone for Configuration<D, E> {
+impl<D> Clone for Configuration<D> {
     fn clone(&self) -> Self {
         Self {
             prefixes: self.prefixes.clone(),
@@ -56,7 +56,7 @@ impl<D, E> Clone for Configuration<D, E> {
     }
 }
 
-impl<D, E> Default for Configuration<D, E> {
+impl<D> Default for Configuration<D> {
     fn default() -> Self {
         Self {
             prefixes: Vec::default(),
@@ -70,7 +70,7 @@ impl<D, E> Default for Configuration<D, E> {
     }
 }
 
-impl<D, E> Configuration<D, E> {
+impl<D> Configuration<D> {
     /// Creates a new instance of the framework configuration.
     pub fn new() -> Self {
         Self::default()
@@ -90,7 +90,7 @@ impl<D, E> Configuration<D, E> {
     }
 
     /// Assigns a function to dynamically parse the prefix.
-    pub fn dynamic_prefix(&mut self, prefix: DynamicPrefix<D, E>) -> &mut Self {
+    pub fn dynamic_prefix(&mut self, prefix: DynamicPrefix<D>) -> &mut Self {
         self.dynamic_prefix = Some(prefix);
         self
     }
@@ -127,7 +127,7 @@ impl<D, E> Configuration<D, E> {
     /// [`categories`]: Self::categories
     /// [`commands`]: Self::commands
     /// [cmd]: Self::command
-    pub fn category<I>(&mut self, name: I, cmds: &[CommandConstructor<D, E>]) -> &mut Self
+    pub fn category<I>(&mut self, name: I, cmds: &[CommandConstructor<D>]) -> &mut Self
     where
         I: Into<String>,
     {
@@ -151,7 +151,7 @@ impl<D, E> Configuration<D, E> {
     /// The command is added to the [`commands`] map.
     ///
     /// [`commands`]: Self::commands
-    pub fn command(&mut self, command: CommandConstructor<D, E>) -> &mut Self {
+    pub fn command(&mut self, command: CommandConstructor<D>) -> &mut Self {
         let id = CommandId::from(command);
 
         // Avoid instantiating the command if the map already contains it.
@@ -173,7 +173,7 @@ impl<D, E> Configuration<D, E> {
         }
 
         for id in &command.subcommands {
-            let ctor: CommandConstructor<D, E> = id.into_constructor();
+            let ctor: CommandConstructor<D> = id.into_constructor();
             self.command(ctor);
         }
 
@@ -183,7 +183,7 @@ impl<D, E> Configuration<D, E> {
     }
 }
 
-impl<D, E> fmt::Debug for Configuration<D, E> {
+impl<D> fmt::Debug for Configuration<D> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("Configuration")
             .field("prefixes", &self.prefixes)

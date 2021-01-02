@@ -39,7 +39,6 @@
 use serenity::model::channel::Message;
 use serenity::prelude::{Context as SerenityContext, Mutex, RwLock};
 
-use std::error::Error as StdError;
 use std::future::Future;
 use std::sync::Arc;
 
@@ -66,21 +65,16 @@ use utils::Segments;
 /// [data]: Framework::data
 pub type DefaultData = ();
 
-/// The default type for [command errors][errors] when it is unspecified.
-///
-/// [errors]: crate::command::CommandResult
-pub type DefaultError = Box<dyn StdError + Send + Sync>;
-
 /// The core of the framework.
 #[derive(Clone)]
-pub struct Framework<D = DefaultData, E = DefaultError> {
+pub struct Framework<D = DefaultData> {
     /// Configuration of the framework that dictates its behaviour.
-    pub conf: Arc<Mutex<Configuration<D, E>>>,
+    pub conf: Arc<Mutex<Configuration<D>>>,
     /// User data that is accessable in every command and function hook.
     pub data: Arc<RwLock<D>>,
 }
 
-impl<D, E> Framework<D, E>
+impl<D> Framework<D>
 where
     D: Default,
 {
@@ -91,12 +85,12 @@ where
     /// [`data`]: Self::data
     /// [`Default`]: std::default::Default
     #[inline]
-    pub fn new(conf: Configuration<D, E>) -> Self {
+    pub fn new(conf: Configuration<D>) -> Self {
         Self::with_data(conf, D::default())
     }
 }
 
-impl<D, E> Framework<D, E> {
+impl<D> Framework<D> {
     /// Creates new instanstiation of the framework using a given configuration and data.
     ///
     /// # Notes
@@ -107,13 +101,13 @@ impl<D, E> Framework<D, E> {
     ///
     /// [`with_arc_data`]: Self::with_arc_data
     #[inline]
-    pub fn with_data(conf: Configuration<D, E>, data: D) -> Self {
+    pub fn with_data(conf: Configuration<D>, data: D) -> Self {
         Self::with_arc_data(conf, Arc::new(RwLock::new(data)))
     }
 
     /// Creates new instanstiation of the framework using a given configuration and data.
     #[inline]
-    pub fn with_arc_data(conf: Configuration<D, E>, data: Arc<RwLock<D>>) -> Self {
+    pub fn with_arc_data(conf: Configuration<D>, data: Arc<RwLock<D>>) -> Self {
         Self {
             conf: Arc::new(Mutex::new(conf)),
             data,
@@ -122,7 +116,7 @@ impl<D, E> Framework<D, E> {
 
     /// Dispatches a command.
     #[inline]
-    pub async fn dispatch(&self, ctx: SerenityContext, msg: Message) -> Result<(), Error<E>> {
+    pub async fn dispatch(&self, ctx: SerenityContext, msg: Message) -> Result<(), Error> {
         self.dispatch_with_hook(ctx, msg, |ctx, msg, f| f(ctx, msg))
             .await
     }
@@ -133,10 +127,10 @@ impl<D, E> Framework<D, E> {
         ctx: SerenityContext,
         msg: Message,
         hook: F,
-    ) -> Result<(), Error<E>>
+    ) -> Result<(), Error>
     where
-        F: FnOnce(Context<D, E>, Message, CommandFn<D, E>) -> Fut,
-        Fut: Future<Output = CommandResult<(), E>>,
+        F: FnOnce(Context<D>, Message, CommandFn<D>) -> Fut,
+        Fut: Future<Output = CommandResult<()>>,
     {
         let (func, command_id, prefix, args) = {
             let conf = self.conf.lock().await;
@@ -192,13 +186,13 @@ impl<D, E> Framework<D, E> {
     }
 }
 
-async fn command_check<D, E>(
+async fn command_check<D>(
     data: &Arc<RwLock<D>>,
-    conf: &Configuration<D, E>,
+    conf: &Configuration<D>,
     serenity_ctx: &SerenityContext,
     msg: &Message,
-    command: &Command<D, E>,
-) -> Result<(), Error<E>> {
+    command: &Command<D>,
+) -> Result<(), Error> {
     let ctx = CheckContext {
         data,
         conf,

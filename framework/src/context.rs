@@ -9,7 +9,7 @@
 
 use crate::command::CommandId;
 use crate::configuration::Configuration;
-use crate::{DefaultData, DefaultError};
+use crate::DefaultData;
 
 use serenity::cache::Cache;
 use serenity::client::Context as SerenityContext;
@@ -27,11 +27,11 @@ use std::sync::Arc;
 ///
 /// [ctx]: crate::command::CommandFn
 #[non_exhaustive]
-pub struct Context<D = DefaultData, E = DefaultError> {
+pub struct Context<D = DefaultData> {
     /// User data.
     pub data: Arc<RwLock<D>>,
     /// Framework configuration.
-    pub conf: Arc<Mutex<Configuration<D, E>>>,
+    pub conf: Arc<Mutex<Configuration<D>>>,
     /// Serenity's context type.
     pub serenity_ctx: SerenityContext,
     /// The identifier of the command.
@@ -46,7 +46,7 @@ pub struct Context<D = DefaultData, E = DefaultError> {
     pub args: String,
 }
 
-impl<D, E> Clone for Context<D, E> {
+impl<D> Clone for Context<D> {
     fn clone(&self) -> Self {
         Self {
             data: Arc::clone(&self.data),
@@ -59,22 +59,21 @@ impl<D, E> Clone for Context<D, E> {
     }
 }
 
-impl<D, E> AsRef<Http> for Context<D, E> {
+impl<D> AsRef<Http> for Context<D> {
     fn as_ref(&self) -> &Http {
         &self.serenity_ctx.http
     }
 }
 
-impl<D, E> AsRef<Cache> for Context<D, E> {
+impl<D> AsRef<Cache> for Context<D> {
     fn as_ref(&self) -> &Cache {
         &self.serenity_ctx.cache
     }
 }
 
-impl<D, E> CacheHttp for Context<D, E>
+impl<D> CacheHttp for Context<D>
 where
     D: Send + Sync,
-    E: Send + Sync,
 {
     fn http(&self) -> &Http {
         &self.serenity_ctx.http
@@ -91,16 +90,16 @@ where
 ///
 /// [dyn_prefix]: crate::configuration::DynamicPrefix
 #[non_exhaustive]
-pub struct PrefixContext<'a, D = DefaultData, E = DefaultError> {
+pub struct PrefixContext<'a, D = DefaultData> {
     /// User data.
     pub data: &'a Arc<RwLock<D>>,
     /// Framework configuration.
-    pub conf: &'a Configuration<D, E>,
+    pub conf: &'a Configuration<D>,
     /// Serenity's context type.
     pub serenity_ctx: &'a SerenityContext,
 }
 
-impl<'a, D, E> Clone for PrefixContext<'a, D, E> {
+impl<'a, D> Clone for PrefixContext<'a, D> {
     fn clone(&self) -> Self {
         Self {
             data: self.data,
@@ -110,22 +109,21 @@ impl<'a, D, E> Clone for PrefixContext<'a, D, E> {
     }
 }
 
-impl<D, E> AsRef<Http> for PrefixContext<'_, D, E> {
+impl<D> AsRef<Http> for PrefixContext<'_, D> {
     fn as_ref(&self) -> &Http {
         &self.serenity_ctx.http
     }
 }
 
-impl<D, E> AsRef<Cache> for PrefixContext<'_, D, E> {
+impl<D> AsRef<Cache> for PrefixContext<'_, D> {
     fn as_ref(&self) -> &Cache {
         &self.serenity_ctx.cache
     }
 }
 
-impl<D, E> CacheHttp for PrefixContext<'_, D, E>
+impl<D> CacheHttp for PrefixContext<'_, D>
 where
     D: Send + Sync,
-    E: Send + Sync,
 {
     fn http(&self) -> &Http {
         &self.serenity_ctx.http
@@ -142,18 +140,18 @@ where
 ///
 /// [fn]: crate::check::CheckFn
 #[non_exhaustive]
-pub struct CheckContext<'a, D = DefaultData, E = DefaultError> {
+pub struct CheckContext<'a, D = DefaultData> {
     /// User data.
     pub data: &'a Arc<RwLock<D>>,
     /// Framework configuration.
-    pub conf: &'a Configuration<D, E>,
+    pub conf: &'a Configuration<D>,
     /// Serenity's context type.
     pub serenity_ctx: &'a SerenityContext,
     /// The identifier of the command that is being checked upon.
     pub command_id: CommandId,
 }
 
-impl<'a, D, E> Clone for CheckContext<'a, D, E> {
+impl<'a, D> Clone for CheckContext<'a, D> {
     fn clone(&self) -> Self {
         Self {
             data: self.data,
@@ -164,22 +162,21 @@ impl<'a, D, E> Clone for CheckContext<'a, D, E> {
     }
 }
 
-impl<D, E> AsRef<Http> for CheckContext<'_, D, E> {
+impl<D> AsRef<Http> for CheckContext<'_, D> {
     fn as_ref(&self) -> &Http {
         &self.serenity_ctx.http
     }
 }
 
-impl<D, E> AsRef<Cache> for CheckContext<'_, D, E> {
+impl<D> AsRef<Cache> for CheckContext<'_, D> {
     fn as_ref(&self) -> &Cache {
         &self.serenity_ctx.cache
     }
 }
 
-impl<D, E> CacheHttp for CheckContext<'_, D, E>
+impl<D> CacheHttp for CheckContext<'_, D>
 where
     D: Send + Sync,
-    E: Send + Sync,
 {
     fn http(&self) -> &Http {
         &self.serenity_ctx.http

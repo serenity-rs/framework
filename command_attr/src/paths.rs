@@ -16,15 +16,9 @@ pub fn default_data_type() -> Box<Type> {
     })
 }
 
-pub fn default_error_type() -> Box<Type> {
-    to_type(quote! {
-        serenity_framework::DefaultError
-    })
-}
-
-pub fn command_type(data: &Type, error: &Type) -> Path {
+pub fn command_type(data: &Type) -> Path {
     to_path(quote! {
-        serenity_framework::command::Command<#data, #error>
+        serenity_framework::command::Command<#data>
     })
 }
 
@@ -64,9 +58,9 @@ pub fn variadic_arguments_func() -> Path {
     })
 }
 
-pub fn check_type(data: &Type, error: &Type) -> Path {
+pub fn check_type(data: &Type) -> Path {
     to_path(quote! {
-        serenity_framework::check::Check<#data, #error>
+        serenity_framework::check::Check<#data>
     })
 }
 

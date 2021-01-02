@@ -2,14 +2,14 @@
 
 use crate::context::Context;
 use crate::utils::ArgumentSegments;
-use crate::{DefaultData, DefaultError};
+use crate::DefaultData;
 
 use std::error::Error as StdError;
 use std::fmt;
 use std::str::FromStr;
 
 /// Abstraction for parsing arguments from a source.
-pub trait Argument<D = DefaultData, E = DefaultError>: Sized {
+pub trait Argument<D = DefaultData>: Sized {
     /// Type of error that may be returned from trying to parse a source.
     type Error;
 
@@ -17,16 +17,16 @@ pub trait Argument<D = DefaultData, E = DefaultError>: Sized {
     /// a [`Context`].
     ///
     /// [`Context`]: crate::context::Context
-    fn parse(ctx: &Context<D, E>, source: &str) -> Result<Self, Self::Error>;
+    fn parse(ctx: &Context<D>, source: &str) -> Result<Self, Self::Error>;
 }
 
-impl<T, D, E> Argument<D, E> for T
+impl<T, D> Argument<D> for T
 where
     T: FromStr,
 {
     type Error = <T as FromStr>::Err;
 
-    fn parse(_: &Context<D, E>, source: &str) -> Result<Self, Self::Error> {
+    fn parse(_: &Context<D>, source: &str) -> Result<Self, Self::Error> {
         <T as FromStr>::from_str(source)
     }
 }
@@ -71,12 +71,12 @@ impl<E: StdError + 'static> StdError for ArgumentError<E> {
 /// returned.
 ///
 /// [arg]: Argument
-pub fn required_argument<T, D, E>(
-    ctx: &Context<D, E>,
+pub fn required_argument<T, D>(
+    ctx: &Context<D>,
     segments: &mut ArgumentSegments<'_>,
 ) -> Result<T, ArgumentError<T::Error>>
 where
-    T: Argument<D, E>,
+    T: Argument<D>,
 {
     match segments.next() {
         Some(seg) => T::parse(ctx, seg).map_err(ArgumentError::Argument),
@@ -93,12 +93,12 @@ where
 /// [`ArgumentError::Argument`].
 ///
 /// [arg]: Argument
-pub fn optional_argument<T, D, E>(
-    ctx: &Context<D, E>,
+pub fn optional_argument<T, D>(
+    ctx: &Context<D>,
     segments: &mut ArgumentSegments<'_>,
 ) -> Result<Option<T>, ArgumentError<T::Error>>
 where
-    T: Argument<D, E>,
+    T: Argument<D>,
 {
     segments
         .next()
@@ -113,12 +113,12 @@ where
 /// is returned. The error is wrapped in [`ArgumentError::Argument`].
 ///
 /// [arg]: Argument
-pub fn variadic_arguments<T, D, E>(
-    ctx: &Context<D, E>,
+pub fn variadic_arguments<T, D>(
+    ctx: &Context<D>,
     segments: &mut ArgumentSegments<'_>,
 ) -> Result<Vec<T>, ArgumentError<T::Error>>
 where
-    T: Argument<D, E>,
+    T: Argument<D>,
 {
     segments
         .map(|seg| T::parse(ctx, seg).map_err(ArgumentError::Argument))

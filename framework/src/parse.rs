@@ -55,8 +55,8 @@ pub fn mention<'a>(msg: &'a str, id: &str) -> Option<(&'a str, &'a str)> {
 ///
 /// [`Configuration::dynamic_prefix`]: crate::configuration::Configuration::dynamic_prefix
 #[allow(clippy::needless_lifetimes)]
-pub async fn dynamic_prefix<'a, D, E>(
-    ctx: PrefixContext<'_, D, E>,
+pub async fn dynamic_prefix<'a, D>(
+    ctx: PrefixContext<'_, D>,
     msg: &'a Message,
 ) -> Option<(&'a str, &'a str)> {
     if let Some(dynamic_prefix) = ctx.conf.dynamic_prefix {
@@ -98,9 +98,9 @@ pub fn static_prefix<'a>(msg: &'a str, prefixes: &[String]) -> Option<(&'a str, 
 /// [prefixes]: static_prefix
 /// [dyn_prefix]: dynamic_prefix
 #[allow(clippy::needless_lifetimes)]
-pub async fn content<'a, D, E>(
+pub async fn content<'a, D>(
     data: &Arc<RwLock<D>>,
-    conf: &Configuration<D, E>,
+    conf: &Configuration<D>,
     serenity_ctx: &SerenityContext,
     msg: &'a Message,
 ) -> Option<(&'a str, &'a str)> {
@@ -134,15 +134,15 @@ pub async fn content<'a, D, E>(
 /// Refer to its documentation for more information.
 ///
 /// [`commands`]: self::commands
-pub struct CommandIterator<'a, 'b, 'c, D, E> {
-    conf: &'a Configuration<D, E>,
+pub struct CommandIterator<'a, 'b, 'c, D> {
+    conf: &'a Configuration<D>,
     segments: &'b mut Segments<'c>,
-    command: Option<&'a Command<D, E>>,
+    command: Option<&'a Command<D>>,
     beginning: bool,
 }
 
-impl<'a, 'b, 'c, D, E> Iterator for CommandIterator<'a, 'b, 'c, D, E> {
-    type Item = Result<&'a Command<D, E>, DispatchError>;
+impl<'a, 'b, 'c, D> Iterator for CommandIterator<'a, 'b, 'c, D> {
+    type Item = Result<&'a Command<D>, DispatchError>;
 
     fn next(&mut self) -> Option<Self::Item> {
         let checkpoint = self.segments.source();
@@ -201,10 +201,10 @@ impl<'a, 'b, 'c, D, E> Iterator for CommandIterator<'a, 'b, 'c, D, E> {
 /// [`Command`]: crate::command::Command
 /// [`DispatchError`]: crate::error::DispatchError
 /// [`InvalidCommandName`]: crate::error::DispatchError::InvalidCommandName
-pub fn commands<'a, 'b, 'c, D, E>(
-    conf: &'a Configuration<D, E>,
+pub fn commands<'a, 'b, 'c, D>(
+    conf: &'a Configuration<D>,
     segments: &'b mut Segments<'c>,
-) -> CommandIterator<'a, 'b, 'c, D, E> {
+) -> CommandIterator<'a, 'b, 'c, D> {
     CommandIterator {
         conf,
         segments,
