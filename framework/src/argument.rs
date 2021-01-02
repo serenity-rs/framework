@@ -36,7 +36,7 @@ where
 pub enum ArgumentError<E> {
     /// Required argument is missing.
     ///
-    /// This is only returned by the [`req_argument`] function.
+    /// This is only returned by the [`required_argument`] function.
     Missing,
     /// Parsing the argument failed.
     ///
