@@ -71,7 +71,7 @@ impl<E: StdError + 'static> StdError for RequiredArgumentError<E> {
 /// returned.
 ///
 /// [arg]: Argument
-pub fn req_argument<T, D, E>(
+pub fn required_argument<T, D, E>(
     ctx: &Context<D, E>,
     segments: &mut ArgumentSegments<'_>,
 ) -> Result<T, RequiredArgumentError<T::Error>>
@@ -92,7 +92,7 @@ where
 /// `Ok(Some(...))` is returned, otherwise `Err`.
 ///
 /// [arg]: Argument
-pub fn opt_argument<T, D, E>(
+pub fn optional_argument<T, D, E>(
     ctx: &Context<D, E>,
     segments: &mut ArgumentSegments<'_>,
 ) -> Result<Option<T>, T::Error>
@@ -109,7 +109,7 @@ where
 /// is returned.
 ///
 /// [arg]: Argument
-pub fn var_arguments<T, D, E>(
+pub fn variadic_arguments<T, D, E>(
     ctx: &Context<D, E>,
     segments: &mut ArgumentSegments<'_>,
 ) -> Result<Vec<T>, T::Error>

@@ -46,21 +46,21 @@ pub fn argument_segments_type() -> Path {
     })
 }
 
-pub fn req_argument_func() -> Path {
+pub fn required_argument_func() -> Path {
     to_path(quote! {
-        serenity_framework::argument::req_argument
+        serenity_framework::argument::required_argument
     })
 }
 
-pub fn opt_argument_func() -> Path {
+pub fn optional_argument_func() -> Path {
     to_path(quote! {
-        serenity_framework::argument::opt_argument
+        serenity_framework::argument::optional_argument
     })
 }
 
-pub fn var_arguments_func() -> Path {
+pub fn variadic_arguments_func() -> Path {
     to_path(quote! {
-        serenity_framework::argument::var_arguments
+        serenity_framework::argument::variadic_arguments
     })
 }
 

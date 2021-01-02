@@ -205,9 +205,9 @@ impl ArgumentType {
 impl ToTokens for ArgumentType {
     fn to_tokens(&self, tokens: &mut TokenStream) {
         let path = match self {
-            ArgumentType::Required => paths::req_argument_func(),
-            ArgumentType::Optional => paths::opt_argument_func(),
-            ArgumentType::Variadic => paths::var_arguments_func(),
+            ArgumentType::Required => paths::required_argument_func(),
+            ArgumentType::Optional => paths::optional_argument_func(),
+            ArgumentType::Variadic => paths::variadic_arguments_func(),
         };
 
         tokens.extend(quote!(#path));
