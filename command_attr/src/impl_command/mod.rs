@@ -150,7 +150,7 @@ fn check_arguments(args: &[Argument]) -> Result<()> {
                 },
                 (ArgumentType::Variadic, ArgumentType::Variadic) => {
                     return Err(Error::new(
-                        last_arg.name.span(),
+                        arg.name.span(),
                         "a command cannot have two variadic argument parameters",
                     ));
                 },
