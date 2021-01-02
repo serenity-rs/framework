@@ -211,9 +211,6 @@
 <span id="208">208</span>
 <span id="209">209</span>
 <span id="210">210</span>
-<span id="211">211</span>
-<span id="212">212</span>
-<span id="213">213</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="doccomment">//! The official command framework for [Serenity] bots.</span>
 <span class="doccomment">//!</span>
@@ -357,12 +354,6 @@
                 <span class="prelude-val">None</span> <span class="op">=</span><span class="op">&gt;</span> <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">Error</span>::<span class="ident">Dispatch</span>(<span class="ident">DispatchError</span>::<span class="ident">NormalMessage</span>)),
             };
 
-            <span class="kw">if</span> <span class="ident">content</span>.<span class="ident">is_empty</span>() {
-                <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">Error</span>::<span class="ident">Dispatch</span>(<span class="ident">DispatchError</span>::<span class="ident">PrefixOnly</span>(
-                    <span class="ident">prefix</span>.<span class="ident">to_string</span>(),
-                )));
-            }
-
             <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">segments</span> <span class="op">=</span> <span class="ident">Segments</span>::<span class="ident">new</span>(<span class="kw-2">&amp;</span><span class="ident">content</span>, <span class="string">&quot; &quot;</span>, <span class="ident">conf</span>.<span class="ident">case_insensitive</span>);
 
             <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">command</span> <span class="op">=</span> <span class="prelude-val">None</span>;
@@ -377,7 +368,10 @@
 
             <span class="kw">let</span> <span class="ident">command</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">command</span> {
                 <span class="prelude-val">Some</span>(<span class="ident">cmd</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">cmd</span>,
-                <span class="prelude-val">None</span> <span class="op">=</span><span class="op">&gt;</span> <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">Error</span>::<span class="ident">Dispatch</span>(<span class="ident">DispatchError</span>::<span class="ident">MissingContent</span>)),
+                <span class="prelude-val">None</span> <span class="op">=</span><span class="op">&gt;</span>
+                    <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">Error</span>::<span class="ident">Dispatch</span>(<span class="ident">DispatchError</span>::<span class="ident">PrefixOnly</span>(
+                        <span class="ident">prefix</span>.<span class="ident">to_string</span>(),
+                    ))),
             };
 
             <span class="kw">let</span> <span class="ident">args</span> <span class="op">=</span> <span class="ident">segments</span>.<span class="ident">source</span>();
