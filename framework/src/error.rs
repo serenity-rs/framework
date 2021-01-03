@@ -1,7 +1,7 @@
 //! Defines error types used by the framework.
 
 use crate::check::Reason;
-use crate::command::CommandError;
+use crate::DefaultError;
 
 use std::error::Error as StdError;
 use std::fmt;
@@ -42,21 +42,21 @@ impl StdError for DispatchError {}
 /// Returned when the call of [`dispatch`] fails.
 ///
 /// [`dispatch`]: crate::Framework::dispatch
-#[derive(Debug)]
-pub enum Error {
+#[derive(Debug, Clone)]
+pub enum Error<E = DefaultError> {
     /// Failed to dispatch a command.
     Dispatch(DispatchError),
     /// A command returned an error.
-    User(CommandError),
+    User(E),
 }
 
-impl From<DispatchError> for Error {
+impl<E> From<DispatchError> for Error<E> {
     fn from(e: DispatchError) -> Self {
         Self::Dispatch(e)
     }
 }
 
-impl fmt::Display for Error {
+impl<E: fmt::Display> fmt::Display for Error<E> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Error::Dispatch(err) => fmt::Display::fmt(err, f),
@@ -65,11 +65,11 @@ impl fmt::Display for Error {
     }
 }
 
-impl StdError for Error {
+impl<E: StdError + 'static> StdError for Error<E> {
     fn source(&self) -> Option<&(dyn StdError + 'static)> {
         match self {
             Error::Dispatch(err) => Some(err),
-            Error::User(err) => Some(&**err),
+            Error::User(err) => Some(err),
         }
     }
 }

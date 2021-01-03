@@ -11,48 +11,42 @@
 use crate::check::{Check, CheckConstructor};
 use crate::context::Context;
 use crate::utils::IdMap;
-use crate::DefaultData;
+use crate::{DefaultData, DefaultError};
 
 use serenity::futures::future::BoxFuture;
 use serenity::model::channel::Message;
 
 use std::collections::HashSet;
-use std::error::Error as StdError;
 use std::fmt;
 
 /// A function to dynamically create a string.
 ///
 /// Used for [`Command::dynamic_description`] and [`Command::dynamic_usage`].
-pub type StringHook<D = DefaultData> =
-    for<'a> fn(ctx: &'a Context<D>, msg: &'a Message) -> BoxFuture<'a, Option<String>>;
+pub type StringHook<D = DefaultData, E = DefaultError> =
+    for<'a> fn(ctx: &'a Context<D, E>, msg: &'a Message) -> BoxFuture<'a, Option<String>>;
 
 /// A function to dynamically create a list of strings.
 ///
 /// Used for [`Command::dynamic_examples`].
-pub type StringsHook<D = DefaultData> =
-    for<'a> fn(ctx: &'a Context<D>, msg: &'a Message) -> BoxFuture<'a, Vec<String>>;
+pub type StringsHook<D = DefaultData, E = DefaultError> =
+    for<'a> fn(ctx: &'a Context<D, E>, msg: &'a Message) -> BoxFuture<'a, Vec<String>>;
 
 /// [`IdMap`] for storing commands.
 ///
 /// [`IdMap`]: crate::utils::IdMap
-pub type CommandMap<D = DefaultData> = IdMap<String, CommandId, Command<D>>;
-
-/// Type of error returned from [commands][fn].
-///
-/// [fn]: CommandFn
-pub type CommandError = Box<dyn StdError + Send + Sync + 'static>;
+pub type CommandMap<D = DefaultData, E = DefaultError> = IdMap<String, CommandId, Command<D, E>>;
 
 /// The result type of a [command function][fn].
 ///
 /// [fn]: CommandFn
-pub type CommandResult<T = ()> = std::result::Result<T, CommandError>;
+pub type CommandResult<T = (), E = DefaultError> = std::result::Result<T, E>;
 
 /// The definition of a command function.
-pub type CommandFn<D = DefaultData> =
-    fn(Context<D>, Message) -> BoxFuture<'static, CommandResult<()>>;
+pub type CommandFn<D = DefaultData, E = DefaultError> =
+    fn(Context<D, E>, Message) -> BoxFuture<'static, CommandResult<(), E>>;
 
 /// A constructor of the [`Command`] type provided by the consumer of the framework.
-pub type CommandConstructor<D = DefaultData> = fn() -> Command<D>;
+pub type CommandConstructor<D = DefaultData, E = DefaultError> = fn() -> Command<D, E>;
 
 /// A unique identifier of a [`Command`] stored in the [`CommandMap`].
 ///
@@ -67,16 +61,16 @@ impl CommandId {
     }
 
     /// Converts the identifier to the constructor it points to.
-    pub(crate) fn into_constructor<D>(self) -> CommandConstructor<D> {
+    pub(crate) fn into_constructor<D, E>(self) -> CommandConstructor<D, E> {
         // SAFETY: CommandId in user code can only be constructed by its
-        // `From<CommandConstructor<D>>` impl. This makes the transmute safe.
+        // `From<CommandConstructor<D, E>>` impl. This makes the transmute safe.
 
         unsafe { std::mem::transmute(self.0 as *const ()) }
     }
 }
 
-impl<D> From<CommandConstructor<D>> for CommandId {
-    fn from(f: CommandConstructor<D>) -> Self {
+impl<D, E> From<CommandConstructor<D, E>> for CommandId {
+    fn from(f: CommandConstructor<D, E>) -> Self {
         Self(f as usize)
     }
 }
@@ -87,11 +81,11 @@ impl<D> From<CommandConstructor<D>> for CommandId {
 ///
 /// [docs]: index.html
 #[non_exhaustive]
-pub struct Command<D = DefaultData> {
+pub struct Command<D = DefaultData, E = DefaultError> {
     /// The identifier of this command.
     pub id: CommandId,
     /// The function of this command.
-    pub function: CommandFn<D>,
+    pub function: CommandFn<D, E>,
     /// The names of this command by which it can be invoked.
     pub names: Vec<String>,
     /// The subcommands belonging to this command.
@@ -111,10 +105,10 @@ pub struct Command<D = DefaultData> {
     /// A boolean to indicate whether the command can be shown in help commands.
     pub help_available: bool,
     /// A function that allows/denies access to this command.
-    pub check: Option<Check<D>>,
+    pub check: Option<Check<D, E>>,
 }
 
-impl<D> Clone for Command<D> {
+impl<D, E> Clone for Command<D, E> {
     fn clone(&self) -> Self {
         Self {
             id: self.id,
@@ -133,10 +127,10 @@ impl<D> Clone for Command<D> {
     }
 }
 
-impl<D> Default for Command<D> {
+impl<D, E> Default for Command<D, E> {
     fn default() -> Self {
         Self {
-            id: CommandId::from((|| Command::default()) as CommandConstructor<D>),
+            id: CommandId::from((|| Command::default()) as CommandConstructor<D, E>),
             function: |_, _| Box::pin(async { Ok(()) }),
             names: Vec::default(),
             subcommands: HashSet::default(),
@@ -152,7 +146,7 @@ impl<D> Default for Command<D> {
     }
 }
 
-impl<D> fmt::Debug for Command<D> {
+impl<D, E> fmt::Debug for Command<D, E> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("Command")
             .field("id", &self.id)
@@ -171,11 +165,11 @@ impl<D> fmt::Debug for Command<D> {
     }
 }
 
-impl<D> Command<D> {
+impl<D, E> Command<D, E> {
     /// Constructs a builder that will be used to create a command from scratch.
     ///
     /// Argument is the main name of the command.
-    pub fn builder<I>(name: I) -> CommandBuilder<D>
+    pub fn builder<I>(name: I) -> CommandBuilder<D, E>
     where
         I: Into<String>,
     {
@@ -184,11 +178,11 @@ impl<D> Command<D> {
 }
 
 /// A builder type for creating a [`Command`] from scratch.
-pub struct CommandBuilder<D = DefaultData> {
-    inner: Command<D>,
+pub struct CommandBuilder<D = DefaultData, E = DefaultError> {
+    inner: Command<D, E>,
 }
 
-impl<D> CommandBuilder<D> {
+impl<D, E> CommandBuilder<D, E> {
     /// Constructs a new instance of the builder.
     ///
     /// Argument is the main name of the command.
@@ -213,7 +207,7 @@ impl<D> CommandBuilder<D> {
     }
 
     /// Assigns the function to this command.
-    pub fn function(mut self, f: CommandFn<D>) -> Self {
+    pub fn function(mut self, f: CommandFn<D, E>) -> Self {
         self.inner.function = f;
         self
     }
@@ -223,7 +217,7 @@ impl<D> CommandBuilder<D> {
     /// The subcommand is added to the [`subcommands`] list.
     ///
     /// [`subcommands`]: Command::subcommands
-    pub fn subcommand(mut self, subcommand: CommandConstructor<D>) -> Self {
+    pub fn subcommand(mut self, subcommand: CommandConstructor<D, E>) -> Self {
         self.inner.subcommands.insert(CommandId::from(subcommand));
         self
     }
@@ -281,7 +275,7 @@ impl<D> CommandBuilder<D> {
     /// Assigns a [`check`] function to this command.
     ///
     /// [`check`]: crate::check
-    pub fn check(mut self, check: CheckConstructor<D>) -> Self {
+    pub fn check(mut self, check: CheckConstructor<D, E>) -> Self {
         self.inner.check = Some(check());
         self
     }
@@ -293,7 +287,7 @@ impl<D> CommandBuilder<D> {
     /// This function may panic if:
     ///
     /// - The command that is about to be built is missing names.
-    pub fn build(self) -> Command<D> {
+    pub fn build(self) -> Command<D, E> {
         assert!(
             !self.inner.names.is_empty(),
             "a command must have at least one name"
@@ -303,7 +297,7 @@ impl<D> CommandBuilder<D> {
     }
 }
 
-impl<D> Default for CommandBuilder<D> {
+impl<D, E> Default for CommandBuilder<D, E> {
     fn default() -> Self {
         Self {
             inner: Command::default(),
@@ -311,7 +305,7 @@ impl<D> Default for CommandBuilder<D> {
     }
 }
 
-impl<D> Clone for CommandBuilder<D> {
+impl<D, E> Clone for CommandBuilder<D, E> {
     fn clone(&self) -> Self {
         Self {
             inner: self.inner.clone(),
@@ -319,7 +313,7 @@ impl<D> Clone for CommandBuilder<D> {
     }
 }
 
-impl<D> fmt::Debug for CommandBuilder<D> {
+impl<D, E> fmt::Debug for CommandBuilder<D, E> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("CommandBuilder")
             .field("inner", &self.inner)

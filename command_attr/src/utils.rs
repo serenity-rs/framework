@@ -1,4 +1,4 @@
-use crate::paths::default_data_type;
+use crate::paths::{default_data_type, default_error_type};
 
 use proc_macro2::{Ident, TokenStream};
 use quote::{quote, ToTokens};
@@ -160,13 +160,14 @@ pub fn parse_bool(attr: &Attr) -> Result<bool> {
     })
 }
 
-pub fn parse_generics(sig: &Signature) -> Result<(Ident, Box<Type>)> {
+pub fn parse_generics(sig: &Signature) -> Result<(Ident, Box<Type>, Box<Type>)> {
     let ctx = get_first_parameter(sig)?;
     let (ident, ty) = get_ident_and_type(ctx)?;
     let path = get_path(&ty)?;
     let mut arguments = get_generic_arguments(path)?;
 
     let default_data = default_data_type();
+    let default_error = default_error_type();
 
     let data = match arguments.next() {
         Some(GenericArgument::Lifetime(_)) => match arguments.next() {
@@ -177,7 +178,12 @@ pub fn parse_generics(sig: &Signature) -> Result<(Ident, Box<Type>)> {
         None => default_data,
     };
 
-    Ok((ident, data))
+    let error = match arguments.next() {
+        Some(arg) => get_generic_type(arg)?,
+        None => default_error,
+    };
+
+    Ok((ident, data, error))
 }
 
 fn get_first_parameter(sig: &Signature) -> Result<&FnArg> {
