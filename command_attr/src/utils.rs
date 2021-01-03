@@ -5,7 +5,7 @@ use quote::{quote, ToTokens};
 use syn::parse::{Parse, ParseStream};
 use syn::spanned::Spanned;
 use syn::{Attribute, Error, FnArg, GenericArgument, Lit, LitStr, Meta};
-use syn::{NestedMeta, Pat, Path, PathArguments, Result, Signature, Token, Type};
+use syn::{NestedMeta, Pat, PatType, Path, PathArguments, Result, Signature, Token, Type};
 
 use std::convert::TryFrom;
 
@@ -162,8 +162,9 @@ pub fn parse_bool(attr: &Attr) -> Result<bool> {
 
 pub fn parse_generics(sig: &Signature) -> Result<(Ident, Box<Type>, Box<Type>)> {
     let ctx = get_first_parameter(sig)?;
-    let (ident, ty) = get_ident_and_type(ctx)?;
-    let path = get_path(&ty)?;
+    let binding = get_pat_type(ctx)?;
+    let ident = get_ident(&binding.pat)?;
+    let path = get_path(&binding.ty)?;
     let mut arguments = get_generic_arguments(path)?;
 
     let default_data = default_data_type();
@@ -196,9 +197,9 @@ fn get_first_parameter(sig: &Signature) -> Result<&FnArg> {
     }
 }
 
-pub fn get_ident_and_type(arg: &FnArg) -> Result<(Ident, Box<Type>)> {
+pub fn get_pat_type(arg: &FnArg) -> Result<&PatType> {
     match arg {
-        FnArg::Typed(t) => Ok((get_ident(&t.pat)?, t.ty.clone())),
+        FnArg::Typed(t) => Ok(t),
         _ => Err(Error::new(
             arg.span(),
             "`self` cannot be used as the context type",
@@ -206,7 +207,7 @@ pub fn get_ident_and_type(arg: &FnArg) -> Result<(Ident, Box<Type>)> {
     }
 }
 
-fn get_ident(p: &Pat) -> Result<Ident> {
+pub fn get_ident(p: &Pat) -> Result<Ident> {
     match p {
         Pat::Ident(pi) => Ok(pi.ident.clone()),
         _ => Err(Error::new(

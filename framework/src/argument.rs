@@ -88,3 +88,16 @@ where
         .map(|seg| T::from_str(seg).map_err(ArgumentError::Argument))
         .collect()
 }
+
+/// Parses the remainder of the list of segments into an argument.
+///
+/// All segments (even if none) are concatenated to a single string
+/// and parsed to the specified argument type. If parsing success,
+/// `Ok(...)` is returned, otherwise `Err(...)`. The error is wrapped in
+/// [`ArgumentError::Argument`].
+pub fn rest_argument<T>(segments: &mut ArgumentSegments<'_>) -> Result<T, ArgumentError<T::Err>>
+where
+    T: FromStr,
+{
+    T::from_str(segments.source()).map_err(ArgumentError::Argument)
+}

@@ -64,6 +64,12 @@ pub fn variadic_arguments_func() -> Path {
     })
 }
 
+pub fn rest_argument_func() -> Path {
+    to_path(quote! {
+        serenity_framework::argument::rest_argument
+    })
+}
+
 pub fn check_type(data: &Type, error: &Type) -> Path {
     to_path(quote! {
         serenity_framework::check::Check<#data, #error>

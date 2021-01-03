@@ -3,7 +3,8 @@ use crate::utils::{self, AttributeArgs};
 
 use proc_macro2::{Ident, TokenStream};
 use quote::{format_ident, quote, ToTokens};
-use syn::{parse2, Error, FnArg, ItemFn, Path, Result, Type};
+use syn::spanned::Spanned;
+use syn::{parse2, Attribute, Error, FnArg, ItemFn, Path, Result, Type};
 
 mod options;
 
@@ -124,6 +125,9 @@ fn parse_arguments(ctx_name: Ident, function: &mut ItemFn, options: &Options) ->
 /// optional arguments second, and variadic arguments third; one or two of these
 /// types of arguments can be missing.
 /// - a list of arguments that only has one variadic argument parameter, if present.
+/// - a list of arguments that only has one rest argument parameter, if present.
+/// - a list of arguments that only has one variadic argument parameter or one rest
+/// argument parameter.
 fn check_arguments(args: &[Argument]) -> Result<()> {
     let mut last_arg: Option<&Argument> = None;
 
@@ -148,17 +152,49 @@ fn check_arguments(args: &[Argument]) -> Result<()> {
                         "variadic argument cannot precede an optional argument",
                     ));
                 },
+                (ArgumentType::Rest, ArgumentType::Required) => {
+                    return Err(Error::new(
+                        last_arg.name.span(),
+                        "rest argument cannot precede a required argument",
+                    ));
+                },
+                (ArgumentType::Rest, ArgumentType::Optional) => {
+                    return Err(Error::new(
+                        last_arg.name.span(),
+                        "rest argument cannot precede an optional argument",
+                    ));
+                },
+                (ArgumentType::Rest, ArgumentType::Variadic) => {
+                    return Err(Error::new(
+                        last_arg.name.span(),
+                        "a rest argument cannot be used alongside a variadic argument",
+                    ));
+                },
+                (ArgumentType::Variadic, ArgumentType::Rest) => {
+                    return Err(Error::new(
+                        last_arg.name.span(),
+                        "a variadic argument cannot be used alongside a rest argument",
+                    ));
+                },
                 (ArgumentType::Variadic, ArgumentType::Variadic) => {
                     return Err(Error::new(
                         arg.name.span(),
                         "a command cannot have two variadic argument parameters",
                     ));
                 },
+                (ArgumentType::Rest, ArgumentType::Rest) => {
+                    return Err(Error::new(
+                        arg.name.span(),
+                        "a command cannot have two rest argument parameters",
+                    ));
+                },
                 (ArgumentType::Required, ArgumentType::Required)
                 | (ArgumentType::Optional, ArgumentType::Optional)
                 | (ArgumentType::Required, ArgumentType::Optional)
                 | (ArgumentType::Required, ArgumentType::Variadic)
-                | (ArgumentType::Optional, ArgumentType::Variadic) => {},
+                | (ArgumentType::Optional, ArgumentType::Variadic)
+                | (ArgumentType::Required, ArgumentType::Rest)
+                | (ArgumentType::Optional, ArgumentType::Rest) => {},
             };
         }
 
@@ -176,10 +212,14 @@ struct Argument {
 
 impl Argument {
     fn new(arg: FnArg) -> Result<Self> {
-        let (name, ty) = utils::get_ident_and_type(&arg)?;
-        let path = utils::get_path(&ty)?;
+        let binding = utils::get_pat_type(&arg)?;
 
-        let kind = ArgumentType::new(path);
+        let name = utils::get_ident(&binding.pat)?;
+
+        let ty = binding.ty.clone();
+
+        let path = utils::get_path(&ty)?;
+        let kind = ArgumentType::new(&binding.attrs, path)?;
 
         Ok(Self { name, ty, kind })
     }
@@ -190,15 +230,45 @@ enum ArgumentType {
     Required,
     Optional,
     Variadic,
+    Rest,
 }
 
 impl ArgumentType {
-    fn new(path: &Path) -> Self {
-        match path.segments.last().unwrap().ident.to_string().as_str() {
-            "Option" => ArgumentType::Optional,
-            "Vec" => ArgumentType::Variadic,
-            _ => ArgumentType::Required,
+    fn new(attrs: &[Attribute], path: &Path) -> Result<Self> {
+        if !attrs.is_empty() {
+            if attrs.len() > 1 {
+                return Err(Error::new(
+                    path.span(),
+                    "an argument cannot have more than 1 attribute",
+                ));
+            }
+
+            let attr = utils::parse_attribute(&attrs[0])?;
+
+            if !attr.path.is_ident("rest") {
+                return Err(Error::new(
+                    attrs[0].span(),
+                    "invalid attribute name, expected `rest`",
+                ));
+            }
+
+            if !attr.values.is_empty() {
+                return Err(Error::new(
+                    attrs[0].span(),
+                    "the `rest` attribute does not accept any input",
+                ));
+            }
+
+            return Ok(ArgumentType::Rest);
         }
+
+        Ok(
+            match path.segments.last().unwrap().ident.to_string().as_str() {
+                "Option" => ArgumentType::Optional,
+                "Vec" => ArgumentType::Variadic,
+                _ => ArgumentType::Required,
+            },
+        )
     }
 }
 
@@ -208,6 +278,7 @@ impl ToTokens for ArgumentType {
             ArgumentType::Required => paths::required_argument_func(),
             ArgumentType::Optional => paths::optional_argument_func(),
             ArgumentType::Variadic => paths::variadic_arguments_func(),
+            ArgumentType::Rest => paths::rest_argument_func(),
         };
 
         tokens.extend(quote!(#path));
