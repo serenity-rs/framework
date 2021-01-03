@@ -323,12 +323,6 @@
 <span id="320">320</span>
 <span id="321">321</span>
 <span id="322">322</span>
-<span id="323">323</span>
-<span id="324">324</span>
-<span id="325">325</span>
-<span id="326">326</span>
-<span id="327">327</span>
-<span id="328">328</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="doccomment">//! Functions and types relating to commands.</span>
 <span class="doccomment">//!</span>
@@ -343,48 +337,42 @@
 <span class="kw">use</span> <span class="kw">crate</span>::<span class="ident">check</span>::{<span class="ident">Check</span>, <span class="ident">CheckConstructor</span>};
 <span class="kw">use</span> <span class="kw">crate</span>::<span class="ident">context</span>::<span class="ident">Context</span>;
 <span class="kw">use</span> <span class="kw">crate</span>::<span class="ident">utils</span>::<span class="ident">IdMap</span>;
-<span class="kw">use</span> <span class="kw">crate</span>::<span class="ident">DefaultData</span>;
+<span class="kw">use</span> <span class="kw">crate</span>::{<span class="ident">DefaultData</span>, <span class="ident">DefaultError</span>};
 
 <span class="kw">use</span> <span class="ident">serenity</span>::<span class="ident">futures</span>::<span class="ident">future</span>::<span class="ident">BoxFuture</span>;
 <span class="kw">use</span> <span class="ident">serenity</span>::<span class="ident">model</span>::<span class="ident">channel</span>::<span class="ident">Message</span>;
 
 <span class="kw">use</span> <span class="ident">std</span>::<span class="ident">collections</span>::<span class="ident">HashSet</span>;
-<span class="kw">use</span> <span class="ident">std</span>::<span class="ident">error</span>::<span class="ident">Error</span> <span class="kw">as</span> <span class="ident">StdError</span>;
 <span class="kw">use</span> <span class="ident">std</span>::<span class="ident">fmt</span>;
 
 <span class="doccomment">/// A function to dynamically create a string.</span>
 <span class="doccomment">///</span>
 <span class="doccomment">/// Used for [`Command::dynamic_description`] and [`Command::dynamic_usage`].</span>
-<span class="kw">pub</span> <span class="kw">type</span> <span class="ident">StringHook</span><span class="op">&lt;</span><span class="ident">D</span> <span class="op">=</span> <span class="ident">DefaultData</span><span class="op">&gt;</span> <span class="op">=</span>
-    <span class="kw">for</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span> <span class="kw">fn</span>(<span class="ident">ctx</span>: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> <span class="ident">Context</span><span class="op">&lt;</span><span class="ident">D</span><span class="op">&gt;</span>, <span class="ident">msg</span>: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> <span class="ident">Message</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">BoxFuture</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span>, <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span><span class="op">&gt;</span>;
+<span class="kw">pub</span> <span class="kw">type</span> <span class="ident">StringHook</span><span class="op">&lt;</span><span class="ident">D</span> <span class="op">=</span> <span class="ident">DefaultData</span>, <span class="ident">E</span> <span class="op">=</span> <span class="ident">DefaultError</span><span class="op">&gt;</span> <span class="op">=</span>
+    <span class="kw">for</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span> <span class="kw">fn</span>(<span class="ident">ctx</span>: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> <span class="ident">Context</span><span class="op">&lt;</span><span class="ident">D</span>, <span class="ident">E</span><span class="op">&gt;</span>, <span class="ident">msg</span>: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> <span class="ident">Message</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">BoxFuture</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span>, <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span><span class="op">&gt;</span>;
 
 <span class="doccomment">/// A function to dynamically create a list of strings.</span>
 <span class="doccomment">///</span>
 <span class="doccomment">/// Used for [`Command::dynamic_examples`].</span>
-<span class="kw">pub</span> <span class="kw">type</span> <span class="ident">StringsHook</span><span class="op">&lt;</span><span class="ident">D</span> <span class="op">=</span> <span class="ident">DefaultData</span><span class="op">&gt;</span> <span class="op">=</span>
-    <span class="kw">for</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span> <span class="kw">fn</span>(<span class="ident">ctx</span>: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> <span class="ident">Context</span><span class="op">&lt;</span><span class="ident">D</span><span class="op">&gt;</span>, <span class="ident">msg</span>: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> <span class="ident">Message</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">BoxFuture</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span>, <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span><span class="op">&gt;</span>;
+<span class="kw">pub</span> <span class="kw">type</span> <span class="ident">StringsHook</span><span class="op">&lt;</span><span class="ident">D</span> <span class="op">=</span> <span class="ident">DefaultData</span>, <span class="ident">E</span> <span class="op">=</span> <span class="ident">DefaultError</span><span class="op">&gt;</span> <span class="op">=</span>
+    <span class="kw">for</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span> <span class="kw">fn</span>(<span class="ident">ctx</span>: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> <span class="ident">Context</span><span class="op">&lt;</span><span class="ident">D</span>, <span class="ident">E</span><span class="op">&gt;</span>, <span class="ident">msg</span>: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> <span class="ident">Message</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">BoxFuture</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span>, <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span><span class="op">&gt;</span>;
 
 <span class="doccomment">/// [`IdMap`] for storing commands.</span>
 <span class="doccomment">///</span>
 <span class="doccomment">/// [`IdMap`]: crate::utils::IdMap</span>
-<span class="kw">pub</span> <span class="kw">type</span> <span class="ident">CommandMap</span><span class="op">&lt;</span><span class="ident">D</span> <span class="op">=</span> <span class="ident">DefaultData</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">IdMap</span><span class="op">&lt;</span><span class="ident">String</span>, <span class="ident">CommandId</span>, <span class="ident">Command</span><span class="op">&lt;</span><span class="ident">D</span><span class="op">&gt;</span><span class="op">&gt;</span>;
-
-<span class="doccomment">/// Type of error returned from [commands][fn].</span>
-<span class="doccomment">///</span>
-<span class="doccomment">/// [fn]: CommandFn</span>
-<span class="kw">pub</span> <span class="kw">type</span> <span class="ident">CommandError</span> <span class="op">=</span> <span class="ident">Box</span><span class="op">&lt;</span><span class="kw">dyn</span> <span class="ident">StdError</span> <span class="op">+</span> <span class="ident">Send</span> <span class="op">+</span> <span class="ident">Sync</span> <span class="op">+</span> <span class="lifetime">&#39;static</span><span class="op">&gt;</span>;
+<span class="kw">pub</span> <span class="kw">type</span> <span class="ident">CommandMap</span><span class="op">&lt;</span><span class="ident">D</span> <span class="op">=</span> <span class="ident">DefaultData</span>, <span class="ident">E</span> <span class="op">=</span> <span class="ident">DefaultError</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">IdMap</span><span class="op">&lt;</span><span class="ident">String</span>, <span class="ident">CommandId</span>, <span class="ident">Command</span><span class="op">&lt;</span><span class="ident">D</span>, <span class="ident">E</span><span class="op">&gt;</span><span class="op">&gt;</span>;
 
 <span class="doccomment">/// The result type of a [command function][fn].</span>
 <span class="doccomment">///</span>
 <span class="doccomment">/// [fn]: CommandFn</span>
-<span class="kw">pub</span> <span class="kw">type</span> <span class="ident">CommandResult</span><span class="op">&lt;</span><span class="ident">T</span> <span class="op">=</span> ()<span class="op">&gt;</span> <span class="op">=</span> <span class="ident">std</span>::<span class="ident">result</span>::<span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">T</span>, <span class="ident">CommandError</span><span class="op">&gt;</span>;
+<span class="kw">pub</span> <span class="kw">type</span> <span class="ident">CommandResult</span><span class="op">&lt;</span><span class="ident">T</span> <span class="op">=</span> (), <span class="ident">E</span> <span class="op">=</span> <span class="ident">DefaultError</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">std</span>::<span class="ident">result</span>::<span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">T</span>, <span class="ident">E</span><span class="op">&gt;</span>;
 
 <span class="doccomment">/// The definition of a command function.</span>
-<span class="kw">pub</span> <span class="kw">type</span> <span class="ident">CommandFn</span><span class="op">&lt;</span><span class="ident">D</span> <span class="op">=</span> <span class="ident">DefaultData</span><span class="op">&gt;</span> <span class="op">=</span>
-    <span class="kw">fn</span>(<span class="ident">Context</span><span class="op">&lt;</span><span class="ident">D</span><span class="op">&gt;</span>, <span class="ident">Message</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">BoxFuture</span><span class="op">&lt;</span><span class="lifetime">&#39;static</span>, <span class="ident">CommandResult</span><span class="op">&lt;</span>()<span class="op">&gt;</span><span class="op">&gt;</span>;
+<span class="kw">pub</span> <span class="kw">type</span> <span class="ident">CommandFn</span><span class="op">&lt;</span><span class="ident">D</span> <span class="op">=</span> <span class="ident">DefaultData</span>, <span class="ident">E</span> <span class="op">=</span> <span class="ident">DefaultError</span><span class="op">&gt;</span> <span class="op">=</span>
+    <span class="kw">fn</span>(<span class="ident">Context</span><span class="op">&lt;</span><span class="ident">D</span>, <span class="ident">E</span><span class="op">&gt;</span>, <span class="ident">Message</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">BoxFuture</span><span class="op">&lt;</span><span class="lifetime">&#39;static</span>, <span class="ident">CommandResult</span><span class="op">&lt;</span>(), <span class="ident">E</span><span class="op">&gt;</span><span class="op">&gt;</span>;
 
 <span class="doccomment">/// A constructor of the [`Command`] type provided by the consumer of the framework.</span>
-<span class="kw">pub</span> <span class="kw">type</span> <span class="ident">CommandConstructor</span><span class="op">&lt;</span><span class="ident">D</span> <span class="op">=</span> <span class="ident">DefaultData</span><span class="op">&gt;</span> <span class="op">=</span> <span class="kw">fn</span>() <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Command</span><span class="op">&lt;</span><span class="ident">D</span><span class="op">&gt;</span>;
+<span class="kw">pub</span> <span class="kw">type</span> <span class="ident">CommandConstructor</span><span class="op">&lt;</span><span class="ident">D</span> <span class="op">=</span> <span class="ident">DefaultData</span>, <span class="ident">E</span> <span class="op">=</span> <span class="ident">DefaultError</span><span class="op">&gt;</span> <span class="op">=</span> <span class="kw">fn</span>() <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Command</span><span class="op">&lt;</span><span class="ident">D</span>, <span class="ident">E</span><span class="op">&gt;</span>;
 
 <span class="doccomment">/// A unique identifier of a [`Command`] stored in the [`CommandMap`].</span>
 <span class="doccomment">///</span>
@@ -399,16 +387,16 @@
     }
 
     <span class="doccomment">/// Converts the identifier to the constructor it points to.</span>
-    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">into_constructor</span><span class="op">&lt;</span><span class="ident">D</span><span class="op">&gt;</span>(<span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">CommandConstructor</span><span class="op">&lt;</span><span class="ident">D</span><span class="op">&gt;</span> {
+    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">into_constructor</span><span class="op">&lt;</span><span class="ident">D</span>, <span class="ident">E</span><span class="op">&gt;</span>(<span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">CommandConstructor</span><span class="op">&lt;</span><span class="ident">D</span>, <span class="ident">E</span><span class="op">&gt;</span> {
         <span class="comment">// SAFETY: CommandId in user code can only be constructed by its</span>
-        <span class="comment">// `From&lt;CommandConstructor&lt;D&gt;&gt;` impl. This makes the transmute safe.</span>
+        <span class="comment">// `From&lt;CommandConstructor&lt;D, E&gt;&gt;` impl. This makes the transmute safe.</span>
 
         <span class="kw">unsafe</span> { <span class="ident">std</span>::<span class="ident">mem</span>::<span class="ident">transmute</span>(<span class="self">self</span>.<span class="number">0</span> <span class="kw">as</span> <span class="kw-2">*</span><span class="kw">const</span> ()) }
     }
 }
 
-<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">D</span><span class="op">&gt;</span> <span class="ident">From</span><span class="op">&lt;</span><span class="ident">CommandConstructor</span><span class="op">&lt;</span><span class="ident">D</span><span class="op">&gt;</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">CommandId</span> {
-    <span class="kw">fn</span> <span class="ident">from</span>(<span class="ident">f</span>: <span class="ident">CommandConstructor</span><span class="op">&lt;</span><span class="ident">D</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
+<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">D</span>, <span class="ident">E</span><span class="op">&gt;</span> <span class="ident">From</span><span class="op">&lt;</span><span class="ident">CommandConstructor</span><span class="op">&lt;</span><span class="ident">D</span>, <span class="ident">E</span><span class="op">&gt;</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">CommandId</span> {
+    <span class="kw">fn</span> <span class="ident">from</span>(<span class="ident">f</span>: <span class="ident">CommandConstructor</span><span class="op">&lt;</span><span class="ident">D</span>, <span class="ident">E</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
         <span class="self">Self</span>(<span class="ident">f</span> <span class="kw">as</span> <span class="ident">usize</span>)
     }
 }
@@ -419,11 +407,11 @@
 <span class="doccomment">///</span>
 <span class="doccomment">/// [docs]: index.html</span>
 <span class="attribute">#[<span class="ident">non_exhaustive</span>]</span>
-<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">Command</span><span class="op">&lt;</span><span class="ident">D</span> <span class="op">=</span> <span class="ident">DefaultData</span><span class="op">&gt;</span> {
+<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">Command</span><span class="op">&lt;</span><span class="ident">D</span> <span class="op">=</span> <span class="ident">DefaultData</span>, <span class="ident">E</span> <span class="op">=</span> <span class="ident">DefaultError</span><span class="op">&gt;</span> {
     <span class="doccomment">/// The identifier of this command.</span>
     <span class="kw">pub</span> <span class="ident">id</span>: <span class="ident">CommandId</span>,
     <span class="doccomment">/// The function of this command.</span>
-    <span class="kw">pub</span> <span class="ident">function</span>: <span class="ident">CommandFn</span><span class="op">&lt;</span><span class="ident">D</span><span class="op">&gt;</span>,
+    <span class="kw">pub</span> <span class="ident">function</span>: <span class="ident">CommandFn</span><span class="op">&lt;</span><span class="ident">D</span>, <span class="ident">E</span><span class="op">&gt;</span>,
     <span class="doccomment">/// The names of this command by which it can be invoked.</span>
     <span class="kw">pub</span> <span class="ident">names</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span>,
     <span class="doccomment">/// The subcommands belonging to this command.</span>
@@ -443,10 +431,10 @@
     <span class="doccomment">/// A boolean to indicate whether the command can be shown in help commands.</span>
     <span class="kw">pub</span> <span class="ident">help_available</span>: <span class="ident">bool</span>,
     <span class="doccomment">/// A function that allows/denies access to this command.</span>
-    <span class="kw">pub</span> <span class="ident">check</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Check</span><span class="op">&lt;</span><span class="ident">D</span><span class="op">&gt;</span><span class="op">&gt;</span>,
+    <span class="kw">pub</span> <span class="ident">check</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Check</span><span class="op">&lt;</span><span class="ident">D</span>, <span class="ident">E</span><span class="op">&gt;</span><span class="op">&gt;</span>,
 }
 
-<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">D</span><span class="op">&gt;</span> <span class="ident">Clone</span> <span class="kw">for</span> <span class="ident">Command</span><span class="op">&lt;</span><span class="ident">D</span><span class="op">&gt;</span> {
+<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">D</span>, <span class="ident">E</span><span class="op">&gt;</span> <span class="ident">Clone</span> <span class="kw">for</span> <span class="ident">Command</span><span class="op">&lt;</span><span class="ident">D</span>, <span class="ident">E</span><span class="op">&gt;</span> {
     <span class="kw">fn</span> <span class="ident">clone</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
         <span class="self">Self</span> {
             <span class="ident">id</span>: <span class="self">self</span>.<span class="ident">id</span>,
@@ -465,10 +453,10 @@
     }
 }
 
-<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">D</span><span class="op">&gt;</span> <span class="ident">Default</span> <span class="kw">for</span> <span class="ident">Command</span><span class="op">&lt;</span><span class="ident">D</span><span class="op">&gt;</span> {
+<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">D</span>, <span class="ident">E</span><span class="op">&gt;</span> <span class="ident">Default</span> <span class="kw">for</span> <span class="ident">Command</span><span class="op">&lt;</span><span class="ident">D</span>, <span class="ident">E</span><span class="op">&gt;</span> {
     <span class="kw">fn</span> <span class="ident">default</span>() <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
         <span class="self">Self</span> {
-            <span class="ident">id</span>: <span class="ident">CommandId</span>::<span class="ident">from</span>((<span class="op">|</span><span class="op">|</span> <span class="ident">Command</span>::<span class="ident">default</span>()) <span class="kw">as</span> <span class="ident">CommandConstructor</span><span class="op">&lt;</span><span class="ident">D</span><span class="op">&gt;</span>),
+            <span class="ident">id</span>: <span class="ident">CommandId</span>::<span class="ident">from</span>((<span class="op">|</span><span class="op">|</span> <span class="ident">Command</span>::<span class="ident">default</span>()) <span class="kw">as</span> <span class="ident">CommandConstructor</span><span class="op">&lt;</span><span class="ident">D</span>, <span class="ident">E</span><span class="op">&gt;</span>),
             <span class="ident">function</span>: <span class="op">|</span><span class="kw">_</span>, <span class="kw">_</span><span class="op">|</span> <span class="ident">Box</span>::<span class="ident">pin</span>(<span class="kw">async</span> { <span class="prelude-val">Ok</span>(()) }),
             <span class="ident">names</span>: <span class="ident">Vec</span>::<span class="ident">default</span>(),
             <span class="ident">subcommands</span>: <span class="ident">HashSet</span>::<span class="ident">default</span>(),
@@ -484,7 +472,7 @@
     }
 }
 
-<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">D</span><span class="op">&gt;</span> <span class="ident">fmt</span>::<span class="ident">Debug</span> <span class="kw">for</span> <span class="ident">Command</span><span class="op">&lt;</span><span class="ident">D</span><span class="op">&gt;</span> {
+<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">D</span>, <span class="ident">E</span><span class="op">&gt;</span> <span class="ident">fmt</span>::<span class="ident">Debug</span> <span class="kw">for</span> <span class="ident">Command</span><span class="op">&lt;</span><span class="ident">D</span>, <span class="ident">E</span><span class="op">&gt;</span> {
     <span class="kw">fn</span> <span class="ident">fmt</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">f</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">fmt</span>::<span class="ident">Formatter</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">fmt</span>::<span class="prelude-ty">Result</span> {
         <span class="ident">f</span>.<span class="ident">debug_struct</span>(<span class="string">&quot;Command&quot;</span>)
             .<span class="ident">field</span>(<span class="string">&quot;id&quot;</span>, <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">id</span>)
@@ -503,11 +491,11 @@
     }
 }
 
-<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">D</span><span class="op">&gt;</span> <span class="ident">Command</span><span class="op">&lt;</span><span class="ident">D</span><span class="op">&gt;</span> {
+<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">D</span>, <span class="ident">E</span><span class="op">&gt;</span> <span class="ident">Command</span><span class="op">&lt;</span><span class="ident">D</span>, <span class="ident">E</span><span class="op">&gt;</span> {
     <span class="doccomment">/// Constructs a builder that will be used to create a command from scratch.</span>
     <span class="doccomment">///</span>
     <span class="doccomment">/// Argument is the main name of the command.</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">builder</span><span class="op">&lt;</span><span class="ident">I</span><span class="op">&gt;</span>(<span class="ident">name</span>: <span class="ident">I</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">CommandBuilder</span><span class="op">&lt;</span><span class="ident">D</span><span class="op">&gt;</span>
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">builder</span><span class="op">&lt;</span><span class="ident">I</span><span class="op">&gt;</span>(<span class="ident">name</span>: <span class="ident">I</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">CommandBuilder</span><span class="op">&lt;</span><span class="ident">D</span>, <span class="ident">E</span><span class="op">&gt;</span>
     <span class="kw">where</span>
         <span class="ident">I</span>: <span class="ident">Into</span><span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span>,
     {
@@ -516,11 +504,11 @@
 }
 
 <span class="doccomment">/// A builder type for creating a [`Command`] from scratch.</span>
-<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">CommandBuilder</span><span class="op">&lt;</span><span class="ident">D</span> <span class="op">=</span> <span class="ident">DefaultData</span><span class="op">&gt;</span> {
-    <span class="ident">inner</span>: <span class="ident">Command</span><span class="op">&lt;</span><span class="ident">D</span><span class="op">&gt;</span>,
+<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">CommandBuilder</span><span class="op">&lt;</span><span class="ident">D</span> <span class="op">=</span> <span class="ident">DefaultData</span>, <span class="ident">E</span> <span class="op">=</span> <span class="ident">DefaultError</span><span class="op">&gt;</span> {
+    <span class="ident">inner</span>: <span class="ident">Command</span><span class="op">&lt;</span><span class="ident">D</span>, <span class="ident">E</span><span class="op">&gt;</span>,
 }
 
-<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">D</span><span class="op">&gt;</span> <span class="ident">CommandBuilder</span><span class="op">&lt;</span><span class="ident">D</span><span class="op">&gt;</span> {
+<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">D</span>, <span class="ident">E</span><span class="op">&gt;</span> <span class="ident">CommandBuilder</span><span class="op">&lt;</span><span class="ident">D</span>, <span class="ident">E</span><span class="op">&gt;</span> {
     <span class="doccomment">/// Constructs a new instance of the builder.</span>
     <span class="doccomment">///</span>
     <span class="doccomment">/// Argument is the main name of the command.</span>
@@ -545,7 +533,7 @@
     }
 
     <span class="doccomment">/// Assigns the function to this command.</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">function</span>(<span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">f</span>: <span class="ident">CommandFn</span><span class="op">&lt;</span><span class="ident">D</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">function</span>(<span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">f</span>: <span class="ident">CommandFn</span><span class="op">&lt;</span><span class="ident">D</span>, <span class="ident">E</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
         <span class="self">self</span>.<span class="ident">inner</span>.<span class="ident">function</span> <span class="op">=</span> <span class="ident">f</span>;
         <span class="self">self</span>
     }
@@ -555,7 +543,7 @@
     <span class="doccomment">/// The subcommand is added to the [`subcommands`] list.</span>
     <span class="doccomment">///</span>
     <span class="doccomment">/// [`subcommands`]: Command::subcommands</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">subcommand</span>(<span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">subcommand</span>: <span class="ident">CommandConstructor</span><span class="op">&lt;</span><span class="ident">D</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">subcommand</span>(<span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">subcommand</span>: <span class="ident">CommandConstructor</span><span class="op">&lt;</span><span class="ident">D</span>, <span class="ident">E</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
         <span class="self">self</span>.<span class="ident">inner</span>.<span class="ident">subcommands</span>.<span class="ident">insert</span>(<span class="ident">CommandId</span>::<span class="ident">from</span>(<span class="ident">subcommand</span>));
         <span class="self">self</span>
     }
@@ -613,7 +601,7 @@
     <span class="doccomment">/// Assigns a [`check`] function to this command.</span>
     <span class="doccomment">///</span>
     <span class="doccomment">/// [`check`]: crate::check</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">check</span>(<span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">check</span>: <span class="ident">CheckConstructor</span><span class="op">&lt;</span><span class="ident">D</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">check</span>(<span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">check</span>: <span class="ident">CheckConstructor</span><span class="op">&lt;</span><span class="ident">D</span>, <span class="ident">E</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
         <span class="self">self</span>.<span class="ident">inner</span>.<span class="ident">check</span> <span class="op">=</span> <span class="prelude-val">Some</span>(<span class="ident">check</span>());
         <span class="self">self</span>
     }
@@ -625,7 +613,7 @@
     <span class="doccomment">/// This function may panic if:</span>
     <span class="doccomment">///</span>
     <span class="doccomment">/// - The command that is about to be built is missing names.</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">build</span>(<span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Command</span><span class="op">&lt;</span><span class="ident">D</span><span class="op">&gt;</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">build</span>(<span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Command</span><span class="op">&lt;</span><span class="ident">D</span>, <span class="ident">E</span><span class="op">&gt;</span> {
         <span class="macro">assert</span><span class="macro">!</span>(
             <span class="op">!</span><span class="self">self</span>.<span class="ident">inner</span>.<span class="ident">names</span>.<span class="ident">is_empty</span>(),
             <span class="string">&quot;a command must have at least one name&quot;</span>
@@ -635,7 +623,7 @@
     }
 }
 
-<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">D</span><span class="op">&gt;</span> <span class="ident">Default</span> <span class="kw">for</span> <span class="ident">CommandBuilder</span><span class="op">&lt;</span><span class="ident">D</span><span class="op">&gt;</span> {
+<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">D</span>, <span class="ident">E</span><span class="op">&gt;</span> <span class="ident">Default</span> <span class="kw">for</span> <span class="ident">CommandBuilder</span><span class="op">&lt;</span><span class="ident">D</span>, <span class="ident">E</span><span class="op">&gt;</span> {
     <span class="kw">fn</span> <span class="ident">default</span>() <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
         <span class="self">Self</span> {
             <span class="ident">inner</span>: <span class="ident">Command</span>::<span class="ident">default</span>(),
@@ -643,7 +631,7 @@
     }
 }
 
-<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">D</span><span class="op">&gt;</span> <span class="ident">Clone</span> <span class="kw">for</span> <span class="ident">CommandBuilder</span><span class="op">&lt;</span><span class="ident">D</span><span class="op">&gt;</span> {
+<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">D</span>, <span class="ident">E</span><span class="op">&gt;</span> <span class="ident">Clone</span> <span class="kw">for</span> <span class="ident">CommandBuilder</span><span class="op">&lt;</span><span class="ident">D</span>, <span class="ident">E</span><span class="op">&gt;</span> {
     <span class="kw">fn</span> <span class="ident">clone</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
         <span class="self">Self</span> {
             <span class="ident">inner</span>: <span class="self">self</span>.<span class="ident">inner</span>.<span class="ident">clone</span>(),
@@ -651,7 +639,7 @@
     }
 }
 
-<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">D</span><span class="op">&gt;</span> <span class="ident">fmt</span>::<span class="ident">Debug</span> <span class="kw">for</span> <span class="ident">CommandBuilder</span><span class="op">&lt;</span><span class="ident">D</span><span class="op">&gt;</span> {
+<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">D</span>, <span class="ident">E</span><span class="op">&gt;</span> <span class="ident">fmt</span>::<span class="ident">Debug</span> <span class="kw">for</span> <span class="ident">CommandBuilder</span><span class="op">&lt;</span><span class="ident">D</span>, <span class="ident">E</span><span class="op">&gt;</span> {
     <span class="kw">fn</span> <span class="ident">fmt</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">f</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">fmt</span>::<span class="ident">Formatter</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">fmt</span>::<span class="prelude-ty">Result</span> {
         <span class="ident">f</span>.<span class="ident">debug_struct</span>(<span class="string">&quot;CommandBuilder&quot;</span>)
             .<span class="ident">field</span>(<span class="string">&quot;inner&quot;</span>, <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">inner</span>)
