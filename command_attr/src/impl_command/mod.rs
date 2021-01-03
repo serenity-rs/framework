@@ -104,7 +104,7 @@ fn parse_arguments(ctx_name: Ident, function: &mut ItemFn, options: &Options) ->
                 // afterwards, as `ArgumentSegments` holds a reference to the source string.
                 let mut __args = #asegsty::new(&#ctx_name.args, #delimiter);
 
-                #(let #argument_names: #argument_tys = #argument_kinds(&#ctx_name, &mut __args)?;)*
+                #(let #argument_names: #argument_tys = #argument_kinds(&mut __args)?;)*
 
                 (#(#argument_names),*)
             };
