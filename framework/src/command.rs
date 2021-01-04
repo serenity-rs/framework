@@ -43,7 +43,7 @@ pub type CommandResult<T = (), E = DefaultError> = std::result::Result<T, E>;
 
 /// The definition of a command function.
 pub type CommandFn<D = DefaultData, E = DefaultError> =
-    fn(Context<D, E>, Message) -> BoxFuture<'static, CommandResult<(), E>>;
+    for<'a> fn(Context<D, E>, &'a Message) -> BoxFuture<'a, CommandResult<(), E>>;
 
 /// A constructor of the [`Command`] type provided by the consumer of the framework.
 pub type CommandConstructor<D = DefaultData, E = DefaultError> = fn() -> Command<D, E>;

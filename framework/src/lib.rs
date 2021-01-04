@@ -40,7 +40,6 @@ use serenity::model::channel::Message;
 use serenity::prelude::{Context as SerenityContext, Mutex, RwLock};
 
 use std::error::Error as StdError;
-use std::future::Future;
 use std::sync::Arc;
 
 pub mod argument;
@@ -54,8 +53,7 @@ pub mod parse;
 pub mod prelude;
 pub mod utils;
 
-use command::Command;
-use command::{CommandFn, CommandResult};
+use command::{Command, CommandFn};
 use configuration::Configuration;
 use context::{CheckContext, Context};
 use error::{DispatchError, Error};
@@ -122,28 +120,24 @@ impl<D, E> Framework<D, E> {
 
     /// Dispatches a command.
     #[inline]
-    pub async fn dispatch(&self, ctx: SerenityContext, msg: Message) -> Result<(), Error<E>> {
-        self.dispatch_with_hook(ctx, msg, |ctx, msg, f| f(ctx, msg))
-            .await
+    pub async fn dispatch(&self, ctx: &SerenityContext, msg: &Message) -> Result<(), Error<E>> {
+        let (ctx, func) = self.parse(ctx, msg).await?;
+
+        func(ctx, msg).await.map_err(Error::User)
     }
 
-    /// Dispatches a command with a hook.
-    pub async fn dispatch_with_hook<F, Fut>(
+    /// Parses a command out of a message, if one is present.
+    pub async fn parse(
         &self,
-        ctx: SerenityContext,
-        msg: Message,
-        hook: F,
-    ) -> Result<(), Error<E>>
-    where
-        F: FnOnce(Context<D, E>, Message, CommandFn<D, E>) -> Fut,
-        Fut: Future<Output = CommandResult<(), E>>,
-    {
+        ctx: &SerenityContext,
+        msg: &Message,
+    ) -> Result<(Context<D, E>, CommandFn<D, E>), DispatchError> {
         let (func, command_id, prefix, args) = {
             let conf = self.conf.lock().await;
 
             let (prefix, content) = match parse::content(&self.data, &conf, &ctx, &msg).await {
                 Some(pair) => pair,
-                None => return Err(Error::Dispatch(DispatchError::NormalMessage)),
+                None => return Err(DispatchError::NormalMessage),
             };
 
             let mut segments = Segments::new(&content, " ", conf.case_insensitive);
@@ -160,10 +154,7 @@ impl<D, E> Framework<D, E> {
 
             let command = match command {
                 Some(cmd) => cmd,
-                None =>
-                    return Err(Error::Dispatch(DispatchError::PrefixOnly(
-                        prefix.to_string(),
-                    ))),
+                None => return Err(DispatchError::PrefixOnly(prefix.to_string())),
             };
 
             let args = segments.source();
@@ -179,13 +170,13 @@ impl<D, E> Framework<D, E> {
         let ctx = Context {
             data: Arc::clone(&self.data),
             conf: Arc::clone(&self.conf),
-            serenity_ctx: ctx,
+            serenity_ctx: ctx.clone(),
             command_id,
             prefix,
             args,
         };
 
-        hook(ctx, msg, func).await.map_err(Error::User)
+        Ok((ctx, func))
     }
 }
 
@@ -195,7 +186,7 @@ async fn command_check<D, E>(
     serenity_ctx: &SerenityContext,
     msg: &Message,
     command: &Command<D, E>,
-) -> Result<(), Error<E>> {
+) -> Result<(), DispatchError> {
     let ctx = CheckContext {
         data,
         conf,
@@ -205,10 +196,7 @@ async fn command_check<D, E>(
 
     if let Some(check) = &command.check {
         if let Err(reason) = (check.function)(&ctx, msg).await {
-            return Err(Error::Dispatch(DispatchError::CheckFailed(
-                check.name.clone(),
-                reason,
-            )));
+            return Err(DispatchError::CheckFailed(check.name.clone(), reason));
         }
     }
 
