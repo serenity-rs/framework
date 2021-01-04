@@ -78,6 +78,12 @@
 <span id="75">75</span>
 <span id="76">76</span>
 <span id="77">77</span>
+<span id="78">78</span>
+<span id="79">79</span>
+<span id="80">80</span>
+<span id="81">81</span>
+<span id="82">82</span>
+<span id="83">83</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="kw">use</span> <span class="ident">proc_macro2</span>::<span class="ident">TokenStream</span>;
 <span class="kw">use</span> <span class="ident">quote</span>::<span class="ident">quote</span>;
@@ -142,6 +148,12 @@
 <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">variadic_arguments_func</span>() <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Path</span> {
     <span class="ident">to_path</span>(<span class="macro">quote</span><span class="macro">!</span> {
         <span class="ident">serenity_framework</span>::<span class="ident">argument</span>::<span class="ident">variadic_arguments</span>
+    })
+}
+
+<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">rest_argument_func</span>() <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Path</span> {
+    <span class="ident">to_path</span>(<span class="macro">quote</span><span class="macro">!</span> {
+        <span class="ident">serenity_framework</span>::<span class="ident">argument</span>::<span class="ident">rest_argument</span>
     })
 }
 
