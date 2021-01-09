@@ -14,4 +14,5 @@ path = "../command_attr"
 optional = true
 
 [features]
+default = ["macros"]
 macros = ["command_attr"]
