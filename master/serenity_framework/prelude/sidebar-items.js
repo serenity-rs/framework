@@ -1,1 +1,1 @@
-initSidebarItems({});
+initSidebarItems({"attr":[["check",""],["command",""],["hook",""]]});
