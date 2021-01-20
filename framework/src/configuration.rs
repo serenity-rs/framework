@@ -171,17 +171,6 @@ impl<D, E> Configuration<D, E> {
         self
     }
 
-    fn _subcommand(&mut self, command: CommandConstructor<D, E>) {
-        let id = CommandId::from(command);
-
-        // Skip instantiating this subcommand if it already exists.
-        if self.commands.contains_id(id) {
-            return;
-        }
-
-        self._command(id, command);
-    }
-
     fn _command(&mut self, id: CommandId, command: CommandConstructor<D, E>) {
         let mut command = command();
         command.id = id;
@@ -197,8 +186,13 @@ impl<D, E> Configuration<D, E> {
         }
 
         for id in &command.subcommands {
+            // Skip instantiating this subcommand if it already exists.
+            if self.commands.contains_id(*id) {
+                continue;
+            }
+
             let ctor: CommandConstructor<D, E> = id.into_constructor();
-            self._subcommand(ctor);
+            self._command(*id, ctor);
         }
 
         self.commands.insert(command.id, command);
