@@ -164,6 +164,11 @@ impl<'a, 'b, 'c, D, E> Iterator for CommandIterator<'a, 'b, 'c, D, E> {
             },
         };
 
+        if self.beginning && !self.conf.root_level_commands.contains(&cmd.id) {
+            self.segments.set_source(checkpoint);
+            return None;
+        }
+
         if let Some(command) = self.command {
             if !command.subcommands.contains(&cmd.id) {
                 // We received a command, but it's not a subcommand of the previously
