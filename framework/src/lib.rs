@@ -53,7 +53,7 @@ pub mod parse;
 pub mod prelude;
 pub mod utils;
 
-use command::{Command, CommandFn};
+use command::CommandFn;
 use configuration::Configuration;
 use context::{CheckContext, Context};
 use error::{DispatchError, Error};
@@ -147,7 +147,18 @@ impl<D, E> Framework<D, E> {
             for cmd in parse::commands(&conf, &mut segments) {
                 let cmd = cmd?;
 
-                command_check(&self.data, &conf, &ctx, &msg, cmd).await?;
+                if let Some(check) = &cmd.check {
+                    let ctx = CheckContext {
+                        data: &self.data,
+                        conf: &conf,
+                        serenity_ctx: &ctx,
+                        command_id: cmd.id,
+                    };
+
+                    if let Err(reason) = (check.function)(&ctx, msg).await {
+                        return Err(DispatchError::CheckFailed(check.name.clone(), reason));
+                    }
+                }
 
                 command = Some(cmd);
             }
@@ -178,27 +189,4 @@ impl<D, E> Framework<D, E> {
 
         Ok((ctx, func))
     }
-}
-
-async fn command_check<D, E>(
-    data: &Arc<RwLock<D>>,
-    conf: &Configuration<D, E>,
-    serenity_ctx: &SerenityContext,
-    msg: &Message,
-    command: &Command<D, E>,
-) -> Result<(), DispatchError> {
-    let ctx = CheckContext {
-        data,
-        conf,
-        serenity_ctx,
-        command_id: command.id,
-    };
-
-    if let Some(check) = &command.check {
-        if let Err(reason) = (check.function)(&ctx, msg).await {
-            return Err(DispatchError::CheckFailed(check.name.clone(), reason));
-        }
-    }
-
-    Ok(())
 }
