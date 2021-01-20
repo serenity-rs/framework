@@ -1,4 +1,4 @@
-use crate::paths::{default_data_type, default_error_type};
+use std::convert::TryFrom;
 
 use proc_macro2::{Ident, TokenStream};
 use quote::{quote, ToTokens};
@@ -7,7 +7,7 @@ use syn::spanned::Spanned;
 use syn::{Attribute, Error, FnArg, GenericArgument, Lit, LitStr, Meta};
 use syn::{NestedMeta, Pat, PatType, Path, PathArguments, Result, Signature, Token, Type};
 
-use std::convert::TryFrom;
+use crate::paths::{default_data_type, default_error_type};
 
 pub struct AttributeArgs(pub Vec<String>);
 
@@ -56,13 +56,19 @@ pub struct Attr {
 
 impl Attr {
     pub fn new(path: Path, values: Vec<Value>) -> Self {
-        Self { path, values }
+        Self {
+            path,
+            values,
+        }
     }
 }
 
 impl ToTokens for Attr {
     fn to_tokens(&self, tokens: &mut TokenStream) {
-        let Attr { path, values } = self;
+        let Attr {
+            path,
+            values,
+        } = self;
 
         tokens.extend(if values.is_empty() {
             quote!(#[#path])
@@ -190,30 +196,21 @@ pub fn parse_generics(sig: &Signature) -> Result<(Ident, Box<Type>, Box<Type>)> 
 fn get_first_parameter(sig: &Signature) -> Result<&FnArg> {
     match sig.inputs.first() {
         Some(arg) => Ok(arg),
-        None => Err(Error::new(
-            sig.inputs.span(),
-            "the function must have parameters",
-        )),
+        None => Err(Error::new(sig.inputs.span(), "the function must have parameters")),
     }
 }
 
 pub fn get_pat_type(arg: &FnArg) -> Result<&PatType> {
     match arg {
         FnArg::Typed(t) => Ok(t),
-        _ => Err(Error::new(
-            arg.span(),
-            "`self` cannot be used as the context type",
-        )),
+        _ => Err(Error::new(arg.span(), "`self` cannot be used as the context type")),
     }
 }
 
 pub fn get_ident(p: &Pat) -> Result<Ident> {
     match p {
         Pat::Ident(pi) => Ok(pi.ident.clone()),
-        _ => Err(Error::new(
-            p.span(),
-            "first parameter must have an identifier",
-        )),
+        _ => Err(Error::new(p.span(), "first parameter must have an identifier")),
     }
 }
 
@@ -221,18 +218,16 @@ pub fn get_path(t: &Type) -> Result<&Path> {
     match t {
         Type::Path(p) => Ok(&p.path),
         Type::Reference(r) => get_path(&r.elem),
-        _ => Err(Error::new(
-            t.span(),
-            "first parameter must be a path to a context type",
-        )),
+        _ => Err(Error::new(t.span(), "first parameter must be a path to a context type")),
     }
 }
 
 fn get_generic_arguments(path: &Path) -> Result<impl Iterator<Item = &GenericArgument> + '_> {
     match &path.segments.last().unwrap().arguments {
         PathArguments::None => Ok(Vec::new().into_iter()),
-        PathArguments::AngleBracketed(arguments) =>
-            Ok(arguments.args.iter().collect::<Vec<_>>().into_iter()),
+        PathArguments::AngleBracketed(arguments) => {
+            Ok(arguments.args.iter().collect::<Vec<_>>().into_iter())
+        },
         _ => Err(Error::new(
             path.span(),
             "context type cannot have generic parameters in parenthesis",

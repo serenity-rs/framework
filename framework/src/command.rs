@@ -8,16 +8,16 @@
 //!
 //! [`check`]: crate::check
 
-use crate::check::{Check, CheckConstructor};
-use crate::context::Context;
-use crate::utils::IdMap;
-use crate::{DefaultData, DefaultError};
+use std::collections::HashSet;
+use std::fmt;
 
 use serenity::futures::future::BoxFuture;
 use serenity::model::channel::Message;
 
-use std::collections::HashSet;
-use std::fmt;
+use crate::check::{Check, CheckConstructor};
+use crate::context::Context;
+use crate::utils::IdMap;
+use crate::{DefaultData, DefaultError};
 
 /// A function to dynamically create a string.
 ///
@@ -288,10 +288,7 @@ impl<D, E> CommandBuilder<D, E> {
     ///
     /// - The command that is about to be built is missing names.
     pub fn build(self) -> Command<D, E> {
-        assert!(
-            !self.inner.names.is_empty(),
-            "a command must have at least one name"
-        );
+        assert!(!self.inner.names.is_empty(), "a command must have at least one name");
 
         self.inner
     }
@@ -315,8 +312,6 @@ impl<D, E> Clone for CommandBuilder<D, E> {
 
 impl<D, E> fmt::Debug for CommandBuilder<D, E> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.debug_struct("CommandBuilder")
-            .field("inner", &self.inner)
-            .finish()
+        f.debug_struct("CommandBuilder").field("inner", &self.inner).finish()
     }
 }

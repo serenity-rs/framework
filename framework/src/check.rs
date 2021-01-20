@@ -7,14 +7,14 @@
 //!
 //! [command]: crate::command
 
-use crate::context::CheckContext;
-use crate::{DefaultData, DefaultError};
+use std::error::Error as StdError;
+use std::fmt::{self, Display};
 
 use serenity::futures::future::BoxFuture;
 use serenity::model::channel::Message;
 
-use std::error::Error as StdError;
-use std::fmt::{self, Display};
+use crate::context::CheckContext;
+use crate::{DefaultData, DefaultError};
 
 /// The reason describing why a check failed.
 ///
@@ -46,7 +46,10 @@ impl Display for Reason {
             Self::Unknown => f.write_str("Unknown"),
             Self::User(msg) => write!(f, "User: {}", msg),
             Self::Log(msg) => write!(f, "Log: {}", msg),
-            Self::UserAndLog { user, log } => write!(f, "User: {}; Log: {}", user, log),
+            Self::UserAndLog {
+                user,
+                log,
+            } => write!(f, "User: {}; Log: {}", user, log),
         }
     }
 }
@@ -191,8 +194,6 @@ impl<D, E> Default for CheckBuilder<D, E> {
 
 impl<D, E> fmt::Debug for CheckBuilder<D, E> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.debug_struct("CheckBuilder")
-            .field("inner", &self.inner)
-            .finish()
+        f.debug_struct("CheckBuilder").field("inner", &self.inner).finish()
     }
 }

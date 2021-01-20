@@ -81,9 +81,9 @@ pub fn segment_split<'a>(src: &'a str, delimiter: &str) -> Option<(&'a str, &'a 
 /// # Examples
 ///
 /// ```rust
-/// use serenity_framework::utils::Segments;
-///
 /// use std::borrow::Cow;
+///
+/// use serenity_framework::utils::Segments;
 ///
 /// let mut iter = Segments::new("hello world", " ", false);
 ///
@@ -178,7 +178,10 @@ impl<'a> Iterator for Segments<'a> {
 /// assert_eq!(quoted_segment_split(""), None);
 /// assert_eq!(quoted_segment_split("Doll and roll"), None);
 /// assert_eq!(quoted_segment_split("\"and some\" and home."), Some(("and some", " and home.")));
-/// assert_eq!(quoted_segment_split("\"Stranger does not rhyme with anger"), Some(("Stranger does not rhyme with anger", "")));
+/// assert_eq!(
+///     quoted_segment_split("\"Stranger does not rhyme with anger"),
+///     Some(("Stranger does not rhyme with anger", ""))
+/// );
 /// ```
 pub fn quoted_segment_split(src: &str) -> Option<(&str, &str)> {
     if src.is_empty() || !src.starts_with('"') {
@@ -233,8 +236,14 @@ pub fn quoted_segment(src: &str) -> Option<&str> {
 ///
 /// assert_eq!(argument_segment_split("", ", "), None);
 /// assert_eq!(argument_segment_split("Font, front, wont", ", "), Some(("Font", "front, wont")));
-/// assert_eq!(argument_segment_split("\"want, grand\", and grant", ", "), Some(("want, grand", "and grant")));
-/// assert_eq!(argument_segment_split("\"Shoes, goes, does.", ", "), Some(("Shoes, goes, does.", "")));
+/// assert_eq!(
+///     argument_segment_split("\"want, grand\", and grant", ", "),
+///     Some(("want, grand", "and grant"))
+/// );
+/// assert_eq!(
+///     argument_segment_split("\"Shoes, goes, does.", ", "),
+///     Some(("Shoes, goes, does.", ""))
+/// );
 /// ```
 ///
 /// [qseg]: quoted_segment_split
@@ -260,7 +269,10 @@ pub fn argument_segment_split<'a>(src: &'a str, delimiter: &str) -> Option<(&'a 
 ///
 /// assert_eq!(argument_segment("", ", "), None);
 /// assert_eq!(argument_segment("Now first say finger, ", ", "), Some("Now first say finger"));
-/// assert_eq!(argument_segment("\"And then singer, ginger\", linger, ", ", "), Some("And then singer, ginger"));
+/// assert_eq!(
+///     argument_segment("\"And then singer, ginger\", linger, ", ", "),
+///     Some("And then singer, ginger")
+/// );
 /// assert_eq!(argument_segment("\"Real, zeal, mauve", ", "), Some("Real, zeal, mauve"));
 /// ```
 
@@ -294,7 +306,10 @@ pub struct ArgumentSegments<'a> {
 impl<'a> ArgumentSegments<'a> {
     /// Creates a new `ArgumentSegments` instance.
     pub fn new(src: &'a str, delimiter: &'a str) -> Self {
-        Self { src, delimiter }
+        Self {
+            src,
+            delimiter,
+        }
     }
 
     /// Returns the source string from which segments are constructed.

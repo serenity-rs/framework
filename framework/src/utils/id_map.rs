@@ -33,8 +33,14 @@
 //!
 //! let mut map: IdMap<String, FooId, Foo> = IdMap::new();
 //!
-//! let foo1 = Foo { bar: 1, baz: "2".to_string() };
-//! let foo2 = Foo { bar: 3, baz: "4".to_string() };
+//! let foo1 = Foo {
+//!     bar: 1,
+//!     baz: "2".to_string(),
+//! };
+//! let foo2 = Foo {
+//!     bar: 3,
+//!     baz: "4".to_string(),
+//! };
 //!
 //! map.insert_name("fo".to_string(), FooId(1));
 //! map.insert_name("foo".to_string(), FooId(1));
@@ -43,14 +49,44 @@
 //! map.insert_name("go".to_string(), FooId(2));
 //! map.insert(FooId(2), foo2);
 //!
-//! assert_eq!(map.get(FooId(1)), Some(&Foo { bar: 1, baz: "2".to_string() }));
+//! assert_eq!(
+//!     map.get(FooId(1)),
+//!     Some(&Foo {
+//!         bar: 1,
+//!         baz: "2".to_string()
+//!     })
+//! );
 //! // This will panic if a structure under that identifier does not exist.
-//! assert_eq!(&map[FooId(1)], &Foo { bar: 1, baz: "2".to_string() });
-//! assert_eq!(map.get_by_name("fo"), Some(&Foo { bar: 1, baz: "2".to_string() }));
-//! assert_eq!(map.get_by_name("foo"), Some(&Foo { bar: 1, baz: "2".to_string() }));
+//! assert_eq!(&map[FooId(1)], &Foo {
+//!     bar: 1,
+//!     baz: "2".to_string()
+//! });
+//! assert_eq!(
+//!     map.get_by_name("fo"),
+//!     Some(&Foo {
+//!         bar: 1,
+//!         baz: "2".to_string()
+//!     })
+//! );
+//! assert_eq!(
+//!     map.get_by_name("foo"),
+//!     Some(&Foo {
+//!         bar: 1,
+//!         baz: "2".to_string()
+//!     })
+//! );
 //!
-//! assert_eq!(&map[FooId(2)], &Foo { bar: 3, baz: "4".to_string() });
-//! assert_eq!(map.get_by_name("go"), Some(&Foo { bar: 3, baz: "4".to_string() }));
+//! assert_eq!(&map[FooId(2)], &Foo {
+//!     bar: 3,
+//!     baz: "4".to_string()
+//! });
+//! assert_eq!(
+//!     map.get_by_name("go"),
+//!     Some(&Foo {
+//!         bar: 3,
+//!         baz: "4".to_string()
+//!     })
+//! );
 //! assert_eq!(map.get_by_name("goo"), None);
 //! ```
 
@@ -184,8 +220,7 @@ where
         Name: Borrow<B>,
         B: Hash + Eq,
     {
-        self.get_id(name)
-            .and_then(move |id| self.structures.get_mut(&id))
+        self.get_id(name).and_then(move |id| self.structures.get_mut(&id))
     }
 
     /// Retrieves both an identifier and its structure based on a name.
@@ -272,8 +307,7 @@ where
     Id: Hash + Eq,
 {
     fn index_mut(&mut self, index: Id) -> &mut Self::Output {
-        self.get_mut(index)
-            .expect("ID with an associated structure")
+        self.get_mut(index).expect("ID with an associated structure")
     }
 }
 

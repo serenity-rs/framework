@@ -1,10 +1,10 @@
-use crate::utils::{parse_bool, parse_identifier, parse_identifiers, parse_string};
+use std::convert::TryInto;
 
 use proc_macro2::{Ident, TokenStream};
 use quote::{quote, ToTokens};
 use syn::{Attribute, Result};
 
-use std::convert::TryInto;
+use crate::utils::{parse_bool, parse_identifier, parse_identifiers, parse_string};
 
 #[derive(Default)]
 pub struct Options {
@@ -47,14 +47,17 @@ impl Options {
                     desc.push_str(&s);
                 },
                 "subcommands" => options.subcommands = parse_identifiers(&attr.try_into()?)?,
-                "dynamic_description" =>
-                    options.dynamic_description = Some(parse_identifier(&attr.try_into()?)?),
+                "dynamic_description" => {
+                    options.dynamic_description = Some(parse_identifier(&attr.try_into()?)?)
+                },
                 "usage" => options.usage = Some(parse_string(&attr.try_into()?)?),
-                "dynamic_usage" =>
-                    options.dynamic_usage = Some(parse_identifier(&attr.try_into()?)?),
+                "dynamic_usage" => {
+                    options.dynamic_usage = Some(parse_identifier(&attr.try_into()?)?)
+                },
                 "example" => options.examples.push(parse_string(&attr.try_into()?)?),
-                "dynamic_examples" =>
-                    options.dynamic_examples = Some(parse_identifier(&attr.try_into()?)?),
+                "dynamic_examples" => {
+                    options.dynamic_examples = Some(parse_identifier(&attr.try_into()?)?)
+                },
                 "help_available" => options.help_available = Some(parse_bool(&attr.try_into()?)?),
                 "check" => options.check = Some(parse_identifier(&attr.try_into()?)?),
                 "delimiter" => options.delimiter = Some(parse_string(&attr.try_into()?)?),

@@ -2,17 +2,17 @@
 //!
 //! Refer to the [`content`] function for the definition of a prefix.
 
-use crate::command::Command;
-use crate::configuration::Configuration;
-use crate::context::PrefixContext;
-use crate::error::DispatchError;
-use crate::utils::Segments;
+use std::sync::Arc;
 
 use serenity::client::Context as SerenityContext;
 use serenity::model::channel::Message;
 use serenity::prelude::RwLock;
 
-use std::sync::Arc;
+use crate::command::Command;
+use crate::configuration::Configuration;
+use crate::context::PrefixContext;
+use crate::error::DispatchError;
+use crate::utils::Segments;
 
 /// Parses a mention from the message.
 ///
@@ -72,10 +72,7 @@ pub async fn dynamic_prefix<'a, D, E>(
 /// If none of the prefixes stored in the list are found in the message, `None` is returned.
 /// Otherwise, the prefix and the rest of the message after the prefix is returned.
 pub fn static_prefix<'a>(msg: &'a str, prefixes: &[String]) -> Option<(&'a str, &'a str)> {
-    prefixes
-        .iter()
-        .find(|p| msg.starts_with(p.as_str()))
-        .map(|p| msg.split_at(p.len()))
+    prefixes.iter().find(|p| msg.starts_with(p.as_str())).map(|p| msg.split_at(p.len()))
 }
 
 /// Returns the content of the message after parsing a prefix.
