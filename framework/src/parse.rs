@@ -138,7 +138,6 @@ pub struct CommandIterator<'a, 'b, 'c, D, E> {
     conf: &'a Configuration<D, E>,
     segments: &'b mut Segments<'c>,
     command: Option<&'a Command<D, E>>,
-    beginning: bool,
 }
 
 impl<'a, 'b, 'c, D, E> Iterator for CommandIterator<'a, 'b, 'c, D, E> {
@@ -156,7 +155,7 @@ impl<'a, 'b, 'c, D, E> Iterator for CommandIterator<'a, 'b, 'c, D, E> {
                 // At least one valid command must be present in the message.
                 // After the first command, we do not care if the "name" is invalid,
                 // as it may be the argument to the command at that point.
-                if self.beginning {
+                if self.command.is_none() {
                     return Some(Err(DispatchError::InvalidCommandName(name.into_owned())));
                 }
 
@@ -164,7 +163,7 @@ impl<'a, 'b, 'c, D, E> Iterator for CommandIterator<'a, 'b, 'c, D, E> {
             },
         };
 
-        if self.beginning && !self.conf.root_level_commands.contains(&cmd.id) {
+        if self.command.is_none() && !self.conf.root_level_commands.contains(&cmd.id) {
             self.segments.set_source(checkpoint);
             return None;
         }
@@ -181,7 +180,6 @@ impl<'a, 'b, 'c, D, E> Iterator for CommandIterator<'a, 'b, 'c, D, E> {
         }
 
         self.command = Some(cmd);
-        self.beginning = false;
 
         Some(Ok(cmd))
     }
@@ -214,6 +212,5 @@ pub fn commands<'a, 'b, 'c, D, E>(
         conf,
         segments,
         command: None,
-        beginning: true,
     }
 }
