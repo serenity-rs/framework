@@ -9,6 +9,7 @@ use serenity::futures::future::BoxFuture;
 use serenity::model::channel::Message;
 use serenity::model::id::UserId;
 
+use std::collections::HashSet;
 use std::fmt;
 
 /// The definition of the dynamic prefix hook.
@@ -35,6 +36,8 @@ pub struct Configuration<D = DefaultData, E = DefaultError> {
     ///
     /// [`Category`]: crate::category::Category
     pub categories: Vec<Category>,
+    /// A set of commands that can only appear at the beginning of a command invocation.
+    pub root_level_commands: HashSet<CommandId>,
     /// An [`IdMap`] containing all [`Command`]s.
     ///
     /// [`IdMap`]: crate::utils::IdMap
@@ -51,6 +54,7 @@ impl<D, E> Clone for Configuration<D, E> {
             no_dm_prefix: self.no_dm_prefix,
             on_mention: self.on_mention.clone(),
             categories: self.categories.clone(),
+            root_level_commands: self.root_level_commands.clone(),
             commands: self.commands.clone(),
         }
     }
@@ -65,6 +69,7 @@ impl<D, E> Default for Configuration<D, E> {
             no_dm_prefix: false,
             on_mention: None,
             categories: Vec::default(),
+            root_level_commands: HashSet::default(),
             commands: CommandMap::default(),
         }
     }
@@ -148,17 +153,25 @@ impl<D, E> Configuration<D, E> {
 
     /// Assigns a command to this configuration.
     ///
-    /// The command is added to the [`commands`] map.
+    /// The command is added to the [`commands`] map, alongside its subcommands.
+    /// It it also added into the [`root_level_commands`] set.
     ///
     /// [`commands`]: Self::commands
+    /// [`root_level_commands`]: Self::root_level_commands
     pub fn command(&mut self, command: CommandConstructor<D, E>) -> &mut Self {
         let id = CommandId::from(command);
 
-        // Avoid instantiating the command if the map already contains it.
-        if self.commands.contains_id(id) {
+        // Skip instantiating this root command if if already exists.
+        if self.root_level_commands.contains(&id) {
             return self;
         }
 
+        self.root_level_commands.insert(id);
+        self._command(id, command);
+        self
+    }
+
+    fn _command(&mut self, id: CommandId, command: CommandConstructor<D, E>) {
         let mut command = command();
         command.id = id;
 
@@ -173,13 +186,16 @@ impl<D, E> Configuration<D, E> {
         }
 
         for id in &command.subcommands {
+            // Skip instantiating this subcommand if it already exists.
+            if self.commands.contains_id(*id) {
+                continue;
+            }
+
             let ctor: CommandConstructor<D, E> = id.into_constructor();
-            self.command(ctor);
+            self._command(*id, ctor);
         }
 
         self.commands.insert(command.id, command);
-
-        self
     }
 }
 
@@ -192,6 +208,7 @@ impl<D, E> fmt::Debug for Configuration<D, E> {
             .field("no_dm_prefix", &self.no_dm_prefix)
             .field("on_mention", &self.on_mention)
             .field("categories", &self.categories)
+            .field("root_level_commands", &self.root_level_commands)
             .field("commands", &self.commands)
             .finish()
     }
