@@ -193,18 +193,6 @@
 <span id="190">190</span>
 <span id="191">191</span>
 <span id="192">192</span>
-<span id="193">193</span>
-<span id="194">194</span>
-<span id="195">195</span>
-<span id="196">196</span>
-<span id="197">197</span>
-<span id="198">198</span>
-<span id="199">199</span>
-<span id="200">200</span>
-<span id="201">201</span>
-<span id="202">202</span>
-<span id="203">203</span>
-<span id="204">204</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="doccomment">//! The official command framework for [Serenity] bots.</span>
 <span class="doccomment">//!</span>
@@ -261,7 +249,7 @@
 <span class="kw">pub</span> <span class="kw">mod</span> <span class="ident">prelude</span>;
 <span class="kw">pub</span> <span class="kw">mod</span> <span class="ident">utils</span>;
 
-<span class="kw">use</span> <span class="ident">command</span>::{<span class="ident">Command</span>, <span class="ident">CommandFn</span>};
+<span class="kw">use</span> <span class="ident">command</span>::<span class="ident">CommandFn</span>;
 <span class="kw">use</span> <span class="ident">configuration</span>::<span class="ident">Configuration</span>;
 <span class="kw">use</span> <span class="ident">context</span>::{<span class="ident">CheckContext</span>, <span class="ident">Context</span>};
 <span class="kw">use</span> <span class="ident">error</span>::{<span class="ident">DispatchError</span>, <span class="ident">Error</span>};
@@ -355,7 +343,18 @@
             <span class="kw">for</span> <span class="ident">cmd</span> <span class="kw">in</span> <span class="ident">parse</span>::<span class="ident">commands</span>(<span class="kw-2">&amp;</span><span class="ident">conf</span>, <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">segments</span>) {
                 <span class="kw">let</span> <span class="ident">cmd</span> <span class="op">=</span> <span class="ident">cmd</span><span class="question-mark">?</span>;
 
-                <span class="ident">command_check</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">data</span>, <span class="kw-2">&amp;</span><span class="ident">conf</span>, <span class="kw-2">&amp;</span><span class="ident">ctx</span>, <span class="kw-2">&amp;</span><span class="ident">msg</span>, <span class="ident">cmd</span>).<span class="kw">await</span><span class="question-mark">?</span>;
+                <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">check</span>) <span class="op">=</span> <span class="kw-2">&amp;</span><span class="ident">cmd</span>.<span class="ident">check</span> {
+                    <span class="kw">let</span> <span class="ident">ctx</span> <span class="op">=</span> <span class="ident">CheckContext</span> {
+                        <span class="ident">data</span>: <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">data</span>,
+                        <span class="ident">conf</span>: <span class="kw-2">&amp;</span><span class="ident">conf</span>,
+                        <span class="ident">serenity_ctx</span>: <span class="kw-2">&amp;</span><span class="ident">ctx</span>,
+                        <span class="ident">command_id</span>: <span class="ident">cmd</span>.<span class="ident">id</span>,
+                    };
+
+                    <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Err</span>(<span class="ident">reason</span>) <span class="op">=</span> (<span class="ident">check</span>.<span class="ident">function</span>)(<span class="kw-2">&amp;</span><span class="ident">ctx</span>, <span class="ident">msg</span>).<span class="kw">await</span> {
+                        <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">DispatchError</span>::<span class="ident">CheckFailed</span>(<span class="ident">check</span>.<span class="ident">name</span>.<span class="ident">clone</span>(), <span class="ident">reason</span>));
+                    }
+                }
 
                 <span class="ident">command</span> <span class="op">=</span> <span class="prelude-val">Some</span>(<span class="ident">cmd</span>);
             }
@@ -386,29 +385,6 @@
 
         <span class="prelude-val">Ok</span>((<span class="ident">ctx</span>, <span class="ident">func</span>))
     }
-}
-
-<span class="kw">async</span> <span class="kw">fn</span> <span class="ident">command_check</span><span class="op">&lt;</span><span class="ident">D</span>, <span class="ident">E</span><span class="op">&gt;</span>(
-    <span class="ident">data</span>: <span class="kw-2">&amp;</span><span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">RwLock</span><span class="op">&lt;</span><span class="ident">D</span><span class="op">&gt;</span><span class="op">&gt;</span>,
-    <span class="ident">conf</span>: <span class="kw-2">&amp;</span><span class="ident">Configuration</span><span class="op">&lt;</span><span class="ident">D</span>, <span class="ident">E</span><span class="op">&gt;</span>,
-    <span class="ident">serenity_ctx</span>: <span class="kw-2">&amp;</span><span class="ident">SerenityContext</span>,
-    <span class="ident">msg</span>: <span class="kw-2">&amp;</span><span class="ident">Message</span>,
-    <span class="ident">command</span>: <span class="kw-2">&amp;</span><span class="ident">Command</span><span class="op">&lt;</span><span class="ident">D</span>, <span class="ident">E</span><span class="op">&gt;</span>,
-) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">DispatchError</span><span class="op">&gt;</span> {
-    <span class="kw">let</span> <span class="ident">ctx</span> <span class="op">=</span> <span class="ident">CheckContext</span> {
-        <span class="ident">data</span>,
-        <span class="ident">conf</span>,
-        <span class="ident">serenity_ctx</span>,
-        <span class="ident">command_id</span>: <span class="ident">command</span>.<span class="ident">id</span>,
-    };
-
-    <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">check</span>) <span class="op">=</span> <span class="kw-2">&amp;</span><span class="ident">command</span>.<span class="ident">check</span> {
-        <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Err</span>(<span class="ident">reason</span>) <span class="op">=</span> (<span class="ident">check</span>.<span class="ident">function</span>)(<span class="kw-2">&amp;</span><span class="ident">ctx</span>, <span class="ident">msg</span>).<span class="kw">await</span> {
-            <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">DispatchError</span>::<span class="ident">CheckFailed</span>(<span class="ident">check</span>.<span class="ident">name</span>.<span class="ident">clone</span>(), <span class="ident">reason</span>));
-        }
-    }
-
-    <span class="prelude-val">Ok</span>(())
 }
 </pre></div>
 </section><section id="search" class="content hidden"></section><section class="footer"></section><div id="rustdoc-vars" data-root-path="../../" data-current-crate="serenity_framework"></div>
