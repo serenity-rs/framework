@@ -306,6 +306,40 @@
 <span id="303">303</span>
 <span id="304">304</span>
 <span id="305">305</span>
+<span id="306">306</span>
+<span id="307">307</span>
+<span id="308">308</span>
+<span id="309">309</span>
+<span id="310">310</span>
+<span id="311">311</span>
+<span id="312">312</span>
+<span id="313">313</span>
+<span id="314">314</span>
+<span id="315">315</span>
+<span id="316">316</span>
+<span id="317">317</span>
+<span id="318">318</span>
+<span id="319">319</span>
+<span id="320">320</span>
+<span id="321">321</span>
+<span id="322">322</span>
+<span id="323">323</span>
+<span id="324">324</span>
+<span id="325">325</span>
+<span id="326">326</span>
+<span id="327">327</span>
+<span id="328">328</span>
+<span id="329">329</span>
+<span id="330">330</span>
+<span id="331">331</span>
+<span id="332">332</span>
+<span id="333">333</span>
+<span id="334">334</span>
+<span id="335">335</span>
+<span id="336">336</span>
+<span id="337">337</span>
+<span id="338">338</span>
+<span id="339">339</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="doccomment">//! An Identifier Map. An abstraction for structures who may have many names, but only</span>
 <span class="doccomment">//! once instance.</span>
@@ -342,8 +376,14 @@
 <span class="doccomment">//!</span>
 <span class="doccomment">//! let mut map: IdMap&lt;String, FooId, Foo&gt; = IdMap::new();</span>
 <span class="doccomment">//!</span>
-<span class="doccomment">//! let foo1 = Foo { bar: 1, baz: &quot;2&quot;.to_string() };</span>
-<span class="doccomment">//! let foo2 = Foo { bar: 3, baz: &quot;4&quot;.to_string() };</span>
+<span class="doccomment">//! let foo1 = Foo {</span>
+<span class="doccomment">//!     bar: 1,</span>
+<span class="doccomment">//!     baz: &quot;2&quot;.to_string(),</span>
+<span class="doccomment">//! };</span>
+<span class="doccomment">//! let foo2 = Foo {</span>
+<span class="doccomment">//!     bar: 3,</span>
+<span class="doccomment">//!     baz: &quot;4&quot;.to_string(),</span>
+<span class="doccomment">//! };</span>
 <span class="doccomment">//!</span>
 <span class="doccomment">//! map.insert_name(&quot;fo&quot;.to_string(), FooId(1));</span>
 <span class="doccomment">//! map.insert_name(&quot;foo&quot;.to_string(), FooId(1));</span>
@@ -352,14 +392,44 @@
 <span class="doccomment">//! map.insert_name(&quot;go&quot;.to_string(), FooId(2));</span>
 <span class="doccomment">//! map.insert(FooId(2), foo2);</span>
 <span class="doccomment">//!</span>
-<span class="doccomment">//! assert_eq!(map.get(FooId(1)), Some(&amp;Foo { bar: 1, baz: &quot;2&quot;.to_string() }));</span>
+<span class="doccomment">//! assert_eq!(</span>
+<span class="doccomment">//!     map.get(FooId(1)),</span>
+<span class="doccomment">//!     Some(&amp;Foo {</span>
+<span class="doccomment">//!         bar: 1,</span>
+<span class="doccomment">//!         baz: &quot;2&quot;.to_string()</span>
+<span class="doccomment">//!     })</span>
+<span class="doccomment">//! );</span>
 <span class="doccomment">//! // This will panic if a structure under that identifier does not exist.</span>
-<span class="doccomment">//! assert_eq!(&amp;map[FooId(1)], &amp;Foo { bar: 1, baz: &quot;2&quot;.to_string() });</span>
-<span class="doccomment">//! assert_eq!(map.get_by_name(&quot;fo&quot;), Some(&amp;Foo { bar: 1, baz: &quot;2&quot;.to_string() }));</span>
-<span class="doccomment">//! assert_eq!(map.get_by_name(&quot;foo&quot;), Some(&amp;Foo { bar: 1, baz: &quot;2&quot;.to_string() }));</span>
+<span class="doccomment">//! assert_eq!(&amp;map[FooId(1)], &amp;Foo {</span>
+<span class="doccomment">//!     bar: 1,</span>
+<span class="doccomment">//!     baz: &quot;2&quot;.to_string()</span>
+<span class="doccomment">//! });</span>
+<span class="doccomment">//! assert_eq!(</span>
+<span class="doccomment">//!     map.get_by_name(&quot;fo&quot;),</span>
+<span class="doccomment">//!     Some(&amp;Foo {</span>
+<span class="doccomment">//!         bar: 1,</span>
+<span class="doccomment">//!         baz: &quot;2&quot;.to_string()</span>
+<span class="doccomment">//!     })</span>
+<span class="doccomment">//! );</span>
+<span class="doccomment">//! assert_eq!(</span>
+<span class="doccomment">//!     map.get_by_name(&quot;foo&quot;),</span>
+<span class="doccomment">//!     Some(&amp;Foo {</span>
+<span class="doccomment">//!         bar: 1,</span>
+<span class="doccomment">//!         baz: &quot;2&quot;.to_string()</span>
+<span class="doccomment">//!     })</span>
+<span class="doccomment">//! );</span>
 <span class="doccomment">//!</span>
-<span class="doccomment">//! assert_eq!(&amp;map[FooId(2)], &amp;Foo { bar: 3, baz: &quot;4&quot;.to_string() });</span>
-<span class="doccomment">//! assert_eq!(map.get_by_name(&quot;go&quot;), Some(&amp;Foo { bar: 3, baz: &quot;4&quot;.to_string() }));</span>
+<span class="doccomment">//! assert_eq!(&amp;map[FooId(2)], &amp;Foo {</span>
+<span class="doccomment">//!     bar: 3,</span>
+<span class="doccomment">//!     baz: &quot;4&quot;.to_string()</span>
+<span class="doccomment">//! });</span>
+<span class="doccomment">//! assert_eq!(</span>
+<span class="doccomment">//!     map.get_by_name(&quot;go&quot;),</span>
+<span class="doccomment">//!     Some(&amp;Foo {</span>
+<span class="doccomment">//!         bar: 3,</span>
+<span class="doccomment">//!         baz: &quot;4&quot;.to_string()</span>
+<span class="doccomment">//!     })</span>
+<span class="doccomment">//! );</span>
 <span class="doccomment">//! assert_eq!(map.get_by_name(&quot;goo&quot;), None);</span>
 <span class="doccomment">//! ```</span>
 
@@ -493,8 +563,7 @@
         <span class="ident">Name</span>: <span class="ident">Borrow</span><span class="op">&lt;</span><span class="ident">B</span><span class="op">&gt;</span>,
         <span class="ident">B</span>: <span class="ident">Hash</span> <span class="op">+</span> <span class="ident">Eq</span>,
     {
-        <span class="self">self</span>.<span class="ident">get_id</span>(<span class="ident">name</span>)
-            .<span class="ident">and_then</span>(<span class="kw">move</span> <span class="op">|</span><span class="ident">id</span><span class="op">|</span> <span class="self">self</span>.<span class="ident">structures</span>.<span class="ident">get_mut</span>(<span class="kw-2">&amp;</span><span class="ident">id</span>))
+        <span class="self">self</span>.<span class="ident">get_id</span>(<span class="ident">name</span>).<span class="ident">and_then</span>(<span class="kw">move</span> <span class="op">|</span><span class="ident">id</span><span class="op">|</span> <span class="self">self</span>.<span class="ident">structures</span>.<span class="ident">get_mut</span>(<span class="kw-2">&amp;</span><span class="ident">id</span>))
     }
 
     <span class="doccomment">/// Retrieves both an identifier and its structure based on a name.</span>
@@ -581,8 +650,7 @@
     <span class="ident">Id</span>: <span class="ident">Hash</span> <span class="op">+</span> <span class="ident">Eq</span>,
 {
     <span class="kw">fn</span> <span class="ident">index_mut</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">index</span>: <span class="ident">Id</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">Self</span>::<span class="ident">Output</span> {
-        <span class="self">self</span>.<span class="ident">get_mut</span>(<span class="ident">index</span>)
-            .<span class="ident">expect</span>(<span class="string">&quot;ID with an associated structure&quot;</span>)
+        <span class="self">self</span>.<span class="ident">get_mut</span>(<span class="ident">index</span>).<span class="ident">expect</span>(<span class="string">&quot;ID with an associated structure&quot;</span>)
     }
 }
 

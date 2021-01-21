@@ -318,11 +318,6 @@
 <span id="315">315</span>
 <span id="316">316</span>
 <span id="317">317</span>
-<span id="318">318</span>
-<span id="319">319</span>
-<span id="320">320</span>
-<span id="321">321</span>
-<span id="322">322</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="doccomment">//! Functions and types relating to commands.</span>
 <span class="doccomment">//!</span>
@@ -334,16 +329,16 @@
 <span class="doccomment">//!</span>
 <span class="doccomment">//! [`check`]: crate::check</span>
 
-<span class="kw">use</span> <span class="kw">crate</span>::<span class="ident">check</span>::{<span class="ident">Check</span>, <span class="ident">CheckConstructor</span>};
-<span class="kw">use</span> <span class="kw">crate</span>::<span class="ident">context</span>::<span class="ident">Context</span>;
-<span class="kw">use</span> <span class="kw">crate</span>::<span class="ident">utils</span>::<span class="ident">IdMap</span>;
-<span class="kw">use</span> <span class="kw">crate</span>::{<span class="ident">DefaultData</span>, <span class="ident">DefaultError</span>};
+<span class="kw">use</span> <span class="ident">std</span>::<span class="ident">collections</span>::<span class="ident">HashSet</span>;
+<span class="kw">use</span> <span class="ident">std</span>::<span class="ident">fmt</span>;
 
 <span class="kw">use</span> <span class="ident">serenity</span>::<span class="ident">futures</span>::<span class="ident">future</span>::<span class="ident">BoxFuture</span>;
 <span class="kw">use</span> <span class="ident">serenity</span>::<span class="ident">model</span>::<span class="ident">channel</span>::<span class="ident">Message</span>;
 
-<span class="kw">use</span> <span class="ident">std</span>::<span class="ident">collections</span>::<span class="ident">HashSet</span>;
-<span class="kw">use</span> <span class="ident">std</span>::<span class="ident">fmt</span>;
+<span class="kw">use</span> <span class="kw">crate</span>::<span class="ident">check</span>::{<span class="ident">Check</span>, <span class="ident">CheckConstructor</span>};
+<span class="kw">use</span> <span class="kw">crate</span>::<span class="ident">context</span>::<span class="ident">Context</span>;
+<span class="kw">use</span> <span class="kw">crate</span>::<span class="ident">utils</span>::<span class="ident">IdMap</span>;
+<span class="kw">use</span> <span class="kw">crate</span>::{<span class="ident">DefaultData</span>, <span class="ident">DefaultError</span>};
 
 <span class="doccomment">/// A function to dynamically create a string.</span>
 <span class="doccomment">///</span>
@@ -614,10 +609,7 @@
     <span class="doccomment">///</span>
     <span class="doccomment">/// - The command that is about to be built is missing names.</span>
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">build</span>(<span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Command</span><span class="op">&lt;</span><span class="ident">D</span>, <span class="ident">E</span><span class="op">&gt;</span> {
-        <span class="macro">assert</span><span class="macro">!</span>(
-            <span class="op">!</span><span class="self">self</span>.<span class="ident">inner</span>.<span class="ident">names</span>.<span class="ident">is_empty</span>(),
-            <span class="string">&quot;a command must have at least one name&quot;</span>
-        );
+        <span class="macro">assert</span><span class="macro">!</span>(<span class="op">!</span><span class="self">self</span>.<span class="ident">inner</span>.<span class="ident">names</span>.<span class="ident">is_empty</span>(), <span class="string">&quot;a command must have at least one name&quot;</span>);
 
         <span class="self">self</span>.<span class="ident">inner</span>
     }
@@ -641,9 +633,7 @@
 
 <span class="kw">impl</span><span class="op">&lt;</span><span class="ident">D</span>, <span class="ident">E</span><span class="op">&gt;</span> <span class="ident">fmt</span>::<span class="ident">Debug</span> <span class="kw">for</span> <span class="ident">CommandBuilder</span><span class="op">&lt;</span><span class="ident">D</span>, <span class="ident">E</span><span class="op">&gt;</span> {
     <span class="kw">fn</span> <span class="ident">fmt</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">f</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">fmt</span>::<span class="ident">Formatter</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">fmt</span>::<span class="prelude-ty">Result</span> {
-        <span class="ident">f</span>.<span class="ident">debug_struct</span>(<span class="string">&quot;CommandBuilder&quot;</span>)
-            .<span class="ident">field</span>(<span class="string">&quot;inner&quot;</span>, <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">inner</span>)
-            .<span class="ident">finish</span>()
+        <span class="ident">f</span>.<span class="ident">debug_struct</span>(<span class="string">&quot;CommandBuilder&quot;</span>).<span class="ident">field</span>(<span class="string">&quot;inner&quot;</span>, <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">inner</span>).<span class="ident">finish</span>()
     }
 }
 </pre></div>

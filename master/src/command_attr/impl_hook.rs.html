@@ -82,28 +82,18 @@
 <span id="79">79</span>
 <span id="80">80</span>
 <span id="81">81</span>
-<span id="82">82</span>
-<span id="83">83</span>
-<span id="84">84</span>
-<span id="85">85</span>
-<span id="86">86</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="kw">use</span> <span class="ident">proc_macro2</span>::{<span class="ident">Span</span>, <span class="ident">TokenStream</span>};
-
+<span class="kw">use</span> <span class="ident">quote</span>::<span class="ident">quote</span>;
 <span class="kw">use</span> <span class="ident">syn</span>::<span class="ident">parse2</span>;
 <span class="kw">use</span> <span class="ident">syn</span>::<span class="ident">punctuated</span>::<span class="ident">Punctuated</span>;
 <span class="kw">use</span> <span class="ident">syn</span>::<span class="ident">spanned</span>::<span class="ident">Spanned</span>;
 <span class="kw">use</span> <span class="ident">syn</span>::{<span class="ident">Error</span>, <span class="ident">FnArg</span>, <span class="ident">GenericParam</span>, <span class="ident">Generics</span>, <span class="ident">ItemFn</span>, <span class="ident">Lifetime</span>};
 <span class="kw">use</span> <span class="ident">syn</span>::{<span class="ident">LifetimeDef</span>, <span class="prelude-ty">Result</span>, <span class="ident">ReturnType</span>, <span class="ident">Signature</span>, <span class="ident">Token</span>, <span class="ident">Type</span>};
 
-<span class="kw">use</span> <span class="ident">quote</span>::<span class="ident">quote</span>;
-
 <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">impl_hook</span>(<span class="ident">attr</span>: <span class="ident">TokenStream</span>, <span class="ident">input</span>: <span class="ident">TokenStream</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">TokenStream</span><span class="op">&gt;</span> {
     <span class="kw">if</span> <span class="op">!</span><span class="ident">attr</span>.<span class="ident">is_empty</span>() {
-        <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">Error</span>::<span class="ident">new</span>(
-            <span class="ident">attr</span>.<span class="ident">span</span>(),
-            <span class="string">&quot;parameters to the `#[hook]` macro are ignored&quot;</span>,
-        ));
+        <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">Error</span>::<span class="ident">new</span>(<span class="ident">attr</span>.<span class="ident">span</span>(), <span class="string">&quot;parameters to the `#[hook]` macro are ignored&quot;</span>));
     }
 
     <span class="kw">let</span> <span class="ident">fun</span> <span class="op">=</span> <span class="ident">parse2</span>::<span class="op">&lt;</span><span class="ident">ItemFn</span><span class="op">&gt;</span>(<span class="ident">input</span>)<span class="question-mark">?</span>;

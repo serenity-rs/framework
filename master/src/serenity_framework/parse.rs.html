@@ -214,25 +214,22 @@
 <span id="211">211</span>
 <span id="212">212</span>
 <span id="213">213</span>
-<span id="214">214</span>
-<span id="215">215</span>
-<span id="216">216</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="doccomment">//! Utilities to parse the prefix and command out of a message.</span>
 <span class="doccomment">//!</span>
 <span class="doccomment">//! Refer to the [`content`] function for the definition of a prefix.</span>
+
+<span class="kw">use</span> <span class="ident">std</span>::<span class="ident">sync</span>::<span class="ident">Arc</span>;
+
+<span class="kw">use</span> <span class="ident">serenity</span>::<span class="ident">client</span>::<span class="ident">Context</span> <span class="kw">as</span> <span class="ident">SerenityContext</span>;
+<span class="kw">use</span> <span class="ident">serenity</span>::<span class="ident">model</span>::<span class="ident">channel</span>::<span class="ident">Message</span>;
+<span class="kw">use</span> <span class="ident">serenity</span>::<span class="ident">prelude</span>::<span class="ident">RwLock</span>;
 
 <span class="kw">use</span> <span class="kw">crate</span>::<span class="ident">command</span>::<span class="ident">Command</span>;
 <span class="kw">use</span> <span class="kw">crate</span>::<span class="ident">configuration</span>::<span class="ident">Configuration</span>;
 <span class="kw">use</span> <span class="kw">crate</span>::<span class="ident">context</span>::<span class="ident">PrefixContext</span>;
 <span class="kw">use</span> <span class="kw">crate</span>::<span class="ident">error</span>::<span class="ident">DispatchError</span>;
 <span class="kw">use</span> <span class="kw">crate</span>::<span class="ident">utils</span>::<span class="ident">Segments</span>;
-
-<span class="kw">use</span> <span class="ident">serenity</span>::<span class="ident">client</span>::<span class="ident">Context</span> <span class="kw">as</span> <span class="ident">SerenityContext</span>;
-<span class="kw">use</span> <span class="ident">serenity</span>::<span class="ident">model</span>::<span class="ident">channel</span>::<span class="ident">Message</span>;
-<span class="kw">use</span> <span class="ident">serenity</span>::<span class="ident">prelude</span>::<span class="ident">RwLock</span>;
-
-<span class="kw">use</span> <span class="ident">std</span>::<span class="ident">sync</span>::<span class="ident">Arc</span>;
 
 <span class="doccomment">/// Parses a mention from the message.</span>
 <span class="doccomment">///</span>
@@ -292,10 +289,7 @@
 <span class="doccomment">/// If none of the prefixes stored in the list are found in the message, `None` is returned.</span>
 <span class="doccomment">/// Otherwise, the prefix and the rest of the message after the prefix is returned.</span>
 <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">static_prefix</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span>(<span class="ident">msg</span>: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> <span class="ident">str</span>, <span class="ident">prefixes</span>: <span class="kw-2">&amp;</span>[<span class="ident">String</span>]) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Option</span><span class="op">&lt;</span>(<span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> <span class="ident">str</span>, <span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> <span class="ident">str</span>)<span class="op">&gt;</span> {
-    <span class="ident">prefixes</span>
-        .<span class="ident">iter</span>()
-        .<span class="ident">find</span>(<span class="op">|</span><span class="ident">p</span><span class="op">|</span> <span class="ident">msg</span>.<span class="ident">starts_with</span>(<span class="ident">p</span>.<span class="ident">as_str</span>()))
-        .<span class="ident">map</span>(<span class="op">|</span><span class="ident">p</span><span class="op">|</span> <span class="ident">msg</span>.<span class="ident">split_at</span>(<span class="ident">p</span>.<span class="ident">len</span>()))
+    <span class="ident">prefixes</span>.<span class="ident">iter</span>().<span class="ident">find</span>(<span class="op">|</span><span class="ident">p</span><span class="op">|</span> <span class="ident">msg</span>.<span class="ident">starts_with</span>(<span class="ident">p</span>.<span class="ident">as_str</span>())).<span class="ident">map</span>(<span class="op">|</span><span class="ident">p</span><span class="op">|</span> <span class="ident">msg</span>.<span class="ident">split_at</span>(<span class="ident">p</span>.<span class="ident">len</span>()))
 }
 
 <span class="doccomment">/// Returns the content of the message after parsing a prefix.</span>

@@ -333,6 +333,21 @@
 <span id="330">330</span>
 <span id="331">331</span>
 <span id="332">332</span>
+<span id="333">333</span>
+<span id="334">334</span>
+<span id="335">335</span>
+<span id="336">336</span>
+<span id="337">337</span>
+<span id="338">338</span>
+<span id="339">339</span>
+<span id="340">340</span>
+<span id="341">341</span>
+<span id="342">342</span>
+<span id="343">343</span>
+<span id="344">344</span>
+<span id="345">345</span>
+<span id="346">346</span>
+<span id="347">347</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="doccomment">//! Functions and types for handling *segments*.</span>
 <span class="doccomment">//!</span>
@@ -417,9 +432,9 @@
 <span class="doccomment">/// # Examples</span>
 <span class="doccomment">///</span>
 <span class="doccomment">/// ```rust</span>
-<span class="doccomment">/// use serenity_framework::utils::Segments;</span>
-<span class="doccomment">///</span>
 <span class="doccomment">/// use std::borrow::Cow;</span>
+<span class="doccomment">///</span>
+<span class="doccomment">/// use serenity_framework::utils::Segments;</span>
 <span class="doccomment">///</span>
 <span class="doccomment">/// let mut iter = Segments::new(&quot;hello world&quot;, &quot; &quot;, false);</span>
 <span class="doccomment">///</span>
@@ -514,7 +529,10 @@
 <span class="doccomment">/// assert_eq!(quoted_segment_split(&quot;&quot;), None);</span>
 <span class="doccomment">/// assert_eq!(quoted_segment_split(&quot;Doll and roll&quot;), None);</span>
 <span class="doccomment">/// assert_eq!(quoted_segment_split(&quot;\&quot;and some\&quot; and home.&quot;), Some((&quot;and some&quot;, &quot; and home.&quot;)));</span>
-<span class="doccomment">/// assert_eq!(quoted_segment_split(&quot;\&quot;Stranger does not rhyme with anger&quot;), Some((&quot;Stranger does not rhyme with anger&quot;, &quot;&quot;)));</span>
+<span class="doccomment">/// assert_eq!(</span>
+<span class="doccomment">///     quoted_segment_split(&quot;\&quot;Stranger does not rhyme with anger&quot;),</span>
+<span class="doccomment">///     Some((&quot;Stranger does not rhyme with anger&quot;, &quot;&quot;))</span>
+<span class="doccomment">/// );</span>
 <span class="doccomment">/// ```</span>
 <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">quoted_segment_split</span>(<span class="ident">src</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Option</span><span class="op">&lt;</span>(<span class="kw-2">&amp;</span><span class="ident">str</span>, <span class="kw-2">&amp;</span><span class="ident">str</span>)<span class="op">&gt;</span> {
     <span class="kw">if</span> <span class="ident">src</span>.<span class="ident">is_empty</span>() <span class="op">|</span><span class="op">|</span> <span class="op">!</span><span class="ident">src</span>.<span class="ident">starts_with</span>(<span class="string">&#39;&quot;&#39;</span>) {
@@ -569,8 +587,14 @@
 <span class="doccomment">///</span>
 <span class="doccomment">/// assert_eq!(argument_segment_split(&quot;&quot;, &quot;, &quot;), None);</span>
 <span class="doccomment">/// assert_eq!(argument_segment_split(&quot;Font, front, wont&quot;, &quot;, &quot;), Some((&quot;Font&quot;, &quot;front, wont&quot;)));</span>
-<span class="doccomment">/// assert_eq!(argument_segment_split(&quot;\&quot;want, grand\&quot;, and grant&quot;, &quot;, &quot;), Some((&quot;want, grand&quot;, &quot;and grant&quot;)));</span>
-<span class="doccomment">/// assert_eq!(argument_segment_split(&quot;\&quot;Shoes, goes, does.&quot;, &quot;, &quot;), Some((&quot;Shoes, goes, does.&quot;, &quot;&quot;)));</span>
+<span class="doccomment">/// assert_eq!(</span>
+<span class="doccomment">///     argument_segment_split(&quot;\&quot;want, grand\&quot;, and grant&quot;, &quot;, &quot;),</span>
+<span class="doccomment">///     Some((&quot;want, grand&quot;, &quot;and grant&quot;))</span>
+<span class="doccomment">/// );</span>
+<span class="doccomment">/// assert_eq!(</span>
+<span class="doccomment">///     argument_segment_split(&quot;\&quot;Shoes, goes, does.&quot;, &quot;, &quot;),</span>
+<span class="doccomment">///     Some((&quot;Shoes, goes, does.&quot;, &quot;&quot;))</span>
+<span class="doccomment">/// );</span>
 <span class="doccomment">/// ```</span>
 <span class="doccomment">///</span>
 <span class="doccomment">/// [qseg]: quoted_segment_split</span>
@@ -596,7 +620,10 @@
 <span class="doccomment">///</span>
 <span class="doccomment">/// assert_eq!(argument_segment(&quot;&quot;, &quot;, &quot;), None);</span>
 <span class="doccomment">/// assert_eq!(argument_segment(&quot;Now first say finger, &quot;, &quot;, &quot;), Some(&quot;Now first say finger&quot;));</span>
-<span class="doccomment">/// assert_eq!(argument_segment(&quot;\&quot;And then singer, ginger\&quot;, linger, &quot;, &quot;, &quot;), Some(&quot;And then singer, ginger&quot;));</span>
+<span class="doccomment">/// assert_eq!(</span>
+<span class="doccomment">///     argument_segment(&quot;\&quot;And then singer, ginger\&quot;, linger, &quot;, &quot;, &quot;),</span>
+<span class="doccomment">///     Some(&quot;And then singer, ginger&quot;)</span>
+<span class="doccomment">/// );</span>
 <span class="doccomment">/// assert_eq!(argument_segment(&quot;\&quot;Real, zeal, mauve&quot;, &quot;, &quot;), Some(&quot;Real, zeal, mauve&quot;));</span>
 <span class="doccomment">/// ```</span>
 
@@ -630,7 +657,10 @@
 <span class="kw">impl</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span> <span class="ident">ArgumentSegments</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span> {
     <span class="doccomment">/// Creates a new `ArgumentSegments` instance.</span>
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">new</span>(<span class="ident">src</span>: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> <span class="ident">str</span>, <span class="ident">delimiter</span>: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> <span class="ident">str</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
-        <span class="self">Self</span> { <span class="ident">src</span>, <span class="ident">delimiter</span> }
+        <span class="self">Self</span> {
+            <span class="ident">src</span>,
+            <span class="ident">delimiter</span>,
+        }
     }
 
     <span class="doccomment">/// Returns the source string from which segments are constructed.</span>

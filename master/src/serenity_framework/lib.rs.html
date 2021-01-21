@@ -188,11 +188,6 @@
 <span id="185">185</span>
 <span id="186">186</span>
 <span id="187">187</span>
-<span id="188">188</span>
-<span id="189">189</span>
-<span id="190">190</span>
-<span id="191">191</span>
-<span id="192">192</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="doccomment">//! The official command framework for [Serenity] bots.</span>
 <span class="doccomment">//!</span>
@@ -232,11 +227,11 @@
 
 <span class="attribute">#![<span class="ident">warn</span>(<span class="ident">missing_docs</span>)]</span>
 
-<span class="kw">use</span> <span class="ident">serenity</span>::<span class="ident">model</span>::<span class="ident">channel</span>::<span class="ident">Message</span>;
-<span class="kw">use</span> <span class="ident">serenity</span>::<span class="ident">prelude</span>::{<span class="ident">Context</span> <span class="kw">as</span> <span class="ident">SerenityContext</span>, <span class="ident">Mutex</span>, <span class="ident">RwLock</span>};
-
 <span class="kw">use</span> <span class="ident">std</span>::<span class="ident">error</span>::<span class="ident">Error</span> <span class="kw">as</span> <span class="ident">StdError</span>;
 <span class="kw">use</span> <span class="ident">std</span>::<span class="ident">sync</span>::<span class="ident">Arc</span>;
+
+<span class="kw">use</span> <span class="ident">serenity</span>::<span class="ident">model</span>::<span class="ident">channel</span>::<span class="ident">Message</span>;
+<span class="kw">use</span> <span class="ident">serenity</span>::<span class="ident">prelude</span>::{<span class="ident">Context</span> <span class="kw">as</span> <span class="ident">SerenityContext</span>, <span class="ident">Mutex</span>, <span class="ident">RwLock</span>};
 
 <span class="kw">pub</span> <span class="kw">mod</span> <span class="ident">argument</span>;
 <span class="kw">pub</span> <span class="kw">mod</span> <span class="ident">category</span>;
@@ -366,12 +361,7 @@
 
             <span class="kw">let</span> <span class="ident">args</span> <span class="op">=</span> <span class="ident">segments</span>.<span class="ident">source</span>();
 
-            (
-                <span class="ident">command</span>.<span class="ident">function</span>,
-                <span class="ident">command</span>.<span class="ident">id</span>,
-                <span class="ident">prefix</span>.<span class="ident">to_string</span>(),
-                <span class="ident">args</span>.<span class="ident">to_string</span>(),
-            )
+            (<span class="ident">command</span>.<span class="ident">function</span>, <span class="ident">command</span>.<span class="ident">id</span>, <span class="ident">prefix</span>.<span class="ident">to_string</span>(), <span class="ident">args</span>.<span class="ident">to_string</span>())
         };
 
         <span class="kw">let</span> <span class="ident">ctx</span> <span class="op">=</span> <span class="ident">Context</span> {
