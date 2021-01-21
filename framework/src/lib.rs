@@ -36,11 +36,11 @@
 
 #![warn(missing_docs)]
 
-use serenity::model::channel::Message;
-use serenity::prelude::{Context as SerenityContext, Mutex, RwLock};
-
 use std::error::Error as StdError;
 use std::sync::Arc;
+
+use serenity::model::channel::Message;
+use serenity::prelude::{Context as SerenityContext, Mutex, RwLock};
 
 pub mod argument;
 pub mod category;
@@ -170,12 +170,7 @@ impl<D, E> Framework<D, E> {
 
             let args = segments.source();
 
-            (
-                command.function,
-                command.id,
-                prefix.to_string(),
-                args.to_string(),
-            )
+            (command.function, command.id, prefix.to_string(), args.to_string())
         };
 
         let ctx = Context {

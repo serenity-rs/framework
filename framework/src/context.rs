@@ -7,16 +7,16 @@
 //!
 //! [msg]: serenity::model::channel::Message
 
-use crate::command::CommandId;
-use crate::configuration::Configuration;
-use crate::{DefaultData, DefaultError};
+use std::sync::Arc;
 
 use serenity::cache::Cache;
 use serenity::client::Context as SerenityContext;
 use serenity::http::{CacheHttp, Http};
 use serenity::prelude::{Mutex, RwLock};
 
-use std::sync::Arc;
+use crate::command::CommandId;
+use crate::configuration::Configuration;
+use crate::{DefaultData, DefaultError};
 
 /// The final context type.
 ///

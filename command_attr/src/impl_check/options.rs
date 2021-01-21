@@ -1,9 +1,10 @@
-use crate::utils::parse_bool;
+use std::convert::TryInto;
+
 use proc_macro2::TokenStream;
 use quote::{quote, ToTokens};
 use syn::{Attribute, Result};
 
-use std::convert::TryInto;
+use crate::utils::parse_bool;
 
 #[derive(Default)]
 pub struct Options {

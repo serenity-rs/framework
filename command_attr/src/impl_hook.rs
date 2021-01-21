@@ -1,19 +1,14 @@
 use proc_macro2::{Span, TokenStream};
-
+use quote::quote;
 use syn::parse2;
 use syn::punctuated::Punctuated;
 use syn::spanned::Spanned;
 use syn::{Error, FnArg, GenericParam, Generics, ItemFn, Lifetime};
 use syn::{LifetimeDef, Result, ReturnType, Signature, Token, Type};
 
-use quote::quote;
-
 pub fn impl_hook(attr: TokenStream, input: TokenStream) -> Result<TokenStream> {
     if !attr.is_empty() {
-        return Err(Error::new(
-            attr.span(),
-            "parameters to the `#[hook]` macro are ignored",
-        ));
+        return Err(Error::new(attr.span(), "parameters to the `#[hook]` macro are ignored"));
     }
 
     let fun = parse2::<ItemFn>(input)?;

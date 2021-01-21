@@ -1,16 +1,16 @@
 //! Configuration of the framework.
 
-use crate::category::Category;
-use crate::command::{CommandConstructor, CommandId, CommandMap};
-use crate::context::PrefixContext;
-use crate::{DefaultData, DefaultError};
+use std::collections::HashSet;
+use std::fmt;
 
 use serenity::futures::future::BoxFuture;
 use serenity::model::channel::Message;
 use serenity::model::id::UserId;
 
-use std::collections::HashSet;
-use std::fmt;
+use crate::category::Category;
+use crate::command::{CommandConstructor, CommandId, CommandMap};
+use crate::context::PrefixContext;
+use crate::{DefaultData, DefaultError};
 
 /// The definition of the dynamic prefix hook.
 pub type DynamicPrefix<D, E> =
@@ -176,11 +176,7 @@ impl<D, E> Configuration<D, E> {
         command.id = id;
 
         for name in &command.names {
-            let name = if self.case_insensitive {
-                name.to_lowercase()
-            } else {
-                name.clone()
-            };
+            let name = if self.case_insensitive { name.to_lowercase() } else { name.clone() };
 
             self.commands.insert_name(name, command.id);
         }

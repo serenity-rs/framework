@@ -1,10 +1,10 @@
 //! Utilities for parsing command arguments.
 
-use crate::utils::ArgumentSegments;
-
 use std::error::Error as StdError;
 use std::fmt;
 use std::str::FromStr;
+
+use crate::utils::ArgumentSegments;
 
 /// Error that might have occured when trying to parse an argument.
 #[derive(Debug)]
@@ -67,10 +67,7 @@ pub fn optional_argument<T>(
 where
     T: FromStr,
 {
-    segments
-        .next()
-        .map(|seg| T::from_str(seg).map_err(ArgumentError::Argument))
-        .transpose()
+    segments.next().map(|seg| T::from_str(seg).map_err(ArgumentError::Argument)).transpose()
 }
 
 /// Tries to parse many arguments from a list of segments.
@@ -84,9 +81,7 @@ pub fn variadic_arguments<T>(
 where
     T: FromStr,
 {
-    segments
-        .map(|seg| T::from_str(seg).map_err(ArgumentError::Argument))
-        .collect()
+    segments.map(|seg| T::from_str(seg).map_err(ArgumentError::Argument)).collect()
 }
 
 /// Parses the remainder of the list of segments into an argument.

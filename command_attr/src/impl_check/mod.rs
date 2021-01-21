@@ -1,10 +1,10 @@
-use crate::paths;
-use crate::utils;
-
 use proc_macro2::TokenStream;
 use quote::{format_ident, quote};
 use syn::parse2;
 use syn::{ItemFn, Result, Type};
+
+use crate::paths;
+use crate::utils;
 
 mod options;
 

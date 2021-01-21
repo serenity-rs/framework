@@ -1,10 +1,10 @@
-use crate::paths;
-use crate::utils::{self, AttributeArgs};
-
 use proc_macro2::{Ident, TokenStream};
 use quote::{format_ident, quote, ToTokens};
 use syn::spanned::Spanned;
 use syn::{parse2, Attribute, Error, FnArg, ItemFn, Path, Result, Type};
+
+use crate::paths;
+use crate::utils::{self, AttributeArgs};
 
 mod options;
 
@@ -221,7 +221,11 @@ impl Argument {
         let path = utils::get_path(&ty)?;
         let kind = ArgumentType::new(&binding.attrs, path)?;
 
-        Ok(Self { name, ty, kind })
+        Ok(Self {
+            name,
+            ty,
+            kind,
+        })
     }
 }
 
@@ -246,10 +250,7 @@ impl ArgumentType {
             let attr = utils::parse_attribute(&attrs[0])?;
 
             if !attr.path.is_ident("rest") {
-                return Err(Error::new(
-                    attrs[0].span(),
-                    "invalid attribute name, expected `rest`",
-                ));
+                return Err(Error::new(attrs[0].span(), "invalid attribute name, expected `rest`"));
             }
 
             if !attr.values.is_empty() {
@@ -262,13 +263,11 @@ impl ArgumentType {
             return Ok(ArgumentType::Rest);
         }
 
-        Ok(
-            match path.segments.last().unwrap().ident.to_string().as_str() {
-                "Option" => ArgumentType::Optional,
-                "Vec" => ArgumentType::Variadic,
-                _ => ArgumentType::Required,
-            },
-        )
+        Ok(match path.segments.last().unwrap().ident.to_string().as_str() {
+            "Option" => ArgumentType::Optional,
+            "Vec" => ArgumentType::Variadic,
+            _ => ArgumentType::Required,
+        })
     }
 }
 

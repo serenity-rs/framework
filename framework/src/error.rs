@@ -1,10 +1,10 @@
 //! Defines error types used by the framework.
 
-use crate::check::Reason;
-use crate::DefaultError;
-
 use std::error::Error as StdError;
 use std::fmt;
+
+use crate::check::Reason;
+use crate::DefaultError;
 
 /// An error describing why [`dispatch`]ing failed.
 ///
@@ -30,8 +30,9 @@ impl fmt::Display for DispatchError {
             DispatchError::PrefixOnly(prefix) => {
                 write!(f, "only the prefix (`{}`) is present", prefix)
             },
-            DispatchError::InvalidCommandName(name) =>
-                write!(f, "name \"{}\" does not refer to any command", name),
+            DispatchError::InvalidCommandName(name) => {
+                write!(f, "name \"{}\" does not refer to any command", name)
+            },
             DispatchError::CheckFailed(name, _) => write!(f, "\"{}\" check failed", name),
         }
     }
