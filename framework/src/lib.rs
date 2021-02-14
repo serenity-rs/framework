@@ -40,7 +40,7 @@ use std::error::Error as StdError;
 use std::sync::Arc;
 
 use serenity::model::channel::Message;
-use serenity::prelude::{Context as SerenityContext, Mutex};
+use serenity::prelude::{Context as SerenityContext, RwLock};
 
 pub mod argument;
 pub mod category;
@@ -73,7 +73,7 @@ pub type DefaultError = Box<dyn StdError + Send + Sync>;
 #[derive(Clone)]
 pub struct Framework<D = DefaultData, E = DefaultError> {
     /// Configuration of the framework that dictates its behaviour.
-    pub conf: Arc<Mutex<Configuration<D, E>>>,
+    pub conf: Arc<RwLock<Configuration<D, E>>>,
     /// User data that is accessable in every command and function hook.
     pub data: Arc<D>,
 }
@@ -113,7 +113,7 @@ impl<D, E> Framework<D, E> {
     #[inline]
     pub fn with_arc_data(conf: Configuration<D, E>, data: Arc<D>) -> Self {
         Self {
-            conf: Arc::new(Mutex::new(conf)),
+            conf: Arc::new(RwLock::new(conf)),
             data,
         }
     }
@@ -133,7 +133,7 @@ impl<D, E> Framework<D, E> {
         msg: &Message,
     ) -> Result<(Context<D, E>, CommandFn<D, E>), DispatchError> {
         let (func, command_id, prefix, args) = {
-            let conf = self.conf.lock().await;
+            let conf = self.conf.read().await;
 
             let (prefix, content) = match parse::content(&self.data, &conf, &ctx, &msg).await {
                 Some(pair) => pair,
