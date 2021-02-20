@@ -6,7 +6,6 @@ use std::sync::Arc;
 
 use serenity::client::Context as SerenityContext;
 use serenity::model::channel::Message;
-use serenity::prelude::RwLock;
 
 use crate::command::Command;
 use crate::configuration::Configuration;
