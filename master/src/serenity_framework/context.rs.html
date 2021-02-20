@@ -207,7 +207,7 @@
 <span class="kw">use</span> <span class="ident">serenity</span>::<span class="ident">cache</span>::<span class="ident">Cache</span>;
 <span class="kw">use</span> <span class="ident">serenity</span>::<span class="ident">client</span>::<span class="ident">Context</span> <span class="kw">as</span> <span class="ident">SerenityContext</span>;
 <span class="kw">use</span> <span class="ident">serenity</span>::<span class="ident">http</span>::{<span class="ident">CacheHttp</span>, <span class="ident">Http</span>};
-<span class="kw">use</span> <span class="ident">serenity</span>::<span class="ident">prelude</span>::{<span class="ident">Mutex</span>, <span class="ident">RwLock</span>};
+<span class="kw">use</span> <span class="ident">serenity</span>::<span class="ident">prelude</span>::<span class="ident">Mutex</span>;
 
 <span class="kw">use</span> <span class="kw">crate</span>::<span class="ident">command</span>::<span class="ident">CommandId</span>;
 <span class="kw">use</span> <span class="kw">crate</span>::<span class="ident">configuration</span>::<span class="ident">Configuration</span>;
@@ -224,7 +224,7 @@
 <span class="attribute">#[<span class="ident">non_exhaustive</span>]</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">Context</span><span class="op">&lt;</span><span class="ident">D</span> <span class="op">=</span> <span class="ident">DefaultData</span>, <span class="ident">E</span> <span class="op">=</span> <span class="ident">DefaultError</span><span class="op">&gt;</span> {
     <span class="doccomment">/// User data.</span>
-    <span class="kw">pub</span> <span class="ident">data</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">RwLock</span><span class="op">&lt;</span><span class="ident">D</span><span class="op">&gt;</span><span class="op">&gt;</span>,
+    <span class="kw">pub</span> <span class="ident">data</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">D</span><span class="op">&gt;</span>,
     <span class="doccomment">/// Framework configuration.</span>
     <span class="kw">pub</span> <span class="ident">conf</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">Mutex</span><span class="op">&lt;</span><span class="ident">Configuration</span><span class="op">&lt;</span><span class="ident">D</span>, <span class="ident">E</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="op">&gt;</span>,
     <span class="doccomment">/// Serenity&#39;s context type.</span>
@@ -288,7 +288,7 @@
 <span class="attribute">#[<span class="ident">non_exhaustive</span>]</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">PrefixContext</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span>, <span class="ident">D</span> <span class="op">=</span> <span class="ident">DefaultData</span>, <span class="ident">E</span> <span class="op">=</span> <span class="ident">DefaultError</span><span class="op">&gt;</span> {
     <span class="doccomment">/// User data.</span>
-    <span class="kw">pub</span> <span class="ident">data</span>: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">RwLock</span><span class="op">&lt;</span><span class="ident">D</span><span class="op">&gt;</span><span class="op">&gt;</span>,
+    <span class="kw">pub</span> <span class="ident">data</span>: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">D</span><span class="op">&gt;</span>,
     <span class="doccomment">/// Framework configuration.</span>
     <span class="kw">pub</span> <span class="ident">conf</span>: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> <span class="ident">Configuration</span><span class="op">&lt;</span><span class="ident">D</span>, <span class="ident">E</span><span class="op">&gt;</span>,
     <span class="doccomment">/// Serenity&#39;s context type.</span>
@@ -339,7 +339,7 @@
 <span class="attribute">#[<span class="ident">non_exhaustive</span>]</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">CheckContext</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span>, <span class="ident">D</span> <span class="op">=</span> <span class="ident">DefaultData</span>, <span class="ident">E</span> <span class="op">=</span> <span class="ident">DefaultError</span><span class="op">&gt;</span> {
     <span class="doccomment">/// User data.</span>
-    <span class="kw">pub</span> <span class="ident">data</span>: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">RwLock</span><span class="op">&lt;</span><span class="ident">D</span><span class="op">&gt;</span><span class="op">&gt;</span>,
+    <span class="kw">pub</span> <span class="ident">data</span>: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">D</span><span class="op">&gt;</span>,
     <span class="doccomment">/// Framework configuration.</span>
     <span class="kw">pub</span> <span class="ident">conf</span>: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> <span class="ident">Configuration</span><span class="op">&lt;</span><span class="ident">D</span>, <span class="ident">E</span><span class="op">&gt;</span>,
     <span class="doccomment">/// Serenity&#39;s context type.</span>
