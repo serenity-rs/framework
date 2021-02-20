@@ -96,7 +96,7 @@ pub fn static_prefix<'a>(msg: &'a str, prefixes: &[String]) -> Option<(&'a str, 
 /// [dyn_prefix]: dynamic_prefix
 #[allow(clippy::needless_lifetimes)]
 pub async fn content<'a, D, E>(
-    data: &Arc<RwLock<D>>,
+    data: &Arc<D>,
     conf: &Configuration<D, E>,
     serenity_ctx: &SerenityContext,
     msg: &'a Message,
