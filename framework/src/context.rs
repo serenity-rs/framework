@@ -12,7 +12,7 @@ use std::sync::Arc;
 use serenity::cache::Cache;
 use serenity::client::Context as SerenityContext;
 use serenity::http::{CacheHttp, Http};
-use serenity::prelude::{Mutex, RwLock};
+use serenity::prelude::Mutex;
 
 use crate::command::CommandId;
 use crate::configuration::Configuration;
@@ -29,7 +29,7 @@ use crate::{DefaultData, DefaultError};
 #[non_exhaustive]
 pub struct Context<D = DefaultData, E = DefaultError> {
     /// User data.
-    pub data: Arc<RwLock<D>>,
+    pub data: Arc<D>,
     /// Framework configuration.
     pub conf: Arc<Mutex<Configuration<D, E>>>,
     /// Serenity's context type.
@@ -93,7 +93,7 @@ where
 #[non_exhaustive]
 pub struct PrefixContext<'a, D = DefaultData, E = DefaultError> {
     /// User data.
-    pub data: &'a Arc<RwLock<D>>,
+    pub data: &'a Arc<D>,
     /// Framework configuration.
     pub conf: &'a Configuration<D, E>,
     /// Serenity's context type.
@@ -144,7 +144,7 @@ where
 #[non_exhaustive]
 pub struct CheckContext<'a, D = DefaultData, E = DefaultError> {
     /// User data.
-    pub data: &'a Arc<RwLock<D>>,
+    pub data: &'a Arc<D>,
     /// Framework configuration.
     pub conf: &'a Configuration<D, E>,
     /// Serenity's context type.
