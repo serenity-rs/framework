@@ -16,7 +16,7 @@ pub enum ArgumentError<E> {
     Missing,
     /// Parsing the argument failed.
     ///
-    /// Contains the error from [`FromStr::Err`].
+    /// Contains the error from [`serenity::utils::Parse::Err`].
     Argument(E),
 }
 
