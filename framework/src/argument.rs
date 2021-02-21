@@ -75,7 +75,7 @@ where
     T: serenity::utils::Parse,
 {
     match segments.next() {
-        Some(seg) => T::parse(ctx, msg, seg).await.map(Some).map_err(ArgumentError::Argument)),
+        Some(seg) => T::parse(ctx, msg, seg).await.map(Some).map_err(ArgumentError::Argument),
         None => Ok(None),
     }
 }
