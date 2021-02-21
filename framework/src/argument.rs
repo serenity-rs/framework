@@ -70,13 +70,13 @@ pub async fn optional_argument<T>(
     ctx: &Context,
     msg: &Message,
     segments: &mut ArgumentSegments<'_>,
-) -> Option<Result<T, ArgumentError<T::Err>>>
+) -> Result<Option<T>, ArgumentError<T::Err>>
 where
     T: serenity::utils::Parse,
 {
     match segments.next() {
-        Some(seg) => Some(T::parse(ctx, msg, seg).await.map_err(ArgumentError::Argument)),
-        None => None,
+        Some(seg) => T::parse(ctx, msg, seg).await.map(Some).map_err(ArgumentError::Argument)),
+        None => Ok(None),
     }
 }
 
