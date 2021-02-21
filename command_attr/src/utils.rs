@@ -166,11 +166,14 @@ pub fn parse_bool(attr: &Attr) -> Result<bool> {
     })
 }
 
-pub fn parse_generics(sig: &Signature) -> Result<(Ident, Box<Type>, Box<Type>)> {
-    let ctx = get_first_parameter(sig)?;
-    let binding = get_pat_type(ctx)?;
-    let ident = get_ident(&binding.pat)?;
-    let path = get_path(&binding.ty)?;
+pub fn parse_generics(sig: &Signature) -> Result<(Ident, Ident, Box<Type>, Box<Type>)> {
+    let (ctx, msg) = get_first_two_parameters(sig)?;
+
+    let msg_indent = get_ident(&get_pat_type(msg)?.pat)?;
+
+    let ctx_binding = get_pat_type(ctx)?;
+    let ctx_ident = get_ident(&ctx_binding.pat)?;
+    let path = get_path(&ctx_binding.ty)?;
     let mut arguments = get_generic_arguments(path)?;
 
     let default_data = default_data_type();
@@ -190,13 +193,17 @@ pub fn parse_generics(sig: &Signature) -> Result<(Ident, Box<Type>, Box<Type>)> 
         None => default_error,
     };
 
-    Ok((ident, data, error))
+    Ok((ctx_ident, msg_indent, data, error))
 }
 
-fn get_first_parameter(sig: &Signature) -> Result<&FnArg> {
-    match sig.inputs.first() {
-        Some(arg) => Ok(arg),
-        None => Err(Error::new(sig.inputs.span(), "the function must have parameters")),
+fn get_first_two_parameters(sig: &Signature) -> Result<(&FnArg, &FnArg)> {
+    let mut parameters = sig.inputs.iter();
+    match (parameters.next(), parameters.next()) {
+        (Some(first), Some(second)) => Ok((first, second)),
+        _ => Err(Error::new(
+            sig.inputs.span(),
+            "the function must have a context and a message parameter",
+        )),
     }
 }
 
@@ -210,7 +217,7 @@ pub fn get_pat_type(arg: &FnArg) -> Result<&PatType> {
 pub fn get_ident(p: &Pat) -> Result<Ident> {
     match p {
         Pat::Ident(pi) => Ok(pi.ident.clone()),
-        _ => Err(Error::new(p.span(), "first parameter must have an identifier")),
+        _ => Err(Error::new(p.span(), "parameter must have an identifier")),
     }
 }
 
@@ -218,7 +225,7 @@ pub fn get_path(t: &Type) -> Result<&Path> {
     match t {
         Type::Path(p) => Ok(&p.path),
         Type::Reference(r) => get_path(&r.elem),
-        _ => Err(Error::new(t.span(), "first parameter must be a path to a context type")),
+        _ => Err(Error::new(t.span(), "parameter must be a path to a context type")),
     }
 }
 

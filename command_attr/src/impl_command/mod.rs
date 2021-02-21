@@ -19,10 +19,10 @@ pub fn impl_command(attr: TokenStream, input: TokenStream) -> Result<TokenStream
         parse2::<AttributeArgs>(attr)?.0
     };
 
-    let (ctx_name, data, error) = utils::parse_generics(&fun.sig)?;
+    let (ctx_name, msg_name, data, error) = utils::parse_generics(&fun.sig)?;
     let options = Options::parse(&mut fun.attrs)?;
 
-    parse_arguments(ctx_name, &mut fun, &options)?;
+    parse_arguments(ctx_name, msg_name, &mut fun, &options)?;
 
     let builder_fn = builder_fn(&data, &error, &mut fun, names, &options);
 
@@ -74,16 +74,18 @@ fn builder_fn(
     }
 }
 
-fn parse_arguments(ctx_name: Ident, function: &mut ItemFn, options: &Options) -> Result<()> {
+fn parse_arguments(
+    ctx_name: Ident,
+    msg_name: Ident,
+    function: &mut ItemFn,
+    options: &Options,
+) -> Result<()> {
     let mut arguments = Vec::new();
 
-    let mut len = function.sig.inputs.len();
-    while len > 2 {
+    while function.sig.inputs.len() > 2 {
         let argument = function.sig.inputs.pop().unwrap().into_value();
 
         arguments.push(Argument::new(argument)?);
-
-        len -= 1;
     }
 
     if !arguments.is_empty() {
@@ -106,7 +108,11 @@ fn parse_arguments(ctx_name: Ident, function: &mut ItemFn, options: &Options) ->
                 // afterwards, as `ArgumentSegments` holds a reference to the source string.
                 let mut __args = #asegsty::new(&#ctx_name.args, #delimiter);
 
-                #(let #argument_names: #argument_tys = #argument_kinds(&mut __args)?;)*
+                #(let #argument_names: #argument_tys = #argument_kinds(
+                    &#ctx_name.serenity_ctx,
+                    &#msg_name,
+                    &mut __args
+                ).await?;)*
 
                 (#(#argument_names),*)
             };

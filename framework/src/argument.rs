@@ -2,7 +2,8 @@
 
 use std::error::Error as StdError;
 use std::fmt;
-use std::str::FromStr;
+
+use serenity::{model::prelude::*, prelude::*};
 
 use crate::utils::ArgumentSegments;
 
@@ -44,12 +45,16 @@ impl<E: StdError + 'static> StdError for ArgumentError<E> {
 /// - If the list of segments is empty, [`ArgumentError::Missing`] is returned.
 /// - If the segment cannot be parsed into an argument, [`ArgumentError::Argument`] is
 /// returned.
-pub fn required_argument<T>(segments: &mut ArgumentSegments<'_>) -> Result<T, ArgumentError<T::Err>>
+pub async fn required_argument<T>(
+    ctx: &Context,
+    msg: &Message,
+    segments: &mut ArgumentSegments<'_>,
+) -> Result<T, ArgumentError<T::Err>>
 where
-    T: FromStr,
+    T: serenity::utils::Parse,
 {
     match segments.next() {
-        Some(seg) => T::from_str(seg).map_err(ArgumentError::Argument),
+        Some(seg) => T::parse(ctx, msg, seg).await.map_err(ArgumentError::Argument),
         None => Err(ArgumentError::Missing),
     }
 }
@@ -61,13 +66,18 @@ where
 /// the first segment is taken and parsed into an argument. If parsing succeeds,
 /// `Ok(Some(...))` is returned, otherwise `Err(...)`. The error is wrapped in
 /// [`ArgumentError::Argument`].
-pub fn optional_argument<T>(
+pub async fn optional_argument<T>(
+    ctx: &Context,
+    msg: &Message,
     segments: &mut ArgumentSegments<'_>,
-) -> Result<Option<T>, ArgumentError<T::Err>>
+) -> Option<Result<T, ArgumentError<T::Err>>>
 where
-    T: FromStr,
+    T: serenity::utils::Parse,
 {
-    segments.next().map(|seg| T::from_str(seg).map_err(ArgumentError::Argument)).transpose()
+    match segments.next() {
+        Some(seg) => Some(T::parse(ctx, msg, seg).await.map_err(ArgumentError::Argument)),
+        None => None,
+    }
 }
 
 /// Tries to parse many arguments from a list of segments.
@@ -75,13 +85,17 @@ where
 /// Each segment in the list is parsed into a vector of arguments. If parsing
 /// all segments succeeds, the vector is returned. Otherwise, the first error
 /// is returned. The error is wrapped in [`ArgumentError::Argument`].
-pub fn variadic_arguments<T>(
+pub async fn variadic_arguments<T>(
+    ctx: &Context,
+    msg: &Message,
     segments: &mut ArgumentSegments<'_>,
 ) -> Result<Vec<T>, ArgumentError<T::Err>>
 where
-    T: FromStr,
+    T: serenity::utils::Parse,
 {
-    segments.map(|seg| T::from_str(seg).map_err(ArgumentError::Argument)).collect()
+    serenity::futures::future::try_join_all(segments.map(|seg| T::parse(ctx, msg, seg)))
+        .await
+        .map_err(ArgumentError::Argument)
 }
 
 /// Parses the remainder of the list of segments into an argument.
@@ -90,9 +104,13 @@ where
 /// and parsed to the specified argument type. If parsing success,
 /// `Ok(...)` is returned, otherwise `Err(...)`. The error is wrapped in
 /// [`ArgumentError::Argument`].
-pub fn rest_argument<T>(segments: &mut ArgumentSegments<'_>) -> Result<T, ArgumentError<T::Err>>
+pub async fn rest_argument<T>(
+    ctx: &Context,
+    msg: &Message,
+    segments: &mut ArgumentSegments<'_>,
+) -> Result<T, ArgumentError<T::Err>>
 where
-    T: FromStr,
+    T: serenity::utils::Parse,
 {
-    T::from_str(segments.source()).map_err(ArgumentError::Argument)
+    T::parse(ctx, msg, segments.source()).await.map_err(ArgumentError::Argument)
 }
