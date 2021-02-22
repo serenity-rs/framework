@@ -40,7 +40,7 @@ use std::error::Error as StdError;
 use std::sync::Arc;
 
 use serenity::model::channel::Message;
-use serenity::prelude::{Context as SerenityContext, Mutex, RwLock};
+use serenity::prelude::{Context as SerenityContext, Mutex};
 
 pub mod argument;
 pub mod category;
@@ -75,7 +75,7 @@ pub struct Framework<D = DefaultData, E = DefaultError> {
     /// Configuration of the framework that dictates its behaviour.
     pub conf: Arc<Mutex<Configuration<D, E>>>,
     /// User data that is accessable in every command and function hook.
-    pub data: Arc<RwLock<D>>,
+    pub data: Arc<D>,
 }
 
 impl<D, E> Framework<D, E>
@@ -106,12 +106,12 @@ impl<D, E> Framework<D, E> {
     /// [`with_arc_data`]: Self::with_arc_data
     #[inline]
     pub fn with_data(conf: Configuration<D, E>, data: D) -> Self {
-        Self::with_arc_data(conf, Arc::new(RwLock::new(data)))
+        Self::with_arc_data(conf, Arc::new(data))
     }
 
     /// Creates new instanstiation of the framework using a given configuration and data.
     #[inline]
-    pub fn with_arc_data(conf: Configuration<D, E>, data: Arc<RwLock<D>>) -> Self {
+    pub fn with_arc_data(conf: Configuration<D, E>, data: Arc<D>) -> Self {
         Self {
             conf: Arc::new(Mutex::new(conf)),
             data,
