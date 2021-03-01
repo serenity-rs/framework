@@ -55,9 +55,8 @@ pub mod utils;
 
 use command::CommandFn;
 use configuration::Configuration;
-use context::{CheckContext, Context};
+use context::Context;
 use error::{DispatchError, Error};
-use utils::Segments;
 
 /// The default type for [user data][data] when it is unspecified.
 ///
@@ -118,7 +117,7 @@ impl<D, E> Framework<D, E> {
         }
     }
 
-    /// Dispatches a command.
+    /// Dispatches a command from a message if one is present.
     #[inline]
     pub async fn dispatch(&self, ctx: &SerenityContext, msg: &Message) -> Result<(), Error<E>> {
         let (ctx, func) = self.parse(ctx, msg).await?;
@@ -140,37 +139,13 @@ impl<D, E> Framework<D, E> {
                 None => return Err(DispatchError::NormalMessage),
             };
 
-            let mut segments = Segments::new(&content, " ", conf.case_insensitive);
+            let (command, args) =
+                match parse::command(&self.data, &conf, &ctx, &msg, content).await? {
+                    Some(pair) => pair,
+                    None => return Err(DispatchError::PrefixOnly(prefix.to_string())),
+                };
 
-            let mut command = None;
-
-            for cmd in parse::commands(&conf, &mut segments) {
-                let cmd = cmd?;
-
-                if let Some(check) = &cmd.check {
-                    let ctx = CheckContext {
-                        data: &self.data,
-                        conf: &conf,
-                        serenity_ctx: &ctx,
-                        command_id: cmd.id,
-                    };
-
-                    if let Err(reason) = (check.function)(&ctx, msg).await {
-                        return Err(DispatchError::CheckFailed(check.name.clone(), reason));
-                    }
-                }
-
-                command = Some(cmd);
-            }
-
-            let command = match command {
-                Some(cmd) => cmd,
-                None => return Err(DispatchError::PrefixOnly(prefix.to_string())),
-            };
-
-            let args = segments.source();
-
-            (command.function, command.id, prefix.to_string(), args.to_string())
+            (command.function, command.id, prefix.to_string(), args)
         };
 
         let ctx = Context {
