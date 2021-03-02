@@ -228,6 +228,7 @@ pub fn commands<'a, 'b, 'c, D, E>(
 ///
 /// [`check`]: crate::command::Command::check
 /// [`Segments`]: crate::utils::Segments
+#[allow(clippy::needless_lifetimes)]
 pub async fn command<'a, D, E>(
     data: &Arc<D>,
     conf: &'a Configuration<D, E>,
