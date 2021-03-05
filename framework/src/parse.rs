@@ -9,7 +9,7 @@ use serenity::model::channel::Message;
 
 use crate::command::Command;
 use crate::configuration::Configuration;
-use crate::context::PrefixContext;
+use crate::context::{CheckContext, PrefixContext};
 use crate::error::DispatchError;
 use crate::utils::Segments;
 
@@ -209,4 +209,57 @@ pub fn commands<'a, 'b, 'c, D, E>(
         segments,
         command: None,
     }
+}
+
+/// Parses and checks all valid commands in a message after the prefix.
+///
+/// This parses commands from `content` using [`commands`]. For each valid command,
+/// it calls its [`check`] function if it has one configured. Commands are
+/// parsed from space-delimited [`Segments`].
+///
+/// ## Return type
+///
+/// This returns the last valid command and its arguments if parsing
+/// and checking commands went successfully.
+///
+/// It may be `None` if no command was found in `content` (it is empty); or
+/// it may be `Err(...)` if either the first segment is an invalid command
+/// name or the check function returned an error.
+///
+/// [`check`]: crate::command::Command::check
+/// [`Segments`]: crate::utils::Segments
+#[allow(clippy::needless_lifetimes)]
+pub async fn command<'a, D, E>(
+    data: &Arc<D>,
+    conf: &'a Configuration<D, E>,
+    ctx: &SerenityContext,
+    msg: &Message,
+    content: &str,
+) -> Result<Option<(&'a Command<D, E>, String)>, DispatchError> {
+    let mut segments = Segments::new(content, " ", conf.case_insensitive);
+
+    let mut command = None;
+
+    for cmd in commands(conf, &mut segments) {
+        let cmd = cmd?;
+
+        if let Some(check) = &cmd.check {
+            let ctx = CheckContext {
+                data,
+                conf,
+                serenity_ctx: &ctx,
+                command_id: cmd.id,
+            };
+
+            if let Err(reason) = (check.function)(&ctx, msg).await {
+                return Err(DispatchError::CheckFailed(check.name.clone(), reason));
+            }
+        }
+
+        command = Some(cmd);
+    }
+
+    let args = segments.source();
+
+    Ok(command.map(|c| (c, args.to_string())))
 }
