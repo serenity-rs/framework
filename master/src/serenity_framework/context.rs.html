@@ -207,7 +207,7 @@
 <span class="kw">use</span> <span class="ident">serenity</span>::<span class="ident">cache</span>::<span class="ident">Cache</span>;
 <span class="kw">use</span> <span class="ident">serenity</span>::<span class="ident">client</span>::<span class="ident">Context</span> <span class="kw">as</span> <span class="ident">SerenityContext</span>;
 <span class="kw">use</span> <span class="ident">serenity</span>::<span class="ident">http</span>::{<span class="ident">CacheHttp</span>, <span class="ident">Http</span>};
-<span class="kw">use</span> <span class="ident">serenity</span>::<span class="ident">prelude</span>::<span class="ident">Mutex</span>;
+<span class="kw">use</span> <span class="ident">serenity</span>::<span class="ident">prelude</span>::<span class="ident">RwLock</span>;
 
 <span class="kw">use</span> <span class="kw">crate</span>::<span class="ident">command</span>::<span class="ident">CommandId</span>;
 <span class="kw">use</span> <span class="kw">crate</span>::<span class="ident">configuration</span>::<span class="ident">Configuration</span>;
@@ -226,7 +226,7 @@
     <span class="doccomment">/// User data.</span>
     <span class="kw">pub</span> <span class="ident">data</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">D</span><span class="op">&gt;</span>,
     <span class="doccomment">/// Framework configuration.</span>
-    <span class="kw">pub</span> <span class="ident">conf</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">Mutex</span><span class="op">&lt;</span><span class="ident">Configuration</span><span class="op">&lt;</span><span class="ident">D</span>, <span class="ident">E</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="op">&gt;</span>,
+    <span class="kw">pub</span> <span class="ident">conf</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">RwLock</span><span class="op">&lt;</span><span class="ident">Configuration</span><span class="op">&lt;</span><span class="ident">D</span>, <span class="ident">E</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="op">&gt;</span>,
     <span class="doccomment">/// Serenity&#39;s context type.</span>
     <span class="kw">pub</span> <span class="ident">serenity_ctx</span>: <span class="ident">SerenityContext</span>,
     <span class="doccomment">/// The identifier of the command.</span>
