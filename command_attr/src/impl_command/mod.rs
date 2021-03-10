@@ -139,7 +139,7 @@ fn check_arguments(args: &[Argument]) -> Result<()> {
 
     for arg in args {
         if let Some(last_arg) = last_arg {
-            match (last_arg.kind, arg.kind) {
+            match (last_arg.kind.type_, arg.kind.type_) {
                 (ArgumentType::Optional, ArgumentType::Required) => {
                     return Err(Error::new(
                         last_arg.name.span(),
@@ -213,7 +213,7 @@ fn check_arguments(args: &[Argument]) -> Result<()> {
 struct Argument {
     name: Ident,
     ty: Box<Type>,
-    kind: ArgumentType,
+    kind: ArgumentMetadata,
 }
 
 impl Argument {
@@ -225,7 +225,7 @@ impl Argument {
         let ty = binding.ty.clone();
 
         let path = utils::get_path(&ty)?;
-        let kind = ArgumentType::new(&binding.attrs, path)?;
+        let kind = ArgumentMetadata::new(&binding.attrs, path)?;
 
         Ok(Self {
             name,
@@ -243,47 +243,73 @@ enum ArgumentType {
     Rest,
 }
 
-impl ArgumentType {
+#[derive(Clone, Copy)]
+struct ArgumentMetadata {
+    type_: ArgumentType,
+    use_parse_trait: bool,
+}
+
+impl ArgumentMetadata {
     fn new(attrs: &[Attribute], path: &Path) -> Result<Self> {
-        if !attrs.is_empty() {
-            if attrs.len() > 1 {
-                return Err(Error::new(
-                    path.span(),
-                    "an argument cannot have more than 1 attribute",
-                ));
-            }
+        let mut is_rest_argument = false;
+        let mut use_parse_trait = false;
+        for attr in attrs {
+            let attr = utils::parse_attribute(attr)?;
 
-            let attr = utils::parse_attribute(&attrs[0])?;
+            if attr.path.is_ident("rest") {
+                is_rest_argument = true;
 
-            if !attr.path.is_ident("rest") {
-                return Err(Error::new(attrs[0].span(), "invalid attribute name, expected `rest`"));
-            }
+                if !attr.values.is_empty() {
+                    return Err(Error::new(
+                        attrs[0].span(),
+                        "the `rest` attribute does not accept any input",
+                    ));
+                }
+            } else if attr.path.is_ident("parse") {
+                use_parse_trait = true;
 
-            if !attr.values.is_empty() {
+                if !attr.values.is_empty() {
+                    return Err(Error::new(
+                        attrs[0].span(),
+                        "the `parse` attribute does not accept any input",
+                    ));
+                }
+            } else {
                 return Err(Error::new(
                     attrs[0].span(),
-                    "the `rest` attribute does not accept any input",
+                    "invalid attribute name, expected `rest` or `parse`",
                 ));
             }
-
-            return Ok(ArgumentType::Rest);
         }
 
-        Ok(match path.segments.last().unwrap().ident.to_string().as_str() {
-            "Option" => ArgumentType::Optional,
-            "Vec" => ArgumentType::Variadic,
-            _ => ArgumentType::Required,
+        let type_ = if is_rest_argument {
+            ArgumentType::Rest
+        } else {
+            match path.segments.last().unwrap().ident.to_string().as_str() {
+                "Option" => ArgumentType::Optional,
+                "Vec" => ArgumentType::Variadic,
+                _ => ArgumentType::Required,
+            }
+        };
+
+        Ok(Self {
+            type_,
+            use_parse_trait,
         })
     }
 }
 
-impl ToTokens for ArgumentType {
+impl ToTokens for ArgumentMetadata {
     fn to_tokens(&self, tokens: &mut TokenStream) {
-        let path = match self {
-            ArgumentType::Required => paths::required_argument_func(),
-            ArgumentType::Optional => paths::optional_argument_func(),
-            ArgumentType::Variadic => paths::variadic_arguments_func(),
-            ArgumentType::Rest => paths::rest_argument_func(),
+        let path = match (self.type_, self.use_parse_trait) {
+            (ArgumentType::Required, false) => paths::required_argument_from_str_func(),
+            (ArgumentType::Required, true) => paths::required_argument_parse_func(),
+            (ArgumentType::Optional, false) => paths::optional_argument_from_str_func(),
+            (ArgumentType::Optional, true) => paths::optional_argument_parse_func(),
+            (ArgumentType::Variadic, false) => paths::variadic_arguments_from_str_func(),
+            (ArgumentType::Variadic, true) => paths::variadic_arguments_parse_func(),
+            (ArgumentType::Rest, false) => paths::rest_argument_from_str_func(),
+            (ArgumentType::Rest, true) => paths::rest_argument_parse_func(),
         };
 
         tokens.extend(quote!(#path));
