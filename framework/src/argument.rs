@@ -12,7 +12,8 @@ use crate::utils::ArgumentSegments;
 pub enum ArgumentError<E> {
     /// Required argument is missing.
     ///
-    /// This is only returned by the [`required_argument`] function.
+    /// This is only returned by the [`required_argument_from_str`] and [`required_argument_parse`]
+    /// functions.
     Missing,
     /// Parsing the argument failed.
     ///
