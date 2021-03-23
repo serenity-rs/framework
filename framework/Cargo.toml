@@ -5,8 +5,8 @@ authors = ["Alex M. M. <acdenissk69@gmail.com>"]
 edition = "2018"
 
 [dependencies.serenity]
-git = "https://github.com/kangalioo/serenity" # Replace with main serenity branch once merged
-branch = "parse"
+git = "https://github.com/serenity-rs/serenity"
+branch = "current"
 default_features = false
 features = ["client", "model", "gateway", "cache", "rustls_backend"]
 
