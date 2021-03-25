@@ -46,27 +46,51 @@ pub fn argument_segments_type() -> Path {
     })
 }
 
-pub fn required_argument_func() -> Path {
+pub fn required_argument_from_str_func() -> Path {
     to_path(quote! {
-        serenity_framework::argument::required_argument
+        serenity_framework::argument::required_argument_from_str
     })
 }
 
-pub fn optional_argument_func() -> Path {
+pub fn required_argument_parse_func() -> Path {
     to_path(quote! {
-        serenity_framework::argument::optional_argument
+        serenity_framework::argument::required_argument_parse
     })
 }
 
-pub fn variadic_arguments_func() -> Path {
+pub fn optional_argument_from_str_func() -> Path {
     to_path(quote! {
-        serenity_framework::argument::variadic_arguments
+        serenity_framework::argument::optional_argument_from_str
     })
 }
 
-pub fn rest_argument_func() -> Path {
+pub fn optional_argument_parse_func() -> Path {
     to_path(quote! {
-        serenity_framework::argument::rest_argument
+        serenity_framework::argument::optional_argument_parse
+    })
+}
+
+pub fn variadic_arguments_from_str_func() -> Path {
+    to_path(quote! {
+        serenity_framework::argument::variadic_arguments_from_str
+    })
+}
+
+pub fn variadic_arguments_parse_func() -> Path {
+    to_path(quote! {
+        serenity_framework::argument::variadic_arguments_parse
+    })
+}
+
+pub fn rest_argument_from_str_func() -> Path {
+    to_path(quote! {
+        serenity_framework::argument::rest_argument_from_str
+    })
+}
+
+pub fn rest_argument_parse_func() -> Path {
+    to_path(quote! {
+        serenity_framework::argument::rest_argument_parse
     })
 }
 

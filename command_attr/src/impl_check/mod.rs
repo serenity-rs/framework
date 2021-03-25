@@ -19,7 +19,7 @@ pub fn impl_check(attr: TokenStream, input: TokenStream) -> Result<TokenStream> 
         parse2::<syn::LitStr>(attr)?.value()
     };
 
-    let (_, data, error) = utils::parse_generics(&fun.sig)?;
+    let (_, _, data, error) = utils::parse_generics(&fun.sig)?;
     let options = Options::parse(&mut fun.attrs)?;
 
     let builder_fn = builder_fn(&data, &error, &mut fun, &name, &options);

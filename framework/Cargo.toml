@@ -5,7 +5,8 @@ authors = ["Alex M. M. <acdenissk69@gmail.com>"]
 edition = "2018"
 
 [dependencies.serenity]
-version = "0.10"
+git = "https://github.com/serenity-rs/serenity"
+branch = "current"
 default_features = false
 features = ["client", "model", "gateway", "cache", "rustls_backend"]
 

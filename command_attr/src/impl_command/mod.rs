@@ -19,10 +19,10 @@ pub fn impl_command(attr: TokenStream, input: TokenStream) -> Result<TokenStream
         parse2::<AttributeArgs>(attr)?.0
     };
 
-    let (ctx_name, data, error) = utils::parse_generics(&fun.sig)?;
+    let (ctx_name, msg_name, data, error) = utils::parse_generics(&fun.sig)?;
     let options = Options::parse(&mut fun.attrs)?;
 
-    parse_arguments(ctx_name, &mut fun, &options)?;
+    parse_arguments(ctx_name, msg_name, &mut fun, &options)?;
 
     let builder_fn = builder_fn(&data, &error, &mut fun, names, &options);
 
@@ -74,16 +74,18 @@ fn builder_fn(
     }
 }
 
-fn parse_arguments(ctx_name: Ident, function: &mut ItemFn, options: &Options) -> Result<()> {
+fn parse_arguments(
+    ctx_name: Ident,
+    msg_name: Ident,
+    function: &mut ItemFn,
+    options: &Options,
+) -> Result<()> {
     let mut arguments = Vec::new();
 
-    let mut len = function.sig.inputs.len();
-    while len > 2 {
+    while function.sig.inputs.len() > 2 {
         let argument = function.sig.inputs.pop().unwrap().into_value();
 
         arguments.push(Argument::new(argument)?);
-
-        len -= 1;
     }
 
     if !arguments.is_empty() {
@@ -98,7 +100,7 @@ fn parse_arguments(ctx_name: Ident, function: &mut ItemFn, options: &Options) ->
 
         let argument_names = arguments.iter().map(|arg| &arg.name).collect::<Vec<_>>();
         let argument_tys = arguments.iter().map(|arg| &arg.ty).collect::<Vec<_>>();
-        let argument_kinds = arguments.iter().map(|arg| &arg.kind).collect::<Vec<_>>();
+        let argument_parsers = arguments.iter().map(|arg| &arg.parser).collect::<Vec<_>>();
 
         function.block = parse2(quote! {{
             let (#(#argument_names),*) = {
@@ -106,7 +108,11 @@ fn parse_arguments(ctx_name: Ident, function: &mut ItemFn, options: &Options) ->
                 // afterwards, as `ArgumentSegments` holds a reference to the source string.
                 let mut __args = #asegsty::new(&#ctx_name.args, #delimiter);
 
-                #(let #argument_names: #argument_tys = #argument_kinds(&mut __args)?;)*
+                #(let #argument_names: #argument_tys = #argument_parsers(
+                    &#ctx_name.serenity_ctx,
+                    &#msg_name,
+                    &mut __args
+                ).await?;)*
 
                 (#(#argument_names),*)
             };
@@ -133,7 +139,7 @@ fn check_arguments(args: &[Argument]) -> Result<()> {
 
     for arg in args {
         if let Some(last_arg) = last_arg {
-            match (last_arg.kind, arg.kind) {
+            match (last_arg.parser.type_, arg.parser.type_) {
                 (ArgumentType::Optional, ArgumentType::Required) => {
                     return Err(Error::new(
                         last_arg.name.span(),
@@ -207,7 +213,7 @@ fn check_arguments(args: &[Argument]) -> Result<()> {
 struct Argument {
     name: Ident,
     ty: Box<Type>,
-    kind: ArgumentType,
+    parser: ArgumentParser,
 }
 
 impl Argument {
@@ -219,12 +225,12 @@ impl Argument {
         let ty = binding.ty.clone();
 
         let path = utils::get_path(&ty)?;
-        let kind = ArgumentType::new(&binding.attrs, path)?;
+        let parser = ArgumentParser::new(&binding.attrs, path)?;
 
         Ok(Self {
             name,
             ty,
-            kind,
+            parser,
         })
     }
 }
@@ -237,47 +243,73 @@ enum ArgumentType {
     Rest,
 }
 
-impl ArgumentType {
+#[derive(Clone, Copy)]
+struct ArgumentParser {
+    type_: ArgumentType,
+    use_parse_trait: bool,
+}
+
+impl ArgumentParser {
     fn new(attrs: &[Attribute], path: &Path) -> Result<Self> {
-        if !attrs.is_empty() {
-            if attrs.len() > 1 {
-                return Err(Error::new(
-                    path.span(),
-                    "an argument cannot have more than 1 attribute",
-                ));
-            }
+        let mut is_rest_argument = false;
+        let mut use_parse_trait = false;
+        for attr in attrs {
+            let attr = utils::parse_attribute(attr)?;
 
-            let attr = utils::parse_attribute(&attrs[0])?;
+            if attr.path.is_ident("rest") {
+                is_rest_argument = true;
 
-            if !attr.path.is_ident("rest") {
-                return Err(Error::new(attrs[0].span(), "invalid attribute name, expected `rest`"));
-            }
+                if !attr.values.is_empty() {
+                    return Err(Error::new(
+                        attrs[0].span(),
+                        "the `rest` attribute does not accept any input",
+                    ));
+                }
+            } else if attr.path.is_ident("parse") {
+                use_parse_trait = true;
 
-            if !attr.values.is_empty() {
+                if !attr.values.is_empty() {
+                    return Err(Error::new(
+                        attrs[0].span(),
+                        "the `parse` attribute does not accept any input",
+                    ));
+                }
+            } else {
                 return Err(Error::new(
                     attrs[0].span(),
-                    "the `rest` attribute does not accept any input",
+                    "invalid attribute name, expected `rest` or `parse`",
                 ));
             }
-
-            return Ok(ArgumentType::Rest);
         }
 
-        Ok(match path.segments.last().unwrap().ident.to_string().as_str() {
-            "Option" => ArgumentType::Optional,
-            "Vec" => ArgumentType::Variadic,
-            _ => ArgumentType::Required,
+        let type_ = if is_rest_argument {
+            ArgumentType::Rest
+        } else {
+            match path.segments.last().unwrap().ident.to_string().as_str() {
+                "Option" => ArgumentType::Optional,
+                "Vec" => ArgumentType::Variadic,
+                _ => ArgumentType::Required,
+            }
+        };
+
+        Ok(Self {
+            type_,
+            use_parse_trait,
         })
     }
 }
 
-impl ToTokens for ArgumentType {
+impl ToTokens for ArgumentParser {
     fn to_tokens(&self, tokens: &mut TokenStream) {
-        let path = match self {
-            ArgumentType::Required => paths::required_argument_func(),
-            ArgumentType::Optional => paths::optional_argument_func(),
-            ArgumentType::Variadic => paths::variadic_arguments_func(),
-            ArgumentType::Rest => paths::rest_argument_func(),
+        let path = match (self.type_, self.use_parse_trait) {
+            (ArgumentType::Required, false) => paths::required_argument_from_str_func(),
+            (ArgumentType::Required, true) => paths::required_argument_parse_func(),
+            (ArgumentType::Optional, false) => paths::optional_argument_from_str_func(),
+            (ArgumentType::Optional, true) => paths::optional_argument_parse_func(),
+            (ArgumentType::Variadic, false) => paths::variadic_arguments_from_str_func(),
+            (ArgumentType::Variadic, true) => paths::variadic_arguments_parse_func(),
+            (ArgumentType::Rest, false) => paths::rest_argument_from_str_func(),
+            (ArgumentType::Rest, true) => paths::rest_argument_parse_func(),
         };
 
         tokens.extend(quote!(#path));
