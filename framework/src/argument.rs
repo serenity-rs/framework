@@ -205,7 +205,6 @@ where
 /// This can also be used to handle larger combinations of types by chaining [`ParseEither`]s,
 /// for example, `ParseEither<f32, ParseEither<i32, String>>`.
 #[derive(Debug)]
-#[non_exhaustive]
 pub enum ParseEither<T, U>
 where
     T: Parse,
@@ -218,7 +217,6 @@ where
 }
 
 /// Error that is returned when [`ParseEither::parse`] fails.
-#[non_exhaustive]
 pub struct ParseEitherError<T, U>
 where
     T: Parse,
