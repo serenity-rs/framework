@@ -257,9 +257,9 @@ where
 impl<T, U> fmt::Display for ParseEitherError<T, U>
 where
     T: Parse,
-    T::Err: fmt::Debug + fmt::Display,
+    T::Err: fmt::Display,
     U: Parse,
-    U::Err: fmt::Debug + fmt::Display,
+    U::Err: fmt::Display,
 {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(
