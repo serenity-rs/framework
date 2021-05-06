@@ -3,7 +3,7 @@
 use std::error::Error as StdError;
 use std::fmt;
 
-use serenity::{async_trait, futures::TryFutureExt, model::prelude::*, prelude::*, utils::Parse};
+use serenity::{async_trait, model::prelude::*, prelude::*, utils::Parse};
 
 use crate::utils::ArgumentSegments;
 
@@ -278,16 +278,17 @@ where
     type Err = ParseEitherError<T, U>;
 
     async fn parse(ctx: &Context, msg: &Message, s: &str) -> Result<Self, Self::Err> {
-        let parse_one = async { T::parse(ctx, msg, s).await.map(Self::VariantOne) };
-        let parse_two = async { U::parse(ctx, msg, s).await.map(Self::VariantTwo) };
+        let err1 = match T::parse(ctx, msg, s).await {
+            Ok(res) => return Ok(Self::VariantOne(res)),
+            Err(err1) => err1,
+        };
 
-        parse_one
-            .or_else(|e1| async {
-                parse_two.await.map_err(|e2| Self::Err {
-                    err_one: e1,
-                    err_two: e2,
-                })
-            })
-            .await
+        match U::parse(ctx, msg, s).await {
+            Ok(res) => Ok(Self::VariantTwo(res)),
+            Err(err2) => Err(Self::Err {
+                err_one: err1,
+                err_two: err2,
+            }),
+        }
     }
 }
