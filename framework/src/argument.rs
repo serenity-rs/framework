@@ -280,8 +280,8 @@ where
     type Err = ParseEitherError<T, U>;
 
     async fn parse(ctx: &Context, msg: &Message, s: &str) -> Result<Self, Self::Err> {
-        let parse_one = async { T::parse(ctx, msg, s).await.map(|v| Self::VariantOne(v)) };
-        let parse_two = async { U::parse(ctx, msg, s).await.map(|v| Self::VariantTwo(v)) };
+        let parse_one = async { T::parse(ctx, msg, s).await.map(Self::VariantOne) };
+        let parse_two = async { U::parse(ctx, msg, s).await.map(Self::VariantTwo) };
 
         parse_one
             .or_else(|e1| async {
