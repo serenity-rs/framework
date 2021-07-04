@@ -3,7 +3,7 @@
 use std::error::Error as StdError;
 use std::fmt;
 
-use serenity::{model::prelude::*, prelude::*};
+use serenity::{async_trait, model::prelude::*, prelude::*, utils::Parse};
 
 use crate::utils::ArgumentSegments;
 
@@ -75,7 +75,7 @@ pub async fn required_argument_parse<T>(
     segments: &mut ArgumentSegments<'_>,
 ) -> Result<T, ArgumentError<T::Err>>
 where
-    T: serenity::utils::Parse,
+    T: Parse,
 {
     match segments.next() {
         Some(seg) => T::parse(ctx, msg, seg).await.map_err(ArgumentError::Argument),
@@ -117,7 +117,7 @@ pub async fn optional_argument_parse<T>(
     segments: &mut ArgumentSegments<'_>,
 ) -> Result<Option<T>, ArgumentError<T::Err>>
 where
-    T: serenity::utils::Parse,
+    T: Parse,
 {
     match segments.next() {
         Some(seg) => T::parse(ctx, msg, seg).await.map(Some).map_err(ArgumentError::Argument),
@@ -152,7 +152,7 @@ pub async fn variadic_arguments_parse<T>(
     segments: &mut ArgumentSegments<'_>,
 ) -> Result<Vec<T>, ArgumentError<T::Err>>
 where
-    T: serenity::utils::Parse,
+    T: Parse,
 {
     serenity::futures::future::try_join_all(segments.map(|seg| T::parse(ctx, msg, seg)))
         .await
@@ -190,7 +190,105 @@ pub async fn rest_argument_parse<T>(
     segments: &mut ArgumentSegments<'_>,
 ) -> Result<T, ArgumentError<T::Err>>
 where
-    T: serenity::utils::Parse,
+    T: Parse,
 {
     T::parse(ctx, msg, segments.source()).await.map_err(ArgumentError::Argument)
+}
+
+/// Denotes a type that can be either one of two different types.
+///
+/// It derives the [`Parse`] trait and can be used to parse an argument as either of two types.
+/// It attempts to parse into the type that is indicated first. If parsing into the first type fails,
+/// an attempt to parse into the second type is made. If both attempts fail, the overall parsing
+/// fails and returns a [`ParseEitherError`].
+///
+/// This can also be used to handle larger combinations of types by chaining [`ParseEither`]s,
+/// for example, `ParseEither<f32, ParseEither<i32, String>>`.
+#[derive(Debug)]
+pub enum ParseEither<T, U>
+where
+    T: Parse,
+    U: Parse,
+{
+    /// The first variant.
+    VariantOne(T),
+    /// The second variant.
+    VariantTwo(U),
+}
+
+/// Error that is returned when [`ParseEither::parse`] fails.
+pub struct ParseEitherError<T, U>
+where
+    T: Parse,
+    U: Parse,
+{
+    /// The error returned from parsing the first variant.
+    pub err_one: T::Err,
+    /// The error returned from parsing the second variant.
+    pub err_two: U::Err,
+}
+
+impl<T, U> fmt::Debug for ParseEitherError<T, U>
+where
+    T: Parse,
+    T::Err: fmt::Debug,
+    U: Parse,
+    U::Err: fmt::Debug,
+{
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("ParseEitherError")
+            .field("err_one", &self.err_one)
+            .field("err_two", &self.err_two)
+            .finish()
+    }
+}
+
+impl<T, U> std::error::Error for ParseEitherError<T, U>
+where
+    T: Parse,
+    T::Err: fmt::Debug + fmt::Display,
+    U: Parse,
+    U::Err: fmt::Debug + fmt::Display,
+{
+}
+
+impl<T, U> fmt::Display for ParseEitherError<T, U>
+where
+    T: Parse,
+    T::Err: fmt::Display,
+    U: Parse,
+    U::Err: fmt::Display,
+{
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "Parsing into type one failed: {}\nParsing into type two failed: {}",
+            self.err_one, self.err_two
+        )
+    }
+}
+
+#[async_trait]
+impl<T, U> Parse for ParseEither<T, U>
+where
+    T: Parse,
+    T::Err: Send,
+    U: Parse,
+{
+    type Err = ParseEitherError<T, U>;
+
+    async fn parse(ctx: &Context, msg: &Message, s: &str) -> Result<Self, Self::Err> {
+        let err1 = match T::parse(ctx, msg, s).await {
+            Ok(res) => return Ok(Self::VariantOne(res)),
+            Err(err1) => err1,
+        };
+
+        match U::parse(ctx, msg, s).await {
+            Ok(res) => Ok(Self::VariantTwo(res)),
+            Err(err2) => Err(Self::Err {
+                err_one: err1,
+                err_two: err2,
+            }),
+        }
+    }
 }
