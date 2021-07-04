@@ -21,7 +21,7 @@ use crate::utils::Segments;
 /// This can be expressed in a regular expression as `<@!?\d+>`.
 ///
 /// As an example, these are valid mentions:
-/// - <@110372470472613888>
+/// - \<@110372470472613888>
 /// - <@!110372470472613888>
 ///
 /// Returns the mention and the rest of the message after the mention, with trimmed
