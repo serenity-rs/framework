@@ -4,7 +4,6 @@ use std::error::Error as StdError;
 use std::fmt;
 
 use crate::check::Reason;
-use crate::DefaultError;
 
 /// An error describing why [`dispatch`]ing failed.
 ///
@@ -44,7 +43,7 @@ impl StdError for DispatchError {}
 ///
 /// [`dispatch`]: crate::Framework::dispatch
 #[derive(Debug, Clone)]
-pub enum Error<E = DefaultError> {
+pub enum Error<E> {
     /// Failed to dispatch a command.
     Dispatch(DispatchError),
     /// A command returned an error.

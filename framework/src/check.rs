@@ -14,7 +14,6 @@ use serenity::futures::future::BoxFuture;
 use serenity::model::channel::Message;
 
 use crate::context::CheckContext;
-use crate::{DefaultData, DefaultError};
 
 /// The reason describing why a check failed.
 ///
@@ -62,11 +61,11 @@ impl StdError for Reason {}
 pub type CheckResult<T = ()> = std::result::Result<T, Reason>;
 
 /// The definition of a check function.
-pub type CheckFn<D = DefaultData, E = DefaultError> =
+pub type CheckFn<D, E> =
     for<'fut> fn(&'fut CheckContext<'_, D, E>, &'fut Message) -> BoxFuture<'fut, CheckResult<()>>;
 
 /// A constructor of the [`Check`] type provided by the consumer of the framework.
-pub type CheckConstructor<D = DefaultData, E = DefaultError> = fn() -> Check<D, E>;
+pub type CheckConstructor<D, E> = fn() -> Check<D, E>;
 
 /// Data relating to a check.
 ///
@@ -74,7 +73,7 @@ pub type CheckConstructor<D = DefaultData, E = DefaultError> = fn() -> Check<D, 
 ///
 /// [docs]: crate::check
 #[non_exhaustive]
-pub struct Check<D = DefaultData, E = DefaultError> {
+pub struct Check<D, E> {
     /// Name of the check.
     ///
     /// Used in help commands.

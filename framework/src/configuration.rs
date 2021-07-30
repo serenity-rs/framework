@@ -10,7 +10,6 @@ use serenity::model::id::UserId;
 use crate::category::Category;
 use crate::command::{CommandConstructor, CommandId, CommandMap};
 use crate::context::PrefixContext;
-use crate::{DefaultData, DefaultError};
 
 /// The definition of the dynamic prefix hook.
 pub type DynamicPrefix<D, E> =
@@ -18,7 +17,7 @@ pub type DynamicPrefix<D, E> =
 
 /// The configuration of the framework.
 #[non_exhaustive]
-pub struct Configuration<D = DefaultData, E = DefaultError> {
+pub struct Configuration<D, E> {
     /// A list of static prefixes.
     pub prefixes: Vec<String>,
     /// A function to dynamically parse the prefix.

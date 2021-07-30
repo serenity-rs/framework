@@ -17,24 +17,24 @@ use serenity::model::channel::Message;
 use crate::check::{Check, CheckConstructor};
 use crate::context::Context;
 use crate::utils::IdMap;
-use crate::{DefaultData, DefaultError};
+use crate::DefaultError;
 
 /// A function to dynamically create a string.
 ///
 /// Used for [`Command::dynamic_description`] and [`Command::dynamic_usage`].
-pub type StringHook<D = DefaultData, E = DefaultError> =
+pub type StringHook<D, E> =
     for<'a> fn(ctx: &'a Context<D, E>, msg: &'a Message) -> BoxFuture<'a, Option<String>>;
 
 /// A function to dynamically create a list of strings.
 ///
 /// Used for [`Command::dynamic_examples`].
-pub type StringsHook<D = DefaultData, E = DefaultError> =
+pub type StringsHook<D, E> =
     for<'a> fn(ctx: &'a Context<D, E>, msg: &'a Message) -> BoxFuture<'a, Vec<String>>;
 
 /// [`IdMap`] for storing commands.
 ///
 /// [`IdMap`]: crate::utils::IdMap
-pub type CommandMap<D = DefaultData, E = DefaultError> = IdMap<String, CommandId, Command<D, E>>;
+pub type CommandMap<D, E> = IdMap<String, CommandId, Command<D, E>>;
 
 /// The result type of a [command function][fn].
 ///
@@ -42,11 +42,11 @@ pub type CommandMap<D = DefaultData, E = DefaultError> = IdMap<String, CommandId
 pub type CommandResult<T = (), E = DefaultError> = std::result::Result<T, E>;
 
 /// The definition of a command function.
-pub type CommandFn<D = DefaultData, E = DefaultError> =
+pub type CommandFn<D, E> =
     for<'a> fn(Context<D, E>, &'a Message) -> BoxFuture<'a, CommandResult<(), E>>;
 
 /// A constructor of the [`Command`] type provided by the consumer of the framework.
-pub type CommandConstructor<D = DefaultData, E = DefaultError> = fn() -> Command<D, E>;
+pub type CommandConstructor<D, E> = fn() -> Command<D, E>;
 
 /// A unique identifier of a [`Command`] stored in the [`CommandMap`].
 ///
@@ -81,7 +81,7 @@ impl<D, E> From<CommandConstructor<D, E>> for CommandId {
 ///
 /// [docs]: index.html
 #[non_exhaustive]
-pub struct Command<D = DefaultData, E = DefaultError> {
+pub struct Command<D, E> {
     /// The identifier of this command.
     pub id: CommandId,
     /// The function of this command.
@@ -93,15 +93,15 @@ pub struct Command<D = DefaultData, E = DefaultError> {
     /// A string describing this command.
     pub description: Option<String>,
     /// A function to dynamically describe this command.
-    pub dynamic_description: Option<StringHook>,
+    pub dynamic_description: Option<StringHook<D, E>>,
     /// A string to express usage of this command.
     pub usage: Option<String>,
     /// A function to dynamically express usage of this command.
-    pub dynamic_usage: Option<StringHook>,
+    pub dynamic_usage: Option<StringHook<D, E>>,
     /// A list of strings demonstrating usage of this command.
     pub examples: Vec<String>,
     /// A function to dynamically demonstrate usage of this command.
-    pub dynamic_examples: Option<StringsHook>,
+    pub dynamic_examples: Option<StringsHook<D, E>>,
     /// A boolean to indicate whether the command can be shown in help commands.
     pub help_available: bool,
     /// A function that allows/denies access to this command.
@@ -178,7 +178,7 @@ impl<D, E> Command<D, E> {
 }
 
 /// A builder type for creating a [`Command`] from scratch.
-pub struct CommandBuilder<D = DefaultData, E = DefaultError> {
+pub struct CommandBuilder<D, E> {
     inner: Command<D, E>,
 }
 
@@ -233,7 +233,7 @@ impl<D, E> CommandBuilder<D, E> {
     }
 
     /// Assigns a function to dynamically create a description to this command.
-    pub fn dynamic_description(mut self, hook: StringHook) -> Self {
+    pub fn dynamic_description(mut self, hook: StringHook<D, E>) -> Self {
         self.inner.dynamic_description = Some(hook);
         self
     }
@@ -248,7 +248,7 @@ impl<D, E> CommandBuilder<D, E> {
     }
 
     /// Assigns a function to dynamically create a usage to this command.
-    pub fn dynamic_usage(mut self, hook: StringHook) -> Self {
+    pub fn dynamic_usage(mut self, hook: StringHook<D, E>) -> Self {
         self.inner.dynamic_usage = Some(hook);
         self
     }
@@ -267,7 +267,7 @@ impl<D, E> CommandBuilder<D, E> {
     }
 
     /// Assigns a function to dynamically create a list of examples to this command.
-    pub fn dynamic_examples(mut self, hook: StringsHook) -> Self {
+    pub fn dynamic_examples(mut self, hook: StringsHook<D, E>) -> Self {
         self.inner.dynamic_examples = Some(hook);
         self
     }
